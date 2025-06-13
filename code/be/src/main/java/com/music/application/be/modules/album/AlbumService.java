@@ -87,7 +87,6 @@ public class AlbumService {
         return mapToResponseDTO(album);
     }
 
-    @Cacheable(value = "albumsPage", key = "'page_' + #pageable.pageNumber + '_size_' + #pageable.pageSize")
     public Page<AlbumResponseDTO> getAllAlbums(Pageable pageable) {
         return albumRepository.findAll(pageable).map(this::mapToResponseDTO);
     }
@@ -98,13 +97,10 @@ public class AlbumService {
                 .orElseThrow(() -> new RuntimeException("Album not found"));
         albumRepository.delete(album);
     }
-
-    @Cacheable(value = "albumsSearch", key = "#query + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<AlbumResponseDTO> searchAlbums(String query, Pageable pageable) {
         return albumRepository.findByNameContainingIgnoreCase(query, pageable).map(this::mapToResponseDTO);
     }
 
-    @Cacheable(value = "albumsByArtist", key = "#artistId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<AlbumResponseDTO> getAlbumsByArtist(Long artistId, Pageable pageable) {
         return albumRepository.findByArtistId(artistId, pageable).map(this::mapToResponseDTO);
     }

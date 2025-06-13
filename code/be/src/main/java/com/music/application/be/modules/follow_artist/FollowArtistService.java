@@ -58,13 +58,11 @@ public class FollowArtistService {
     }
 
     // Get followed artists
-    @Cacheable(value = "followedArtists", key = "#userId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<FollowArtistDTO> getFollowedArtists(Long userId, Pageable pageable) {
         return followArtistRepository.findByUserId(userId, pageable).map(this::mapToDTO);
     }
 
     // Search followed artists
-    @Cacheable(value = "searchedFollowedArtists", key = "#userId + '-' + #query + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<FollowArtistDTO> searchFollowedArtists(Long userId, String query, Pageable pageable) {
         return followArtistRepository.findByUserIdAndArtistNameContainingIgnoreCase(userId, query, pageable)
                 .map(this::mapToDTO);

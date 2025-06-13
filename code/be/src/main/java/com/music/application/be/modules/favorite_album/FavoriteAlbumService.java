@@ -47,13 +47,11 @@ public class FavoriteAlbumService {
     }
 
     // Get favorite albums
-    @Cacheable(value = "favoriteAlbums", key = "#userId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<FavoriteAlbumDTO> getFavoriteAlbums(Long userId, Pageable pageable) {
         return favoriteAlbumRepository.findByUserId(userId, pageable).map(this::mapToDTO);
     }
 
     // Search favorite albums
-    @Cacheable(value = "favoriteAlbumsSearch", key = "#userId + '-' + #query + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<FavoriteAlbumDTO> searchFavoriteAlbums(Long userId, String query, Pageable pageable) {
         return favoriteAlbumRepository.findByUserIdAndAlbumNameContainingIgnoreCase(userId, query, pageable)
                 .map(this::mapToDTO);

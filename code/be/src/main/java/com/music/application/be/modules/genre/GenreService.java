@@ -37,7 +37,6 @@ public class GenreService {
     }
 
     // Read all with pagination
-    @Cacheable(value = "genres", key = "'all-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<GenreDTO> getAllGenres(Pageable pageable) {
         return genreRepository.findAll(pageable).map(this::mapToDTO);
     }
@@ -65,7 +64,6 @@ public class GenreService {
     }
 
     // Search genres
-    @Cacheable(value = "searchedGenres", key = "#query + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<GenreDTO> searchGenres(String query, Pageable pageable) {
         return genreRepository.findByNameContainingIgnoreCase(query, pageable).map(this::mapToDTO);
     }

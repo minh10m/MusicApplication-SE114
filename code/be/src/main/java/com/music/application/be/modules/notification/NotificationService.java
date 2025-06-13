@@ -67,7 +67,6 @@ public class NotificationService {
         }
     }
 
-    @Cacheable(value = "userNotificationsPaginated", key = "#userId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<Notification> getUserNotificationsPaginated(Long userId, Pageable pageable) {
         try {
             return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);

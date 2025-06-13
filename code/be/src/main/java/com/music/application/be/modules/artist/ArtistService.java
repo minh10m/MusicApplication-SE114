@@ -39,7 +39,6 @@ public class ArtistService {
         return mapToResponseDTO(artist);
     }
 
-    @Cacheable(value = "artistsPage", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<ArtistResponseDTO> getAllArtists(Pageable pageable) {
         return artistRepository.findAll(pageable).map(this::mapToResponseDTO);
     }
@@ -70,7 +69,6 @@ public class ArtistService {
         artistRepository.delete(artist);
     }
 
-    @Cacheable(value = "artistsSearch", key = "#query + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<ArtistResponseDTO> searchArtists(String query, Pageable pageable) {
         return artistRepository.findByNameContainingIgnoreCase(query, pageable).map(this::mapToResponseDTO);
     }

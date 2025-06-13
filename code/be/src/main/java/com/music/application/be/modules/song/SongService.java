@@ -207,7 +207,6 @@ public class SongService {
     }
 
     // Read all with pagination
-    @Cacheable(value = "songs", key = "'all-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<SongDTO> getAllSongs(Pageable pageable) {
         return songRepository.findAll(pageable).map(this::mapToDTO);
     }
@@ -221,25 +220,21 @@ public class SongService {
     }
 
     // Search songs
-    @Cacheable(value = "searchedSongs", key = "#query + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<SongDTO> searchSongs(String query, Pageable pageable) {
         return songRepository.findByTitleContainingIgnoreCase(query, pageable).map(this::mapToDTO);
     }
 
     // Get songs by genre
-    @Cacheable(value = "songsByGenre", key = "#genreId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<SongDTO> getSongsByGenre(Long genreId, Pageable pageable) {
         return songRepository.findByGenresId(genreId, pageable).map(this::mapToDTO);
     }
 
     // Get songs by artist
-    @Cacheable(value = "songsByArtist", key = "#artistId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<SongDTO> getSongsByArtist(Long artistId, Pageable pageable) {
         return songRepository.findByArtistId(artistId, pageable).map(this::mapToDTO);
     }
 
     // Get top songs by view count
-    @Cacheable(value = "topSongs", key = "'top-' + #page + '-' + #size")
     public Page<SongDTO> getTopSongsByViewCount(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return songRepository.findAllByOrderByViewCountDesc(pageable).map(this::mapToDTO);

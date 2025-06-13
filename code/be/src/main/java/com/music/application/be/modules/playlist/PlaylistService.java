@@ -176,7 +176,6 @@ public class PlaylistService {
     }
 
     // Search playlists
-    @Cacheable(value = "searchedPlaylists", key = "#query + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<PlaylistDTO> searchPlaylists(String query, Pageable pageable) {
         return playlistRepository.findByNameContainingIgnoreCase(query, pageable).map(this::mapToDTO);
     }

@@ -45,13 +45,11 @@ public class DownloadedSongService {
     }
 
     // Get downloaded songs
-    @Cacheable(value = "downloadedSongs", key = "#userId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<DownloadedSongDTO> getDownloadedSongs(Long userId, Pageable pageable) {
         return downloadedSongRepository.findByUserId(userId, pageable).map(this::mapToDTO);
     }
 
     // Search downloaded songs
-    @Cacheable(value = "downloadedSongsSearch", key = "#userId + '-' + #query + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<DownloadedSongDTO> searchDownloadedSongs(Long userId, String query, Pageable pageable) {
         return downloadedSongRepository.findByUserIdAndSongTitleContainingIgnoreCase(userId, query, pageable)
                 .map(this::mapToDTO);
