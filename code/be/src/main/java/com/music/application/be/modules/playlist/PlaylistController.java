@@ -22,14 +22,13 @@ public class PlaylistController {
 
     // Create playlist for user (no genre required)
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMIN', 'USER')")
     public ResponseEntity<PlaylistDTO> createPlaylist(@Valid @RequestBody PlaylistRequestDTO playlistRequestDTO) {
         return ResponseEntity.ok(playlistService.createPlaylist(playlistRequestDTO));
     }
 
     // Create playlist for admin with genres (auto-add songs)
     @PostMapping("/with-genres")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<PlaylistDTO> createPlaylistWithGenres(@Valid @RequestBody PlaylistRequestDTO playlistRequestDTO) {
         return ResponseEntity.ok(playlistService.createPlaylistWithGenres(playlistRequestDTO));
     }
@@ -68,7 +67,6 @@ public class PlaylistController {
 
     // Update playlist for user (no genre)
     @PutMapping("/{playlistId}")
-    @PreAuthorize("hasAuthority('ADMIN', 'USER')")
     public ResponseEntity<PlaylistDTO> updatePlaylist(@PathVariable Long playlistId, @Valid @RequestBody PlaylistRequestDTO playlistRequestDTO) {
         return ResponseEntity.ok(playlistService.updatePlaylist(playlistId, playlistRequestDTO));
     }
@@ -82,7 +80,6 @@ public class PlaylistController {
 
     // Delete playlist
     @DeleteMapping("/{playlistId}")
-    @PreAuthorize("hasAuthority('ADMIN', 'USER')")
     public ResponseEntity<Void> deletePlaylist(@PathVariable Long playlistId) {
         playlistService.deletePlaylist(playlistId);
         return ResponseEntity.ok().build();

@@ -28,6 +28,8 @@ public class Playlist {
 
     private String description;
 
+    private String thumbnail;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

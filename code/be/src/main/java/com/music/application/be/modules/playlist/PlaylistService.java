@@ -61,6 +61,8 @@ public class PlaylistService {
         playlist.setCreatedBy(user);
 
         Playlist savedPlaylist = playlistRepository.save(playlist);
+        // Cập nhật thumbnail từ bài hát đầu tiên (nếu có)
+        updateThumbnail(savedPlaylist.getId());
         return mapToDTO(savedPlaylist);
     }
 
@@ -100,6 +102,8 @@ public class PlaylistService {
                 songPlaylist.setAddedAt(LocalDateTime.now());
                 songPlaylistRepository.save(songPlaylist);
             }
+            // Cập nhật thumbnail từ bài hát đầu tiên
+            updateThumbnail(savedPlaylist.getId());
         }
 
         return mapToDTO(savedPlaylist);
@@ -157,6 +161,8 @@ public class PlaylistService {
 
         // Không xử lý genre cho playlist của user
         Playlist updatedPlaylist = playlistRepository.save(playlist);
+        // Cập nhật thumbnail từ bài hát đầu tiên (nếu có)
+        updateThumbnail(id);
         return mapToDTO(updatedPlaylist);
     }
 
@@ -201,6 +207,8 @@ public class PlaylistService {
                 songPlaylist.setAddedAt(LocalDateTime.now());
                 songPlaylistRepository.save(songPlaylist);
             }
+            // Cập nhật thumbnail từ bài hát đầu tiên
+            updateThumbnail(id);
         }
 
         Playlist updatedPlaylist = playlistRepository.save(playlist);
@@ -245,6 +253,7 @@ public class PlaylistService {
         dto.setId(playlist.getId());
         dto.setName(playlist.getName());
         dto.setDescription(playlist.getDescription());
+        dto.setThumbnail(playlist.getThumbnail()); // Thêm thumbnail
         dto.setCreatedAt(playlist.getCreatedAt());
         dto.setGenreIds(playlist.getGenres() != null ? playlist.getGenres().stream().map(Genre::getId).collect(Collectors.toList()) : null);
         dto.setUserId(playlist.getCreatedBy().getId());
@@ -259,5 +268,17 @@ public class PlaylistService {
         dto.setPlaylistId(songPlaylist.getPlaylist().getId());
         dto.setAddedAt(songPlaylist.getAddedAt());
         return dto;
+    }
+
+    // Phương thức cập nhật thumbnail từ bài hát đầu tiên
+    public void updateThumbnail(Long playlistId) {
+        List<SongPlaylist> songPlaylists = songPlaylistRepository.findByPlaylistIdOrderByAddedAtAsc(playlistId);
+        if (!songPlaylists.isEmpty()) {
+            Song firstSong = songPlaylists.get(0).getSong();
+            Playlist playlist = playlistRepository.findById(playlistId)
+                    .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + playlistId));
+            playlist.setThumbnail(firstSong.getThumbnail()); // Giả định Song có trường thumbnail
+            playlistRepository.save(playlist);
+        }
     }
 }

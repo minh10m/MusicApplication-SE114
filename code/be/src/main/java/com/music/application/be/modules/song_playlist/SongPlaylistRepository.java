@@ -12,5 +12,7 @@ public interface SongPlaylistRepository extends JpaRepository<SongPlaylist, Long
     List<SongPlaylist> findByPlaylistIdOrderByAddedAtDesc(Long playlistId);
     List<SongPlaylist> findBySongId(Long songId);
     void deleteByPlaylistId(Long playlistId);
+    List<SongPlaylist> findByPlaylistIdOrderByAddedAtAsc(Long playlistId);
 
+    long countByPlaylistId(Long id);
 }

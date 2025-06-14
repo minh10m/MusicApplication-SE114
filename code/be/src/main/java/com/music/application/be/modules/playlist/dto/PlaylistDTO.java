@@ -21,6 +21,8 @@ public class PlaylistDTO {
     @Size(max = 1000, message = "Description must be less than 1000 characters")
     private String description;
 
+    private String thumbnail;
+
     private LocalDateTime createdAt;
 
     private List<Long> genreIds;
