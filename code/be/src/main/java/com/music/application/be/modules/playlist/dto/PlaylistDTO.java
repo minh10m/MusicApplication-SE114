@@ -1,5 +1,6 @@
 package com.music.application.be.modules.playlist.dto;
 
+import com.music.application.be.modules.song_playlist.dto.SongPlaylistDTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -23,5 +24,7 @@ public class PlaylistDTO {
     private LocalDateTime createdAt;
 
     private List<Long> genreIds;
+
+    private List<SongPlaylistDTO> songPlaylists;
 
 }

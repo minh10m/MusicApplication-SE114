@@ -40,6 +40,12 @@ public class PlaylistController {
         return ResponseEntity.ok(playlistService.getPlaylistById(playlistId));
     }
 
+    // Get playlist with songs by ID
+    @GetMapping("/{playlistId}/with-songs")
+    public ResponseEntity<PlaylistDTO> getPlaylistWithSongs(@PathVariable Long playlistId) {
+        return ResponseEntity.ok(playlistService.getPlaylistWithSongs(playlistId));
+    }
+
     // Get all playlists
     @GetMapping
     public ResponseEntity<PagedResponseDTO<PlaylistDTO>> getAllPlaylists(

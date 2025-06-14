@@ -9,6 +9,7 @@ import com.music.application.be.modules.song.Song;
 import com.music.application.be.modules.song.SongRepository;
 import com.music.application.be.modules.song_playlist.SongPlaylist;
 import com.music.application.be.modules.song_playlist.SongPlaylistRepository;
+import com.music.application.be.modules.song_playlist.dto.SongPlaylistDTO;
 import com.music.application.be.modules.user.User;
 import com.music.application.be.modules.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -110,6 +111,23 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
         return mapToDTO(playlist);
+    }
+
+    // Read playlist with songs by ID
+    @Cacheable(value = "playlists", key = "'with-songs-' + #id")
+    public PlaylistDTO getPlaylistWithSongs(Long id) {
+        Playlist playlist = playlistRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
+
+        // Lấy danh sách bài hát từ SongPlaylist
+        List<SongPlaylist> songPlaylists = songPlaylistRepository.findByPlaylistIdOrderByAddedAtDesc(id);
+        List<SongPlaylistDTO> songPlaylistDTOs = songPlaylists.stream()
+                .map(this::mapToSongPlaylistDTO)
+                .collect(Collectors.toList());
+
+        PlaylistDTO dto = mapToDTO(playlist);
+        dto.setSongPlaylists(songPlaylistDTOs); // Thêm danh sách bài hát
+        return dto;
     }
 
     // Read all with pagination
@@ -230,6 +248,16 @@ public class PlaylistService {
         dto.setCreatedAt(playlist.getCreatedAt());
         dto.setGenreIds(playlist.getGenres() != null ? playlist.getGenres().stream().map(Genre::getId).collect(Collectors.toList()) : null);
         dto.setUserId(playlist.getCreatedBy().getId());
+        return dto;
+    }
+
+    // Map SongPlaylist to DTO
+    private SongPlaylistDTO mapToSongPlaylistDTO(SongPlaylist songPlaylist) {
+        SongPlaylistDTO dto = new SongPlaylistDTO();
+        dto.setId(songPlaylist.getId());
+        dto.setSongId(songPlaylist.getSong().getId());
+        dto.setPlaylistId(songPlaylist.getPlaylist().getId());
+        dto.setAddedAt(songPlaylist.getAddedAt());
         return dto;
     }
 }
