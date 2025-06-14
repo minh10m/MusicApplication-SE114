@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,7 +57,7 @@ public class UserService {
         return convertToDetailDTO(updatedUser);
     }
 
-    @Cacheable(value = "allUsers")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public List<UserResponseDTO> getAllUsers() {
         return userRepository.findAll()
                 .stream()
