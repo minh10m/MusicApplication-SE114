@@ -18,6 +18,7 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -46,8 +47,11 @@ public class PlaylistService {
     // Create playlist for user (no genre)
     @CacheEvict(value = {"playlists", "searchedPlaylists"}, allEntries = true)
     public PlaylistDTO createPlaylist(PlaylistRequestDTO playlistRequestDTO) {
-        User user = userRepository.findById(playlistRequestDTO.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + playlistRequestDTO.getUserId()));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User user = (User) authentication.getPrincipal();
 
         Playlist playlist = new Playlist();
         playlist.setName(playlistRequestDTO.getName());
@@ -55,7 +59,6 @@ public class PlaylistService {
         playlist.setCreatedAt(LocalDateTime.now());
         playlist.setCreatedBy(user);
 
-        // Không xử lý genre cho user
         Playlist savedPlaylist = playlistRepository.save(playlist);
         return mapToDTO(savedPlaylist);
     }
@@ -63,8 +66,11 @@ public class PlaylistService {
     // Create playlist for admin with genres (auto-add songs)
     @CacheEvict(value = {"playlists", "searchedPlaylists"}, allEntries = true)
     public PlaylistDTO createPlaylistWithGenres(PlaylistRequestDTO playlistRequestDTO) {
-        User user = userRepository.findById(playlistRequestDTO.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + playlistRequestDTO.getUserId()));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User user = (User) authentication.getPrincipal();
 
         Playlist playlist = new Playlist();
         playlist.setName(playlistRequestDTO.getName());
@@ -72,7 +78,6 @@ public class PlaylistService {
         playlist.setCreatedAt(LocalDateTime.now());
         playlist.setCreatedBy(user);
 
-        // Liên kết genres (chỉ admin sử dụng)
         if (playlistRequestDTO.getGenreIds() != null && !playlistRequestDTO.getGenreIds().isEmpty()) {
             List<Genre> genres = genreRepository.findAllById(playlistRequestDTO.getGenreIds());
             if (genres.size() != playlistRequestDTO.getGenreIds().size()) {
@@ -85,7 +90,6 @@ public class PlaylistService {
 
         Playlist savedPlaylist = playlistRepository.save(playlist);
 
-        // Tự động thêm các bài hát có genre trùng
         if (!playlist.getGenres().isEmpty()) {
             List<Song> matchingSongs = songRepository.findByGenresIn(playlist.getGenres());
             for (Song song : matchingSongs) {
@@ -114,16 +118,42 @@ public class PlaylistService {
         return playlistRepository.findAll(pageable).map(this::mapToDTO);
     }
 
-    // Update
+    // Update playlist for user (no genre)
     @CachePut(value = "playlists", key = "#id")
     @CacheEvict(value = "searchedPlaylists", allEntries = true)
     public PlaylistDTO updatePlaylist(Long id, PlaylistRequestDTO playlistRequestDTO) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
 
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new EntityNotFoundException("Current user not found"));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User currentUser = (User) authentication.getPrincipal();
+        if (!currentUser.getId().equals(playlist.getCreatedBy().getId()) && !currentUser.getRole().equals(Role.ADMIN)) {
+            throw new SecurityException("You do not have permission to update this playlist");
+        }
+
+        playlist.setName(playlistRequestDTO.getName());
+        playlist.setDescription(playlistRequestDTO.getDescription());
+
+        // Không xử lý genre cho playlist của user
+        Playlist updatedPlaylist = playlistRepository.save(playlist);
+        return mapToDTO(updatedPlaylist);
+    }
+
+    // Update playlist for admin with genres (auto-add songs)
+    @CachePut(value = "playlists", key = "#id")
+    @CacheEvict(value = "searchedPlaylists", allEntries = true)
+    public PlaylistDTO updatePlaylistWithGenres(Long id, PlaylistRequestDTO playlistRequestDTO) {
+        Playlist playlist = playlistRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User currentUser = (User) authentication.getPrincipal();
         if (!currentUser.getId().equals(playlist.getCreatedBy().getId()) && !currentUser.getRole().equals(Role.ADMIN)) {
             throw new SecurityException("You do not have permission to update this playlist");
         }
@@ -165,9 +195,11 @@ public class PlaylistService {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
 
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new EntityNotFoundException("Current user not found"));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User currentUser = (User) authentication.getPrincipal();
         if (!currentUser.getId().equals(playlist.getCreatedBy().getId()) && !currentUser.getRole().equals(Role.ADMIN)) {
             throw new SecurityException("You do not have permission to delete this playlist");
         }
@@ -176,6 +208,7 @@ public class PlaylistService {
     }
 
     // Search playlists
+    @Cacheable(value = "searchedPlaylists", key = "#query + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<PlaylistDTO> searchPlaylists(String query, Pageable pageable) {
         return playlistRepository.findByNameContainingIgnoreCase(query, pageable).map(this::mapToDTO);
     }

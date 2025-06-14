@@ -5,9 +5,6 @@ import lombok.Data;
 
 @Data
 public class AddFavoriteSongRequestDTO {
-    @NotNull(message = "User ID is required")
-    private Long userId;
-
     @NotNull(message = "Song ID is required")
     private Long songId;
 }

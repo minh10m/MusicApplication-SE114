@@ -9,9 +9,6 @@ import java.util.List;
 
 @Data
 public class PlaylistRequestDTO {
-    @NotNull(message = "User ID is required")
-    private Long userId; // Thêm userId để xác định người tạo
-
     @NotBlank(message = "Name is mandatory")
     @Size(max = 255, message = "Name must be less than 255 characters")
     private String name;

@@ -22,26 +22,24 @@ public class FavoriteAlbumController {
     @PostMapping
     public ResponseEntity<FavoriteAlbumDTO> addFavoriteAlbum(
             @Valid @RequestBody AddFavoriteAlbumRequestDTO requestDTO) {
-        return ResponseEntity.ok(favoriteAlbumService.addFavoriteAlbum(requestDTO.getUserId(), requestDTO.getAlbumId()));
+        return ResponseEntity.ok(favoriteAlbumService.addFavoriteAlbum(requestDTO.getAlbumId()));
     }
 
     // Get favorite albums
-    @GetMapping("/user/{userId}")
+    @GetMapping
     public ResponseEntity<Page<FavoriteAlbumDTO>> getFavoriteAlbums(
-            @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "addedAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(favoriteAlbumService.getFavoriteAlbums(userId, pageable));
+        return ResponseEntity.ok(favoriteAlbumService.getFavoriteAlbums(pageable));
     }
 
     // Search favorite albums
-    @GetMapping("/user/{userId}/search")
+    @GetMapping("/search")
     public ResponseEntity<Page<FavoriteAlbumDTO>> searchFavoriteAlbums(
-            @PathVariable Long userId,
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -49,13 +47,14 @@ public class FavoriteAlbumController {
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(favoriteAlbumService.searchFavoriteAlbums(userId, query, pageable));
+        return ResponseEntity.ok(favoriteAlbumService.searchFavoriteAlbums(query, pageable));
     }
 
     // Remove favorite album
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> removeFavoriteAlbum(@PathVariable Long id) {
-        favoriteAlbumService.removeFavoriteAlbum(id);
+    @DeleteMapping
+    public ResponseEntity<Void> removeFavoriteAlbum(
+            @RequestParam Long albumId) {
+        favoriteAlbumService.removeFavoriteAlbum(albumId);
         return ResponseEntity.ok().build();
     }
 }

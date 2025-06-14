@@ -22,34 +22,32 @@ public class FollowArtistController {
     @PostMapping
     public ResponseEntity<FollowArtistDTO> followArtist(
             @Valid @RequestBody FollowArtistRequestDTO requestDTO) {
-        return ResponseEntity.ok(followArtistService.followArtist(requestDTO.getUserId(), requestDTO.getArtistId()));
+        return ResponseEntity.ok(followArtistService.followArtist(requestDTO.getArtistId()));
     }
 
     // Unfollow artist
-    @DeleteMapping("/{id}")
+    @DeleteMapping
     public ResponseEntity<Void> unfollowArtist(
-            @PathVariable Long id) {
-        followArtistService.unfollowArtist(id);
+            @RequestParam Long artistId) {
+        followArtistService.unfollowArtist(artistId);
         return ResponseEntity.ok().build();
     }
 
     // Get followed artists with sorting
-    @GetMapping("/user/{userId}")
+    @GetMapping
     public ResponseEntity<Page<FollowArtistDTO>> getFollowedArtists(
-            @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "followedAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(followArtistService.getFollowedArtists(userId, pageable));
+        return ResponseEntity.ok(followArtistService.getFollowedArtists(pageable));
     }
 
     // Search followed artists with sorting
-    @GetMapping("/user/{userId}/search")
+    @GetMapping("/search")
     public ResponseEntity<Page<FollowArtistDTO>> searchFollowedArtists(
-            @PathVariable Long userId,
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -57,6 +55,6 @@ public class FollowArtistController {
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(followArtistService.searchFollowedArtists(userId, query, pageable));
+        return ResponseEntity.ok(followArtistService.searchFollowedArtists(query, pageable));
     }
 }
