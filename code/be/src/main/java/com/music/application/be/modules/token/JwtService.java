@@ -107,6 +107,7 @@ public class JwtService {
         try {
             token = Jwts.builder()
                     .subject(user.getUsername())
+                    .claim("userId", user.getId())
                     .issuedAt(new Date(System.currentTimeMillis()))
                     .expiration(new Date(System.currentTimeMillis() + expireTime))
                     .signWith(getSigninKey())
