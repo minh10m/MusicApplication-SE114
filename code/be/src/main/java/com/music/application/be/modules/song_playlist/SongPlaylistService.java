@@ -2,6 +2,7 @@ package com.music.application.be.modules.song_playlist;
 
 import com.music.application.be.modules.playlist.Playlist;
 import com.music.application.be.modules.playlist.PlaylistRepository;
+import com.music.application.be.modules.playlist.PlaylistService;
 import com.music.application.be.modules.song.Song;
 import com.music.application.be.modules.song.SongRepository;
 import com.music.application.be.modules.song_playlist.dto.SongPlaylistDTO;
@@ -26,6 +27,9 @@ public class SongPlaylistService {
     @Autowired
     private PlaylistRepository playlistRepository;
 
+    @Autowired
+    private PlaylistService playlistService; // Thêm dependency
+
     // Add song to playlist
     @CacheEvict(value = {"playlists", "searchedPlaylists"}, key = "#requestDTO.playlistId")
     public SongPlaylistDTO addSongToPlaylist(SongPlaylistRequestDTO requestDTO) {
@@ -48,6 +52,13 @@ public class SongPlaylistService {
         songPlaylist.setAddedAt(LocalDateTime.now());
 
         SongPlaylist savedSongPlaylist = songPlaylistRepository.save(songPlaylist);
+
+        // Kiểm tra và cập nhật thumbnail nếu playlist trước đó trống
+        long songCount = songPlaylistRepository.countByPlaylistId(playlist.getId());
+        if (songCount == 1) { // Sau khi thêm, playlist chỉ có 1 bài hát, tức là trước đó trống
+            playlistService.updateThumbnail(playlist.getId());
+        }
+
         return mapToDTO(savedSongPlaylist);
     }
 
@@ -98,7 +109,17 @@ public class SongPlaylistService {
     public void removeSongFromPlaylist(Long id) {
         SongPlaylist songPlaylist = songPlaylistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("SongPlaylist not found with id: " + id));
+        Long playlistId = songPlaylist.getPlaylist().getId();
         songPlaylistRepository.delete(songPlaylist);
+
+        // Nếu sau khi xóa, playlist trở thành trống, cập nhật thumbnail thành null
+        long remainingSongs = songPlaylistRepository.countByPlaylistId(playlistId);
+        if (remainingSongs == 0) {
+            Playlist playlist = playlistRepository.findById(playlistId)
+                    .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + playlistId));
+            playlist.setThumbnail(null);
+            playlistRepository.save(playlist);
+        }
     }
 
     // Map entity to DTO

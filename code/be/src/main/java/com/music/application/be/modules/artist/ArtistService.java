@@ -4,6 +4,7 @@ import com.music.application.be.modules.album.AlbumRepository;
 import com.music.application.be.modules.artist.dto.ArtistResponseDTO;
 import com.music.application.be.modules.artist.dto.CreateArtistDTO;
 import com.music.application.be.modules.artist.dto.UpdateArtistDTO;
+import com.music.application.be.modules.cloudinary.CloudinaryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -11,6 +12,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @Service
 public class ArtistService {
@@ -21,12 +25,20 @@ public class ArtistService {
     @Autowired
     private AlbumRepository albumRepository;
 
-    public ArtistResponseDTO createArtist(CreateArtistDTO createArtistDTO) {
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    public ArtistResponseDTO createArtist(CreateArtistDTO createArtistDTO, MultipartFile avatarFile) throws IOException {
         Artist artist = new Artist();
         artist.setName(createArtistDTO.getName());
-        artist.setAvatar(createArtistDTO.getAvatar());
         artist.setDescription(createArtistDTO.getDescription());
         artist.setFollowerCount(0);
+
+        // Upload avatar to Cloudinary if file is provided
+        if (avatarFile != null && !avatarFile.isEmpty()) {
+            String avatarUrl = cloudinaryService.uploadFile(avatarFile, "image");
+            artist.setAvatar(avatarUrl);
+        }
 
         Artist savedArtist = artistRepository.save(artist);
         return mapToResponseDTO(savedArtist);
@@ -44,18 +56,21 @@ public class ArtistService {
     }
 
     @CachePut(value = "artists", key = "#id")
-    public ArtistResponseDTO updateArtist(Long id, UpdateArtistDTO updateArtistDTO) {
+    public ArtistResponseDTO updateArtist(Long id, UpdateArtistDTO updateArtistDTO, MultipartFile avatarFile) throws IOException {
         Artist artist = artistRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Artist not found"));
 
         if (updateArtistDTO.getName() != null) {
             artist.setName(updateArtistDTO.getName());
         }
-        if (updateArtistDTO.getAvatar() != null) {
-            artist.setAvatar(updateArtistDTO.getAvatar());
-        }
         if (updateArtistDTO.getDescription() != null) {
             artist.setDescription(updateArtistDTO.getDescription());
+        }
+
+        // Upload new avatar to Cloudinary if file is provided
+        if (avatarFile != null && !avatarFile.isEmpty()) {
+            String avatarUrl = cloudinaryService.uploadFile(avatarFile, "image");
+            artist.setAvatar(avatarUrl);
         }
 
         Artist updatedArtist = artistRepository.save(artist);

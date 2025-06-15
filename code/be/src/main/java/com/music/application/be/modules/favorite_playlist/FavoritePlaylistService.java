@@ -12,6 +12,8 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,12 +31,20 @@ public class FavoritePlaylistService {
     private PlaylistRepository playlistRepository;
 
     // Add favorite playlist
-    @CachePut(value = "favoritePlaylists", key = "#userId + '-' + #playlistId")
-    public FavoritePlaylistDTO addFavoritePlaylist(Long userId, Long playlistId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+    public FavoritePlaylistDTO addFavoritePlaylist(Long playlistId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User user = (User) authentication.getPrincipal();
+
         Playlist playlist = playlistRepository.findById(playlistId)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + playlistId));
+
+        // Kiểm tra xem quan hệ đã tồn tại chưa
+        if (favoritePlaylistRepository.findByUserIdAndPlaylistId(user.getId(), playlistId).isPresent()) {
+            throw new IllegalStateException("Favorite playlist relationship already exists for userId: " + user.getId() + " and playlistId: " + playlistId);
+        }
 
         FavoritePlaylist favoritePlaylist = FavoritePlaylist.builder()
                 .user(user)
@@ -47,21 +57,37 @@ public class FavoritePlaylistService {
     }
 
     // Get favorite playlists
-    public Page<FavoritePlaylistDTO> getFavoritePlaylists(Long userId, Pageable pageable) {
-        return favoritePlaylistRepository.findByUserId(userId, pageable).map(this::mapToDTO);
+    public Page<FavoritePlaylistDTO> getFavoritePlaylists(Pageable pageable) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User user = (User) authentication.getPrincipal();
+        return favoritePlaylistRepository.findByUserId(user.getId(), pageable).map(this::mapToDTO);
     }
 
     // Search favorite playlists
-    public Page<FavoritePlaylistDTO> searchFavoritePlaylists(Long userId, String query, Pageable pageable) {
-        return favoritePlaylistRepository.findByUserIdAndPlaylistNameContainingIgnoreCase(userId, query, pageable)
+    public Page<FavoritePlaylistDTO> searchFavoritePlaylists(String query, Pageable pageable) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User user = (User) authentication.getPrincipal();
+        return favoritePlaylistRepository.findByUserIdAndPlaylistNameContainingIgnoreCase(user.getId(), query, pageable)
                 .map(this::mapToDTO);
     }
 
     // Remove favorite playlist
-    @CacheEvict(value = "favoritePlaylists", allEntries = true)
-    public void removeFavoritePlaylist(Long id) {
-        FavoritePlaylist favoritePlaylist = favoritePlaylistRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Favorite playlist not found with id: " + id));
+    public void removeFavoritePlaylist(Long playlistId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User user = (User) authentication.getPrincipal();
+
+        FavoritePlaylist favoritePlaylist = favoritePlaylistRepository.findByUserIdAndPlaylistId(user.getId(), playlistId)
+                .orElseThrow(() -> new EntityNotFoundException("Favorite playlist not found with userId: " + user.getId() + " and playlistId: " + playlistId));
+
         favoritePlaylistRepository.delete(favoritePlaylist);
     }
 

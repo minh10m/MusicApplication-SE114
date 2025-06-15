@@ -3,12 +3,15 @@ package com.music.application.be.modules.follow_artist;
 import com.music.application.be.modules.artist.Artist;
 import com.music.application.be.modules.artist.ArtistRepository;
 import com.music.application.be.modules.follow_artist.dto.FollowArtistDTO;
+import com.music.application.be.modules.user.User;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,17 +26,23 @@ public class FollowArtistService {
     private ArtistRepository artistRepository;
 
     // Follow artist
-    @CacheEvict(value = {"followedArtists", "searchedFollowedArtists"}, key = "#userId")
-    public FollowArtistDTO followArtist(Long userId, Long artistId) {
+    public FollowArtistDTO followArtist(Long artistId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User user = (User) authentication.getPrincipal();
+
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new EntityNotFoundException("Artist not found with id: " + artistId));
 
-        if (followArtistRepository.findByUserIdAndArtistId(userId, artistId).isPresent()) {
-            throw new IllegalStateException("User with id " + userId + " has already followed artist with id " + artistId);
+        // Kiểm tra xem quan hệ đã tồn tại chưa (đã có sẵn trong code gốc)
+        if (followArtistRepository.findByUserIdAndArtistId(user.getId(), artistId).isPresent()) {
+            throw new IllegalStateException("User with id " + user.getId() + " has already followed artist with id " + artistId);
         }
 
         FollowArtist followArtist = new FollowArtist();
-        followArtist.setUserId(userId);
+        followArtist.setUserId(user.getId());
         followArtist.setArtist(artist);
         followArtist.setFollowedAt(LocalDateTime.now());
 
@@ -45,10 +54,15 @@ public class FollowArtistService {
     }
 
     // Unfollow artist
-    @CacheEvict(value = {"followedArtists", "searchedFollowedArtists"}, key = "#followArtist.userId")
-    public void unfollowArtist(Long id) {
-        FollowArtist followArtist = followArtistRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Follow relationship not found with id: " + id));
+    public void unfollowArtist(Long artistId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User user = (User) authentication.getPrincipal();
+
+        FollowArtist followArtist = followArtistRepository.findByUserIdAndArtistId(user.getId(), artistId)
+                .orElseThrow(() -> new EntityNotFoundException("Follow relationship not found with userId: " + user.getId() + " and artistId: " + artistId));
         Artist artist = followArtist.getArtist();
 
         followArtistRepository.delete(followArtist);
@@ -58,13 +72,23 @@ public class FollowArtistService {
     }
 
     // Get followed artists
-    public Page<FollowArtistDTO> getFollowedArtists(Long userId, Pageable pageable) {
-        return followArtistRepository.findByUserId(userId, pageable).map(this::mapToDTO);
+    public Page<FollowArtistDTO> getFollowedArtists(Pageable pageable) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User user = (User) authentication.getPrincipal();
+        return followArtistRepository.findByUserId(user.getId(), pageable).map(this::mapToDTO);
     }
 
     // Search followed artists
-    public Page<FollowArtistDTO> searchFollowedArtists(Long userId, String query, Pageable pageable) {
-        return followArtistRepository.findByUserIdAndArtistNameContainingIgnoreCase(userId, query, pageable)
+    public Page<FollowArtistDTO> searchFollowedArtists(String query, Pageable pageable) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User user = (User) authentication.getPrincipal();
+        return followArtistRepository.findByUserIdAndArtistNameContainingIgnoreCase(user.getId(), query, pageable)
                 .map(this::mapToDTO);
     }
 

@@ -8,8 +8,6 @@ public class UpdateArtistDTO {
     @Size(max = 255, message = "Name must be less than 255 characters")
     private String name;
 
-    private String avatar;
-
     @Size(max = 1000, message = "Description must be less than 1000 characters")
     private String description;
 }

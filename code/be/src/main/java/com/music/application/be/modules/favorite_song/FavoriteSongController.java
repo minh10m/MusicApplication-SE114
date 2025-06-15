@@ -22,26 +22,24 @@ public class FavoriteSongController {
     @PostMapping
     public ResponseEntity<FavoriteSongDTO> addFavoriteSong(
             @Valid @RequestBody AddFavoriteSongRequestDTO requestDTO) {
-        return ResponseEntity.ok(favoriteSongService.addFavoriteSong(requestDTO.getUserId(), requestDTO.getSongId()));
+        return ResponseEntity.ok(favoriteSongService.addFavoriteSong(requestDTO.getSongId()));
     }
 
     // Get favorite songs with sorting
-    @GetMapping("/user/{userId}")
+    @GetMapping
     public ResponseEntity<Page<FavoriteSongDTO>> getFavoriteSongs(
-            @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "addedAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(favoriteSongService.getFavoriteSongs(userId, pageable));
+        return ResponseEntity.ok(favoriteSongService.getFavoriteSongs(pageable));
     }
 
     // Search favorite songs with sorting
-    @GetMapping("/user/{userId}/search")
+    @GetMapping("/search")
     public ResponseEntity<Page<FavoriteSongDTO>> searchFavoriteSongs(
-            @PathVariable Long userId,
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -49,13 +47,14 @@ public class FavoriteSongController {
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(favoriteSongService.searchFavoriteSongs(userId, query, pageable));
+        return ResponseEntity.ok(favoriteSongService.searchFavoriteSongs(query, pageable));
     }
 
     // Remove favorite song
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> removeFavoriteSong(@PathVariable Long id) {
-        favoriteSongService.removeFavoriteSong(id);
+    @DeleteMapping
+    public ResponseEntity<Void> removeFavoriteSong(
+            @RequestParam Long songId) {
+        favoriteSongService.removeFavoriteSong(songId);
         return ResponseEntity.ok().build();
     }
 }

@@ -7,9 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AddFavoriteAlbumRequestDTO {
-    @NotNull(message = "User ID is required")
-    private Long userId;
-
     @NotNull(message = "Album ID is required")
     private Long albumId;
 }

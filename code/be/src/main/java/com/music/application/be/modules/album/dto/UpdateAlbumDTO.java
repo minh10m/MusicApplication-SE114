@@ -1,10 +1,12 @@
 package com.music.application.be.modules.album.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDate;
 
+@Schema(description = "Thông tin bài hát")
 @Data
 public class UpdateAlbumDTO {
     @Size(max = 255, message = "Name must be less than 255 characters")

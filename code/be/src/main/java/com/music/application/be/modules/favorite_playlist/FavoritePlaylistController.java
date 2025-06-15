@@ -22,26 +22,24 @@ public class FavoritePlaylistController {
     @PostMapping
     public ResponseEntity<FavoritePlaylistDTO> addFavoritePlaylist(
             @Valid @RequestBody AddFavoritePlaylistRequestDTO requestDTO) {
-        return ResponseEntity.ok(favoritePlaylistService.addFavoritePlaylist(requestDTO.getUserId(), requestDTO.getPlaylistId()));
+        return ResponseEntity.ok(favoritePlaylistService.addFavoritePlaylist(requestDTO.getPlaylistId()));
     }
 
     // Get favorite playlists
-    @GetMapping("/user/{userId}")
+    @GetMapping
     public ResponseEntity<Page<FavoritePlaylistDTO>> getFavoritePlaylists(
-            @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "addedAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(favoritePlaylistService.getFavoritePlaylists(userId, pageable));
+        return ResponseEntity.ok(favoritePlaylistService.getFavoritePlaylists(pageable));
     }
 
     // Search favorite playlists
-    @GetMapping("/user/{userId}/search")
+    @GetMapping("/search")
     public ResponseEntity<Page<FavoritePlaylistDTO>> searchFavoritePlaylists(
-            @PathVariable Long userId,
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -49,13 +47,14 @@ public class FavoritePlaylistController {
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(favoritePlaylistService.searchFavoritePlaylists(userId, query, pageable));
+        return ResponseEntity.ok(favoritePlaylistService.searchFavoritePlaylists(query, pageable));
     }
 
     // Remove favorite playlist
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> removeFavoritePlaylist(@PathVariable Long id) {
-        favoritePlaylistService.removeFavoritePlaylist(id);
+    @DeleteMapping
+    public ResponseEntity<Void> removeFavoritePlaylist(
+            @RequestParam Long playlistId) {
+        favoritePlaylistService.removeFavoritePlaylist(playlistId);
         return ResponseEntity.ok().build();
     }
 }
