@@ -7,6 +7,8 @@ import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.common.enum.TimeOfDay
 import com.example.musicapplicationse114.model.AlbumResponse
+import com.example.musicapplicationse114.model.DownloadedSongResponse
+import com.example.musicapplicationse114.model.FavoriteSongResponse
 import com.example.musicapplicationse114.model.RecentlyPlayed
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
@@ -22,6 +24,8 @@ data class HomeUiState(
     val albums: List<AlbumResponse> = emptyList(),
     val songs: List<SongResponse> = emptyList(),
     val recentPlayed: List<RecentlyPlayed> = emptyList(),
+    val favoriteSongs: List<FavoriteSongResponse> = emptyList(),
+    val downloadSongs: List<DownloadedSongResponse> = emptyList(),
     val status : LoadStatus = LoadStatus.Init(),
     val avatar : String = "",
     val username : String = "",
@@ -88,6 +92,82 @@ fun loadAlbum() {
         }
     }
 }
+
+    fun loadFavoriteSong() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+
+            val token = tokenManager?.getToken()
+            val userId = tokenManager?.getUserId()
+
+            if (api == null || token.isNullOrBlank() || userId == null) {
+                Log.e("HomeViewModel", "API, token, hoặc userId null")
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Thiếu thông tin xác thực"))
+                return@launch
+            }
+
+            try {
+                Log.d("FavoriteSong", "Token: $token - UserId: $userId")
+
+                val response = api.getFavoriteSongs(token, userId)
+                if (response.isSuccessful) {
+                    val songs = response.body()?.content.orEmpty()
+
+                    _uiState.value = _uiState.value.copy(
+                        favoriteSongs = songs,
+                        status = LoadStatus.Success()
+                    )
+
+                    Log.d("HomeViewModel", "Favorite songs loaded: ${songs.size}")
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: "Lỗi không xác định"
+                    Log.e("HomeViewModel", "Lỗi response: $errorMsg")
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Lỗi tải danh sách yêu thích"))
+                }
+            } catch (ex: Exception) {
+                Log.e("HomeViewModel", "Exception: ${ex.message}", ex)
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Lỗi mạng hoặc máy chủ"))
+            }
+        }
+    }
+    fun loadDownloadedSong() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+
+            val token = tokenManager?.getToken()
+            val userId = tokenManager?.getUserId()
+
+            if (api == null || token.isNullOrBlank() || userId == null) {
+                Log.e("HomeViewModel", "API, token hoặc userId null khi load downloaded songs")
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Thiếu thông tin xác thực"))
+                return@launch
+            }
+
+            try {
+                Log.d("DownloadedSongs", "Token: $token - UserId: $userId")
+
+                val response = api.getDownloadedSongs(token, userId)
+                if (response.isSuccessful) {
+                    val downloadedSongs = response.body()?.content.orEmpty()
+
+                    _uiState.value = _uiState.value.copy(
+                        downloadSongs = downloadedSongs,
+                        status = LoadStatus.Success()
+                    )
+
+                    Log.d("HomeViewModel", "Downloaded songs loaded: ${downloadedSongs.size}")
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: "Lỗi không xác định"
+                    Log.e("HomeViewModel", "Lỗi response downloaded songs: $errorMsg")
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Lỗi tải bài hát đã tải xuống"))
+                }
+            } catch (ex: Exception) {
+                Log.e("HomeViewModel", "Exception khi load downloaded songs: ${ex.message}", ex)
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Lỗi mạng hoặc máy chủ"))
+            }
+        }
+    }
+
 
 
 //    fun loadRecentPlayed()

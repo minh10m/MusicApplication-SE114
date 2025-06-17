@@ -78,12 +78,17 @@ class LoginViewModel @Inject constructor(
                 if(result != null && result.isSuccessful){
                     val accessToken = result.body()?.access_token
                     if(accessToken != null){
-                        tokenManager?.saveToken("Bearer $accessToken")
-                        Log.d("TOKEN", "Token: Bearer $accessToken")
+                        val bearer = "Bearer $accessToken"
+                        tokenManager?.saveToken(bearer)
+
+                        val userId = tokenManager?.decodeUserIdFromToken(bearer)
+                        if (userId != null) {
+                            tokenManager?.saveUserId(userId)
+                            Log.d("Login", "Decoded userId: $userId")
+                        }
+
                         _uiState.value = _uiState.value.copy(status = LoadStatus.Success())
                         updateSuccessMessage(result.body()?.message.toString())
-
-                        Log.d("Login", "Access token saved: $accessToken")
                     } else {
                         _uiState.value = _uiState.value.copy(status = LoadStatus.Error(result.body()?.message.toString()))
                         Log.e("SignUpError", "Response body: ${result.body()?.toString()}")

@@ -35,7 +35,7 @@ fun PlayerScreen(
     navController: NavController,
     songId: Long,
     viewModel: PlayerViewModel = hiltViewModel(),
-    mainViewModel: MainViewModel
+    mainViewModel: MainViewModel,
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -51,7 +51,9 @@ fun PlayerScreen(
                     song = song,
                     context = context,
                     onNext = { viewModel.nextSong() },
-                    onPrevious = { viewModel.previousSong() }
+                    onPrevious = { viewModel.previousSong()},
+                    navController = navController,
+                    viewModel = viewModel
                 )
             }
         }
@@ -79,8 +81,14 @@ fun PlayerContent(
     song: SongResponse,
     context: Context,
     onNext: () -> Unit,
-    onPrevious: () -> Unit
+    onPrevious: () -> Unit,
+    navController: NavController,
+    viewModel: PlayerViewModel
 ) {
+    val state by viewModel.uiState.collectAsState()
+    val isLiked = state.likedSongIds.contains(song.id)
+    val isDownloaded = state.downloadedSongIds.contains(song.id)
+
     val player = remember(song.id) {
         ExoPlayer.Builder(context).build()
     }
@@ -90,7 +98,6 @@ fun PlayerContent(
     var position by remember { mutableStateOf(0L) }
     var duration by remember { mutableStateOf(0L) }
 
-    // Gắn listener chuyển bài khi bài hát kết thúc
     DisposableEffect(song.id) {
         val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
@@ -107,16 +114,16 @@ fun PlayerContent(
         }
     }
 
-    // Cập nhật media mới
     LaunchedEffect(song.id) {
         player.setMediaItem(MediaItem.fromUri(song.audioUrl))
         player.prepare()
         player.playWhenReady = true
         isPlaying = true
         position = 0L
+
+
     }
 
-    // Cập nhật tiến độ phát
     LaunchedEffect(song.id, isPlaying) {
         while (true) {
             if (isPlaying) {
@@ -127,7 +134,6 @@ fun PlayerContent(
         }
     }
 
-    // Cài đặt chế độ lặp
     player.repeatMode = if (isLooping) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
 
     Column(
@@ -139,7 +145,17 @@ fun PlayerContent(
     ) {
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Hình ảnh + lời bài hát
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = {
+                navController.popBackStack()
+            }) {
+                Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Back", tint = Color.White, modifier = Modifier.size(32.dp))
+            }
+        }
+
         Box(
             modifier = Modifier
                 .size(350.dp)
@@ -186,11 +202,20 @@ fun PlayerContent(
             }
 
             Row {
-                IconButton(onClick = { }) {
-                    Icon(Icons.Default.FavoriteBorder, contentDescription = "Like", tint = Color.White)
+                IconButton(onClick = { viewModel.toggleFavorite(song.id) }) {
+                    Icon(
+                        imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Like",
+                        tint = if (isLiked) Color.Red else Color.White
+                    )
                 }
-                IconButton(onClick = { }) {
-                    Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White)
+
+                IconButton(onClick = { viewModel.toggleDownload(song.id) }) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = "Download",
+                        tint = if (isDownloaded) Color.Cyan else Color.White
+                    )
                 }
             }
         }
@@ -222,34 +247,28 @@ fun PlayerContent(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            IconButton(onClick = { }, modifier = Modifier.size(48.dp)) {
+            IconButton(onClick = { /* Shuffle chưa làm */ }, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", tint = Color.White)
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            IconButton(
-                onClick = {
-                    if (!isLooping) {
-                        player.pause()
-                        isPlaying = false
-                        onPrevious()
-                    }
-                },
-                modifier = Modifier.size(48.dp)
-            ) {
+            IconButton(onClick = {
+                if (!isLooping) {
+                    player.pause()
+                    isPlaying = false
+                    onPrevious()
+                }
+            }) {
                 Icon(Icons.Default.SkipPrevious, contentDescription = "Previous", tint = Color.White, modifier = Modifier.size(40.dp))
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            IconButton(
-                onClick = {
-                    if (isPlaying) player.pause() else player.play()
-                    isPlaying = !isPlaying
-                },
-                modifier = Modifier.size(96.dp)
-            ) {
+            IconButton(onClick = {
+                if (isPlaying) player.pause() else player.play()
+                isPlaying = !isPlaying
+            }, modifier = Modifier.size(96.dp)) {
                 Icon(
                     if (isPlaying) Icons.Default.PauseCircle else Icons.Default.PlayCircle,
                     contentDescription = "Play/Pause",
@@ -260,28 +279,22 @@ fun PlayerContent(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            IconButton(
-                onClick = {
-                    if (!isLooping) {
-                        player.pause()
-                        isPlaying = false
-                        onNext()
-                    }
-                },
-                modifier = Modifier.size(48.dp)
-            ) {
+            IconButton(onClick = {
+                if (!isLooping) {
+                    player.pause()
+                    isPlaying = false
+                    onNext()
+                }
+            }) {
                 Icon(Icons.Default.SkipNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(40.dp))
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            IconButton(
-                onClick = {
-                    isLooping = !isLooping
-                    player.repeatMode = if (isLooping) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
-                },
-                modifier = Modifier.size(48.dp)
-            ) {
+            IconButton(onClick = {
+                isLooping = !isLooping
+                player.repeatMode = if (isLooping) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+            }) {
                 Icon(Icons.Default.Repeat, contentDescription = "Repeat", tint = if (isLooping) Color.Green else Color.White)
             }
         }

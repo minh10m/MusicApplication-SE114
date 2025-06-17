@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.common.enum.LoadStatus
+import com.example.musicapplicationse114.model.AddFavoriteSongRequest
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +18,8 @@ data class PlayerUiState(
     val song: SongResponse? = null,
     val playlist: List<SongResponse> = emptyList(),
     val currentIndex: Int = -1,
+    val likedSongIds: Set<Long> = emptySet(),
+    val downloadedSongIds: Set<Long> = emptySet(),
     val status: LoadStatus = LoadStatus.Init()
 )
 
@@ -34,16 +37,21 @@ class PlayerViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
             try {
                 val token = tokenManager?.getToken()
-                if (!token.isNullOrBlank() && api != null) {
-                    // Lấy danh sách toàn bộ bài hát (playlist) một lần
+                val userId = tokenManager?.getUserId()
+                if (!token.isNullOrBlank() && api != null && userId != null) {
                     val playlist = api.getSongs(token).content.orEmpty()
                     val index = playlist.indexOfFirst { it.id == songId }
+
+                    val likedSongs = api.getFavoriteSongs(token, userId).body()?.content?.map { it.songId } ?: emptyList()
+                    val downloadedSongs = api.getDownloadedSongs(token, userId).body()?.content?.map { it.songId } ?: emptyList()
 
                     if (index != -1) {
                         _uiState.value = PlayerUiState(
                             song = playlist[index],
                             playlist = playlist,
                             currentIndex = index,
+                            likedSongIds = likedSongs.toSet(),
+                            downloadedSongIds = downloadedSongs.toSet(),
                             status = LoadStatus.Success()
                         )
                         Log.d("PlayerViewModel", "Loaded song: ${playlist[index].title}")
@@ -59,6 +67,79 @@ class PlayerViewModel @Inject constructor(
             }
         }
     }
+
+
+    fun toggleFavorite(songId: Long) {
+        viewModelScope.launch {
+            val token = tokenManager?.getToken()
+            val userId = tokenManager?.getUserId()
+            if (!token.isNullOrBlank() && api != null && userId != null) {
+                val prevSet = _uiState.value.likedSongIds
+                val currentSet = prevSet.toMutableSet()
+                val isLiked = currentSet.contains(songId)
+
+                // Cập nhật UI ngay lập tức
+                if (isLiked) currentSet.remove(songId) else currentSet.add(songId)
+                _uiState.value = _uiState.value.copy(likedSongIds = currentSet)
+
+                try {
+                    if (isLiked) {
+                        val favoriteId = api.getFavoriteSongs(token, userId)
+                            .body()?.content?.firstOrNull { it.songId == songId }?.id
+                        if (favoriteId != null) {
+                            api.removeFavoriteSong(token, favoriteId)
+                        } else {
+                            throw Exception("Không tìm thấy favoriteId để xóa")
+                        }
+                    } else {
+                        api.addFavoriteSong(token, AddFavoriteSongRequest(songId, userId))
+                    }
+                } catch (e: Exception) {
+                    // Rollback nếu API fail
+                    Log.e("FavoriteError", "API failed, rollback UI: ${e.message}")
+                    _uiState.value = _uiState.value.copy(likedSongIds = prevSet)
+                }
+            }
+        }
+    }
+
+
+
+    fun toggleDownload(songId: Long) {
+        viewModelScope.launch {
+            val token = tokenManager?.getToken()
+            val userId = tokenManager?.getUserId()
+            if (!token.isNullOrBlank() && api != null && userId != null) {
+                val prevSet = _uiState.value.downloadedSongIds
+                val currentSet = prevSet.toMutableSet()
+                val isDownloaded = currentSet.contains(songId)
+
+                // Cập nhật UI ngay lập tức
+                if (isDownloaded) currentSet.remove(songId) else currentSet.add(songId)
+                _uiState.value = _uiState.value.copy(downloadedSongIds = currentSet)
+
+                try {
+                    if (isDownloaded) {
+                        val downloadedId = api.getDownloadedSongs(token, userId)
+                            .body()?.content?.firstOrNull { it.songId == songId }?.id
+                        if (downloadedId != null) {
+                            api.removeDownloadedSong(token, downloadedId)
+                        } else {
+                            throw Exception("Không tìm thấy downloadedId để xóa")
+                        }
+                    } else {
+                        api.addDownloadedSong(token, userId, songId)
+                    }
+                } catch (e: Exception) {
+                    // Rollback nếu API fail
+                    Log.e("DownloadError", "API failed, rollback UI: ${e.message}")
+                    _uiState.value = _uiState.value.copy(downloadedSongIds = prevSet)
+                }
+            }
+        }
+    }
+
+
 
     fun nextSong() {
         val state = _uiState.value

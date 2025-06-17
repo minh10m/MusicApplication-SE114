@@ -82,7 +82,7 @@ fun Home(viewModel: HomeViewModel, navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .padding(bottom = 110.dp, start = 2.dp) // tránh che mất nội dung dưới
+            .padding(bottom = 110.dp, start = 2.dp)
     ) {
         item {
             Spacer(modifier = Modifier.height(16.dp))
@@ -135,30 +135,66 @@ fun Home(viewModel: HomeViewModel, navController: NavController) {
             }
         }
 
-//        item {
-//            Spacer(modifier = Modifier.height(24.dp))
-//            Text(
-//                "Nghe gần đây ",
-//                color = Color.White,
-//                fontSize = 20.sp,
-//                fontWeight = FontWeight.Bold,
-//                modifier = Modifier.padding(start = 16.dp)
-//            )
-//
-//            Spacer(modifier = Modifier.height(8.dp))
-//
-//            LazyRow(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(start = 8.dp)
-//            ) {
-//                items(items = state.value.songs) { song ->
-//                    SongItem(song)
-//                }
-//            }
-//        }
+        // ✅ Bài hát yêu thích (chỉ hiện ID)
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "ID bài hát yêu thích",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 8.dp)
+            ) {
+                items(state.value.favoriteSongs.toList()) { id ->
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(text = "ID: $id", color = Color.White)
+                    }
+                }
+            }
+        }
+
+        // ✅ Bài hát đã tải (chỉ hiện ID)
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "ID bài hát đã tải",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 8.dp)
+            ) {
+                items(state.value.downloadSongs.toList()) { id ->
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(text = "ID: $id", color = Color.White)
+                    }
+                }
+            }
+        }
     }
 }
+
 
 
 @Composable
@@ -375,6 +411,8 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel, mainV
         viewModel.updateUserName(username)
         viewModel.loadAlbum()
         viewModel.loadSong()
+        viewModel.loadDownloadedSong()
+        viewModel.loadFavoriteSong()
         Log.i("username", viewModel.getUserName())
         Log.i("timeOfDay", viewModel.getTimeOfDay().toString())
     }
