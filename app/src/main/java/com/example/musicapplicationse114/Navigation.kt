@@ -15,6 +15,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -27,6 +28,7 @@ import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
 import com.example.musicapplicationse114.ui.screen.library.LibraryScreen
 import com.example.musicapplicationse114.ui.screen.login.LoginScreen
 import com.example.musicapplicationse114.ui.screen.login.LoginViewModel
+import com.example.musicapplicationse114.ui.screen.player.PlayerScreen
 import com.example.musicapplicationse114.ui.screen.search.SearchScreenStyled
 import com.example.musicapplicationse114.ui.screen.searchtype.SearchTypeScreen
 import com.example.musicapplicationse114.ui.screen.signUp.SignUpScreen
@@ -42,6 +44,11 @@ sealed class Screen(val route: String, val title: String) {
         object Start : Screen("start", "Start")
         object Search : Screen("search", "Search")
         object Library : Screen("library", "Library")
+        object Player : Screen("player/{songId}", "Player")
+        {
+            fun createRoute(songId: Long) = "player/$songId"
+        }
+
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -108,5 +115,23 @@ fun Navigation() {
         composable(Screen.Library.route) {
             LibraryScreen(navController = navController, viewModel = hiltViewModel(), mainViewModel)
         }
-    }
+                composable(
+                    route = Screen.Player.route,
+                    arguments = listOf(navArgument("songId") { type = NavType.LongType })
+                ) { backStackEntry ->
+                    val songId = backStackEntry.arguments?.getLong("songId")
+                    if (songId != null) {
+                        PlayerScreen(
+                            navController = navController,
+                            songId = songId, // Truyền songId vào PlayerScreen
+                             viewModel = hiltViewModel(),
+                            mainViewModel
+                        )
+                    } else {
+                        Log.e("Navigation", "Song ID is null for Player screen")
+                        navController.popBackStack()
+                    }
+                }
+
+            }
 }

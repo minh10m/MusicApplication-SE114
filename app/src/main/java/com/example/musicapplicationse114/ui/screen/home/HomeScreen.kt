@@ -18,8 +18,12 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
@@ -44,7 +48,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,51 +60,188 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.R
+import com.example.musicapplicationse114.Screen
 import com.example.musicapplicationse114.common.enum.TimeOfDay
+import com.example.musicapplicationse114.model.AlbumResponse
+import com.example.musicapplicationse114.model.SongResponse
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.threeten.bp.LocalDate
+import org.threeten.bp.format.DateTimeFormatter
 
 data class TabItem(val text : String, val screen : @Composable () -> Unit)
 
 @Composable
-fun Home() {
-    Column() {
-        //featuring today
-        Image(
-            painter = painterResource(R.drawable.feature),
-            contentDescription = null,
-            modifier = Modifier
-                .size(width = 400.dp, height = 200.dp)
-                .offset(x = -10.dp)
-        )
+fun Home(viewModel: HomeViewModel, navController: NavController) {
+    val state = viewModel.uiState.collectAsState()
 
-//    Spacer(modifier = Modifier.height(0.dp))
-
-//            recently Played
-        Image(
-            painter = painterResource(R.drawable.recent_play),
-            contentDescription = null,
-            modifier = Modifier
-                .size(width = 400.dp, height = 180.dp)
-                .offset(x = -10.dp)
-        )
-
-        Spacer(modifier = Modifier.height(0.dp))
-        Box {
-            //Mix for you
-            Image(
-                painter = painterResource(R.drawable.mix_for_you),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(width = 480.dp, height = 250.dp)
-                    .offset(x = -10.dp)
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .padding(bottom = 110.dp, start = 2.dp) // tránh che mất nội dung dưới
+    ) {
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "Albums nổi bật",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 16.dp)
             )
 
-            //navigation bar tam thoi
+            Spacer(modifier = Modifier.height(8.dp))
 
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 2.dp)
+            ) {
+                items(items = state.value.albums) { album ->
+                    AlbumItem(album)
+                }
+            }
         }
+
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "Gợi ý bài hát",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 2.dp)
+            ) {
+                items(items = state.value.songs) { song ->
+                    SongItem(
+                        song = song,
+                        onClick = {
+                            navController.navigate(Screen.Player.createRoute(song.id))
+                        }
+                    )
+                }
+            }
+        }
+
+//        item {
+//            Spacer(modifier = Modifier.height(24.dp))
+//            Text(
+//                "Nghe gần đây ",
+//                color = Color.White,
+//                fontSize = 20.sp,
+//                fontWeight = FontWeight.Bold,
+//                modifier = Modifier.padding(start = 16.dp)
+//            )
+//
+//            Spacer(modifier = Modifier.height(8.dp))
+//
+//            LazyRow(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(start = 8.dp)
+//            ) {
+//                items(items = state.value.songs) { song ->
+//                    SongItem(song)
+//                }
+//            }
+//        }
+    }
+}
+
+
+@Composable
+fun AlbumItem(album: AlbumResponse) {
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .width(170.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .height(170.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+        ) {
+            AsyncImage(
+                model = album.coverImage,
+                contentDescription = album.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = album.name,
+            color = Color.LightGray,
+            fontSize = 16.sp,
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+fun SongItem(song: SongResponse, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .width(320.dp)
+            .clickable { onClick() }
+    ) {
+        Box(
+            modifier = Modifier
+                .height(200.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+        ) {
+            AsyncImage(
+                model = song.thumbnail,
+                contentDescription = song.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = song.title,
+            color = Color.LightGray,
+            fontSize = 16.sp,
+            maxLines = 1
+        )
+
+//        Text(
+//            text = song.artist,
+//            color = Color.Gray,
+//            fontSize = 12.sp,
+//            maxLines = 1
+//        )
+    }
+}
+
+
+fun formatDate(input: String): String {
+    return try {
+        val inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val outputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        val date = LocalDate.parse(input, inputFormatter)
+        outputFormatter.format(date)
+    } catch (e: Exception) {
+        "N/A"
     }
 }
 
@@ -181,6 +324,7 @@ fun Workout()
 
 }
 
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -190,7 +334,7 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel, mainV
 
     var tabs = listOf(
         TabItem("For you",) {
-            Home()
+            Home(viewModel, navController)
         },
         TabItem("Relax",) {
             Relax1()
@@ -229,6 +373,8 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel, mainV
     LaunchedEffect(username) {
         viewModel.setTimeOfDay()
         viewModel.updateUserName(username)
+        viewModel.loadAlbum()
+        viewModel.loadSong()
         Log.i("username", viewModel.getUserName())
         Log.i("timeOfDay", viewModel.getTimeOfDay().toString())
     }
@@ -268,11 +414,11 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel, mainV
                                 .size(23.dp)
                         )
 //
-//                            Spacer(modifier = Modifier.width(5.dp))
 
                         Row() {
+                            Spacer(modifier = Modifier.height(20.dp))
                             Text(
-                                "Hi ${state.value.username},",
+                                " Hi ${state.value.username},",
                                 fontSize = 18.sp,
                                 color = Color.White
                             )
@@ -346,7 +492,7 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel, mainV
                 userScrollEnabled = false, verticalAlignment = Alignment.Top
             ) { page ->
                 when (page) {
-                    0 -> Home()
+                    0 -> Home(viewModel, navController)
                     1 -> Relax1()
                     else -> {}
                 }
@@ -364,7 +510,7 @@ fun NavigationBar(navController: NavController, onHomeReselected: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.Transparent) // 👈 Nền trong suốt hoàn toàn
-            .padding(bottom = 16.dp)       // 👈 Dưới một chút để tránh đụng gesture bar
+            .padding(bottom = 30.dp)       // 👈 Dưới một chút để tránh đụng gesture bar
     ) {
         Row(
             modifier = Modifier
@@ -446,5 +592,5 @@ fun HomeScreenPreview()
 {
     val navController = rememberNavController()
     val username = ""
-    HomeScreen(navController = navController, viewModel = HomeViewModel(null, null), mainViewModel = MainViewModel(), username)
+    HomeScreen(navController = navController, viewModel = HomeViewModel(null, null, null), mainViewModel = MainViewModel(), username)
 }

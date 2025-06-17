@@ -1,6 +1,6 @@
 package com.example.musicapplicationse114.model
 
-data class Song(
+data class SongResponse(
     val id: Long,
     val title: String,
     val duration: Int,
@@ -9,7 +9,9 @@ data class Song(
     val lyrics: String,
     val releaseDate: String, // <-- Đổi từ LocalDate
     val viewCount: Int = 0,
-    val album: Album,
-    val artist: Artist,
-    val genre: Genre
+    val artistId: Long,
+    val albumId: Long,
+    val genreIds: List<Long>
 )
+
+data class SongPageResponse(val content : List<SongResponse>)

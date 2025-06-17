@@ -1,3 +1,4 @@
+
 pluginManagement {
     repositories {
         google {
@@ -17,6 +18,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
+
 }
 
 rootProject.name = "MusicApplicationSE114"

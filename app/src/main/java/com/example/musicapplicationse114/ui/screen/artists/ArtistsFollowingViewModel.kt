@@ -1,16 +1,16 @@
 package com.example.musicapplicationse114.ui.screen.artists
 
 import androidx.lifecycle.ViewModel
-import com.example.musicapplicationse114.model.Album
+import com.example.musicapplicationse114.model.AlbumResponse
 import com.example.musicapplicationse114.model.Artist
 import com.example.musicapplicationse114.model.FollowArtist
-import com.example.musicapplicationse114.model.Song
+import com.example.musicapplicationse114.model.SongResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class ArtistsFollowingViewModel : ViewModel() {
-    private val dummySongs = arrayListOf<Song>()
-    private val dummyAlbums = arrayListOf<Album>()
+    private val dummySongs = arrayListOf<SongResponse>()
+    private val dummyAlbums = arrayListOf<AlbumResponse>()
     private val dummyFollows = arrayListOf<FollowArtist>()
 
     private val dummyArtists = listOf(

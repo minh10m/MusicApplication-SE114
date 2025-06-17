@@ -1,10 +1,10 @@
 package com.example.musicapplicationse114.ui.screen.download
 
 import androidx.lifecycle.ViewModel
-import com.example.musicapplicationse114.model.Album
+import com.example.musicapplicationse114.model.AlbumResponse
 import com.example.musicapplicationse114.model.Artist
 import com.example.musicapplicationse114.model.Genre
-import com.example.musicapplicationse114.model.Song
+import com.example.musicapplicationse114.model.SongResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -20,14 +20,13 @@ class DownloadSongsViewModel : ViewModel() {
         followers = arrayListOf()
     )
 
-    private val dummyAlbum = Album(
+    private val dummyAlbum = AlbumResponse(
         id = 1,
         name = "Test Album",
-        releseDate = "2020-01-01",
+        releaseDate = "2020-01-01",
         coverImage = "",
         description = "",
         artist = dummyArtist,
-        songs = arrayListOf()
     )
 
     private val dummyGenre = Genre(
@@ -38,12 +37,12 @@ class DownloadSongsViewModel : ViewModel() {
     )
 
     private val dummySongs = listOf(
-        Song(1, "Inside Out", 220, "", "", "", "2020-01-01", 0, dummyAlbum, dummyArtist, dummyGenre),
-        Song(2, "Young", 210, "", "", "", "2020-01-01", 0, dummyAlbum, dummyArtist, dummyGenre),
-        Song(3, "Beach House", 250, "", "", "", "2020-01-01", 0, dummyAlbum, dummyArtist, dummyGenre),
-        Song(4, "Kills You Slowly", 200, "", "", "", "2020-01-01", 0, dummyAlbum, dummyArtist, dummyGenre)
+        SongResponse(1, "Inside Out", 220, "", "", "", "2020-01-01", 0, 23424, 234234, emptyList()),
+        SongResponse(2, "Young", 210, "", "", "", "2020-01-01", 0, 243423, 5435, emptyList()),
+        SongResponse(3, "Beach House", 250, "", "", "", "2020-01-01", 0, 234234, 3454, emptyList()),
+        SongResponse(4, "Kills You Slowly", 200, "", "", "", "2020-01-01", 0, 243234, 345435, emptyList())
     )
 
     private val _downloadedSongs = MutableStateFlow(dummySongs)
-    val downloadedSongs: StateFlow<List<Song>> = _downloadedSongs
+    val downloadedSongs: StateFlow<List<SongResponse>> = _downloadedSongs
 }

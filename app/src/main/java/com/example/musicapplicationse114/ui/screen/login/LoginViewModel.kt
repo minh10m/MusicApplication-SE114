@@ -5,6 +5,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapplicationse114.MainViewModel
+import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.model.UserLoginRequest
 import com.example.musicapplicationse114.repositories.Api
@@ -27,7 +28,8 @@ data class LoginUiState(
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val mainLog: MainLog?,
-    private val api: Api?
+    private val api: Api?,
+    private val tokenManager: TokenManager?
 ): ViewModel() {
 
     val _uiState = MutableStateFlow(LoginUiState())
@@ -76,22 +78,25 @@ class LoginViewModel @Inject constructor(
                 if(result != null && result.isSuccessful){
                     val accessToken = result.body()?.access_token
                     if(accessToken != null){
+                        tokenManager?.saveToken("Bearer $accessToken")
+                        Log.d("TOKEN", "Token: Bearer $accessToken")
                         _uiState.value = _uiState.value.copy(status = LoadStatus.Success())
                         updateSuccessMessage(result.body()?.message.toString())
-                        //Save Token sau khi đăng nhập ở đâu đó
-                    }
-                    else{
+
+                        Log.d("Login", "Access token saved: $accessToken")
+                    } else {
                         _uiState.value = _uiState.value.copy(status = LoadStatus.Error(result.body()?.message.toString()))
                         Log.e("SignUpError", "Response body: ${result.body()?.toString()}")
                         Log.e("SignUpError", "Response code: ${result.code()}")
                         Log.e("SignUpError", "AccessToken: ${result.body()?.access_token}")
                     }
                 }
-            }catch (ex : Exception){
+            } catch (ex : Exception){
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Error(ex.message.toString()))
             }
         }
     }
+
 
     fun getUserName() : String
     {
