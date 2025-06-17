@@ -92,7 +92,7 @@ class PlayerViewModel @Inject constructor(
                             throw Exception("Không tìm thấy favoriteId để xóa")
                         }
                     } else {
-                        api.addFavoriteSong(token, AddFavoriteSongRequest(songId, userId))
+                        api.addFavoriteSong(token, AddFavoriteSongRequest(userId, songId))
                     }
                 } catch (e: Exception) {
                     // Rollback nếu API fail
