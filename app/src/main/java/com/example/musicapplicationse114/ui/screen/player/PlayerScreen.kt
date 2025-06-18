@@ -28,6 +28,8 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.model.SongResponse
+import com.example.musicapplicationse114.model.getCurrentLyric
+import com.example.musicapplicationse114.model.parseLyrics
 import kotlinx.coroutines.delay
 
 @Composable
@@ -98,6 +100,10 @@ fun PlayerContent(
     var position by remember { mutableStateOf(0L) }
     var duration by remember { mutableStateOf(0L) }
 
+    val lyricsList = remember(song.id) { parseLyrics(song.lyrics ?: "") }
+    val hasValidLyrics = lyricsList.isNotEmpty()
+    val currentLyricLine = remember { mutableStateOf("") }
+
     DisposableEffect(song.id) {
         val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
@@ -114,16 +120,28 @@ fun PlayerContent(
         }
     }
 
+    // Tách riêng: chuẩn bị player
     LaunchedEffect(song.id) {
         player.setMediaItem(MediaItem.fromUri(song.audioUrl))
         player.prepare()
         player.playWhenReady = true
         isPlaying = true
         position = 0L
-
-
     }
 
+    // Tách riêng: cập nhật lời bài hát
+    LaunchedEffect(song.id, isPlaying) {
+        while (true) {
+            if (isPlaying) {
+                val timeMs = player.currentPosition.toInt()
+                val line = getCurrentLyric(timeMs, lyricsList)
+                currentLyricLine.value = line
+            }
+            delay(300)
+        }
+    }
+
+    // Tách riêng: cập nhật thanh thời gian
     LaunchedEffect(song.id, isPlaying) {
         while (true) {
             if (isPlaying) {
@@ -169,12 +187,13 @@ fun PlayerContent(
             )
             if (!song.lyrics.isNullOrBlank()) {
                 Text(
-                    text = song.lyrics ?: "",
-                    color = Color.White,
-                    fontSize = 14.sp,
+                    text = if (hasValidLyrics) currentLyricLine.value else song.lyrics,
+                    color = Color.Black,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .background(Color.Black.copy(alpha = 0.5f))
+                        .background(Color.Transparent)
                         .padding(8.dp),
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
