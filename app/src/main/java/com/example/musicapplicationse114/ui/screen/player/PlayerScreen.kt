@@ -20,9 +20,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.musicapplicationse114.MainViewModel
@@ -30,6 +27,7 @@ import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.model.getCurrentLyric
 import com.example.musicapplicationse114.model.parseLyrics
+import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import kotlinx.coroutines.delay
 
 @Composable
@@ -38,121 +36,81 @@ fun PlayerScreen(
     songId: Long,
     viewModel: PlayerViewModel = hiltViewModel(),
     mainViewModel: MainViewModel,
+    sharedViewModel: PlayerSharedViewModel
 ) {
-    val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val globalPlayerController = sharedViewModel.player
+    val playerState by globalPlayerController.state.collectAsState()
 
+    // Tải bài hát ban đầu dựa trên songId
     LaunchedEffect(songId) {
         viewModel.loadSongById(songId)
     }
 
-    when (val status = state.status) {
-        is LoadStatus.Success -> {
-            state.song?.let { song ->
-                PlayerContent(
-                    song = song,
-                    context = context,
-                    onNext = { viewModel.nextSong() },
-                    onPrevious = { viewModel.previousSong()},
-                    navController = navController,
-                    viewModel = viewModel
-                )
+    // Hiển thị giao diện dựa trên playerState
+    playerState.currentSong?.let { song ->
+        PlayerContent(
+            song = song,
+            navController = navController,
+            viewModel = viewModel,
+            mainViewModel = mainViewModel,
+            currentPosition = playerState.position,
+            duration = playerState.duration,
+            isPlaying = playerState.isPlaying,
+            isLooping = playerState.isLooping,
+            onTogglePlay = { globalPlayerController.toggle() },
+            onSeek = { globalPlayerController.seekTo(it) },
+            onToggleLoop = { globalPlayerController.setLooping(!playerState.isLooping) },
+            onNext = { globalPlayerController.nextSong(context) },
+            onPrevious = { globalPlayerController.previousSong(context) }
+        )
+    } ?: run {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            contentAlignment = Alignment.Center
+        ) {
+            when (val status = viewModel.uiState.collectAsState().value.status) {
+                is LoadStatus.Loading -> CircularProgressIndicator(color = Color.White)
+                is LoadStatus.Error -> Text("Lỗi: ${status.description}", color = Color.Red)
+                else -> Text("Không tìm thấy bài hát", color = Color.White)
             }
         }
-        is LoadStatus.Loading -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color.White)
-            }
-        }
-        is LoadStatus.Error -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Lỗi: ${status.description}", color = Color.Red)
-            }
-        }
-        else -> {}
     }
 }
 
 @Composable
 fun PlayerContent(
     song: SongResponse,
-    context: Context,
-    onNext: () -> Unit,
-    onPrevious: () -> Unit,
     navController: NavController,
-    viewModel: PlayerViewModel
+    viewModel: PlayerViewModel,
+    mainViewModel: MainViewModel,
+    currentPosition: Long,
+    duration: Long,
+    isPlaying: Boolean,
+    isLooping: Boolean,
+    onTogglePlay: () -> Unit,
+    onSeek: (Long) -> Unit,
+    onToggleLoop: () -> Unit,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val isLiked = state.likedSongIds.contains(song.id)
     val isDownloaded = state.downloadedSongIds.contains(song.id)
 
-    val player = remember(song.id) {
-        ExoPlayer.Builder(context).build()
-    }
-
-    var isPlaying by remember { mutableStateOf(true) }
-    var isLooping by remember { mutableStateOf(false) }
-    var position by remember { mutableStateOf(0L) }
-    var duration by remember { mutableStateOf(0L) }
-
     val lyricsList = remember(song.id) { parseLyrics(song.lyrics ?: "") }
     val hasValidLyrics = lyricsList.isNotEmpty()
     val currentLyricLine = remember { mutableStateOf("") }
 
-    DisposableEffect(song.id) {
-        val listener = object : Player.Listener {
-            override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_ENDED && !isLooping) {
-                    onNext()
-                }
-            }
-        }
-        player.addListener(listener)
-
-        onDispose {
-            player.removeListener(listener)
-            player.release()
+    LaunchedEffect(isPlaying, currentPosition) {
+        if (isPlaying) {
+            val line = getCurrentLyric(currentPosition.toInt(), lyricsList)
+            currentLyricLine.value = line
+            delay(100)
         }
     }
-
-    // Tách riêng: chuẩn bị player
-    LaunchedEffect(song.id) {
-        player.setMediaItem(MediaItem.fromUri(song.audioUrl))
-        player.prepare()
-        player.playWhenReady = true
-        isPlaying = true
-        position = 0L
-    }
-
-    // Tách riêng: cập nhật lời bài hát
-    LaunchedEffect(song.id, isPlaying) {
-        while (true) {
-            if (isPlaying) {
-                val timeMs = player.currentPosition.toInt()
-                val line = getCurrentLyric(timeMs, lyricsList)
-                currentLyricLine.value = line
-            }
-            delay(300)
-        }
-    }
-
-    // Tách riêng: cập nhật thanh thời gian
-    LaunchedEffect(song.id, isPlaying) {
-        while (true) {
-            if (isPlaying) {
-                position = player.currentPosition
-                duration = player.duration.coerceAtLeast(0L)
-            }
-            delay(500)
-        }
-    }
-
-    player.repeatMode = if (isLooping) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
 
     Column(
         modifier = Modifier
@@ -168,6 +126,7 @@ fun PlayerContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = {
+                mainViewModel.setFullScreenPlayer(false)
                 navController.popBackStack()
             }) {
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Back", tint = Color.White, modifier = Modifier.size(32.dp))
@@ -188,12 +147,12 @@ fun PlayerContent(
             if (!song.lyrics.isNullOrBlank()) {
                 Text(
                     text = if (hasValidLyrics) currentLyricLine.value else song.lyrics,
-                    color = Color.Black,
+                    color = Color.White,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .background(Color.Transparent)
+                        .background(Color.Black.copy(alpha = 0.6f))
                         .padding(8.dp),
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
@@ -242,11 +201,8 @@ fun PlayerContent(
         Spacer(modifier = Modifier.height(20.dp))
 
         Slider(
-            value = position.toFloat(),
-            onValueChange = {
-                player.seekTo(it.toLong())
-                position = it.toLong()
-            },
+            value = currentPosition.toFloat(),
+            onValueChange = { onSeek(it.toLong()) },
             valueRange = 0f..duration.toFloat(),
             modifier = Modifier.fillMaxWidth()
         )
@@ -255,7 +211,7 @@ fun PlayerContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(formatDuration(position), color = Color.Gray)
+            Text(formatDuration(currentPosition), color = Color.Gray)
             Text(formatDuration(duration), color = Color.Gray)
         }
 
@@ -266,28 +222,19 @@ fun PlayerContent(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            IconButton(onClick = { /* Shuffle chưa làm */ }, modifier = Modifier.size(48.dp)) {
+            IconButton(onClick = { /* TODO: shuffle */ }, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", tint = Color.White)
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            IconButton(onClick = {
-                if (!isLooping) {
-                    player.pause()
-                    isPlaying = false
-                    onPrevious()
-                }
-            }) {
-                Icon(Icons.Default.SkipPrevious, contentDescription = "Previous", tint = Color.White, modifier = Modifier.size(40.dp))
+            IconButton(onClick = onPrevious, modifier = Modifier.size(40.dp)) {
+                Icon(Icons.Default.SkipPrevious, contentDescription = "Previous Song", tint = Color.White)
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            IconButton(onClick = {
-                if (isPlaying) player.pause() else player.play()
-                isPlaying = !isPlaying
-            }, modifier = Modifier.size(96.dp)) {
+            IconButton(onClick = onTogglePlay, modifier = Modifier.size(96.dp)) {
                 Icon(
                     if (isPlaying) Icons.Default.PauseCircle else Icons.Default.PlayCircle,
                     contentDescription = "Play/Pause",
@@ -298,23 +245,18 @@ fun PlayerContent(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            IconButton(onClick = {
-                if (!isLooping) {
-                    player.pause()
-                    isPlaying = false
-                    onNext()
-                }
-            }) {
-                Icon(Icons.Default.SkipNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(40.dp))
+            IconButton(onClick = onNext, modifier = Modifier.size(40.dp)) {
+                Icon(Icons.Default.SkipNext, contentDescription = "Next Song", tint = Color.White)
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            IconButton(onClick = {
-                isLooping = !isLooping
-                player.repeatMode = if (isLooping) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
-            }) {
-                Icon(Icons.Default.Repeat, contentDescription = "Repeat", tint = if (isLooping) Color.Green else Color.White)
+            IconButton(onClick = onToggleLoop, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    Icons.Default.Repeat,
+                    contentDescription = "Repeat",
+                    tint = if (isLooping) Color.Cyan else Color.White
+                )
             }
         }
     }
