@@ -39,7 +39,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.R
 import com.example.musicapplicationse114.model.Artist
-import com.example.musicapplicationse114.ui.screen.home.NavigationBar
 import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
 
 @Composable
@@ -54,7 +53,7 @@ fun ArtistsFollowingScreen(
         containerColor = Color.Transparent,
         bottomBar = {
             Box(modifier = Modifier.fillMaxWidth().background(Color.Transparent)) {
-                NavigationBar(navController = navController) {}
+                //NavigationBar(navController = navController) {}
             }
         }
     ) { innerPadding ->

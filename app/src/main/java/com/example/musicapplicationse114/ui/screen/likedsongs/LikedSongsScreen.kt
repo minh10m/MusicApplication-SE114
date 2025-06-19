@@ -33,7 +33,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.model.SongResponse
-import com.example.musicapplicationse114.ui.screen.home.NavigationBar
 import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
 import kotlinx.coroutines.delay
 
@@ -66,7 +65,7 @@ fun LikedSongsScreen(
         contentWindowInsets = WindowInsets
             .safeDrawing
             .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
-        bottomBar = { NavigationBar(navController = navController) { showLoading = true } }
+//        bottomBar = { NavigationBar(navController = navController) { showLoading = true } }
     ) { innerPadding ->
         Column(
             modifier = Modifier
