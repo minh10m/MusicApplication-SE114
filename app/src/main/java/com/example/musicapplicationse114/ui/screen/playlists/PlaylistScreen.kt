@@ -31,7 +31,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.model.Playlist
-import com.example.musicapplicationse114.ui.screen.home.NavigationBar
 import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
 
 @Composable
@@ -52,7 +51,7 @@ fun PlaylistScreen(
         }
     }
 
-    Scaffold(bottomBar = { NavigationBar(navController = navController) { showLoading = true } }) { innerPadding ->
+    Scaffold() { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

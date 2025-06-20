@@ -33,7 +33,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.example.musicapplicationse114.MainViewModel
-import com.example.musicapplicationse114.ui.screen.home.NavigationBar
 import kotlinx.coroutines.delay
 
 @Composable
@@ -63,13 +62,13 @@ fun SearchTypeScreen(
         }
     }
 
-    Scaffold (bottomBar = {NavigationBar(navController = navController){showLoading = true} }){ innerPadding ->
+    Scaffold (){ innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
                 .padding(horizontal = 16.dp, vertical = 0.dp)
-                .then(Modifier.padding(bottom = 80.dp))
+                .then(Modifier.padding(bottom = 129.dp))
 
         ) {
             SearchTypeTopBar(onBackClick = { navController.navigate("home") {

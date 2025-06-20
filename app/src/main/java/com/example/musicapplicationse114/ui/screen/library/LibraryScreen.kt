@@ -32,7 +32,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.musicapplicationse114.MainViewModel
-import com.example.musicapplicationse114.ui.screen.home.NavigationBar
 import com.example.musicapplicationse114.ui.screen.search.SearchBottomNavigationBar
 import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
 import com.example.musicapplicationse114.ui.screen.searchtype.SearchBottomNavigationBar
@@ -61,12 +60,12 @@ fun LibraryScreen(navController: NavController, viewModel: LibraryViewModel = vi
         }
     }
 
-    Scaffold(bottomBar = {NavigationBar(navController = navController){showLoading = true} }) {innerPadding->
+    Scaffold() {innerPadding->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
-                .padding(start = 24.dp, end = 24.dp, top = 48.dp, bottom = 80.dp)
+                .padding(start = 24.dp, end = 24.dp, top = 48.dp, bottom = 129.dp)
         ) {
             Text("Your Library", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(modifier = Modifier.height(24.dp))

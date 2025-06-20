@@ -27,8 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.musicapplicationse114.MainViewModel
-import com.example.musicapplicationse114.model.Song
-import com.example.musicapplicationse114.ui.screen.home.NavigationBar
+import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
 import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.WindowInsets
@@ -64,7 +63,7 @@ fun DownloadSongsScreen(
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
-        bottomBar = { NavigationBar(navController = navController) { showLoading = true } }
+//        bottomBar = { NavigationBar(navController = navController) { showLoading = true } }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -137,7 +136,7 @@ fun SearchBar() {
 }
 
 @Composable
-fun SongItem(song: Song) {
+fun SongItem(song: SongResponse) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -152,7 +151,7 @@ fun SongItem(song: Song) {
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(song.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-            Text(song.artist.name, color = Color.Gray, fontSize = 13.sp)
+            //Text(song.artist.name, color = Color.Gray, fontSize = 13.sp)
         }
         Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.LightGray)
         Spacer(modifier = Modifier.width(10.dp))
