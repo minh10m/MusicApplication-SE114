@@ -30,7 +30,7 @@ data class HomeUiState(
     val avatar : String = "",
     val username : String = "",
     val timeOfDay: TimeOfDay = TimeOfDay.MORNING
-    )
+)
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -69,29 +69,29 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-fun loadAlbum() {
-    viewModelScope.launch {
-        try {
-            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
-            val token = tokenManager?.getToken()
-            if (api != null && !token.isNullOrBlank()) {
-                Log.d("AlbumRequest", "Token: $token")
-                val albums = api.getAlbums(token)
-                Log.d("HomeViewModel", "Albums loaded: ${albums.content.size} items")
-                _uiState.value = _uiState.value.copy(
-                    albums = albums.content,
-                    status = LoadStatus.Success()
-                )
-            } else {
-                Log.e("HomeViewModel", "API hoặc token null")
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
+    fun loadAlbum() {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+                val token = tokenManager?.getToken()
+                if (api != null && !token.isNullOrBlank()) {
+                    Log.d("AlbumRequest", "Token: $token")
+                    val albums = api.getAlbums(token)
+                    Log.d("HomeViewModel", "Albums loaded: ${albums.content.size} items")
+                    _uiState.value = _uiState.value.copy(
+                        albums = albums.content,
+                        status = LoadStatus.Success()
+                    )
+                } else {
+                    Log.e("HomeViewModel", "API hoặc token null")
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
+                }
+            } catch (ex: Exception) {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(ex.message.toString()))
+                Log.e("HomeViewModel", "Failed to load albums: ${ex.message}")
             }
-        } catch (ex: Exception) {
-            _uiState.value = _uiState.value.copy(status = LoadStatus.Error(ex.message.toString()))
-            Log.e("HomeViewModel", "Failed to load albums: ${ex.message}")
         }
     }
-}
 
     fun loadFavoriteSong() {
         viewModelScope.launch {

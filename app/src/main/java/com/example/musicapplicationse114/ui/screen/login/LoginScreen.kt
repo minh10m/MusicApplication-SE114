@@ -255,5 +255,5 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
 fun LoginScreenPreview()
 {
     val navController = rememberNavController()
-    LoginScreen(navController = navController, viewModel = LoginViewModel(null, null, null), mainViewModel = MainViewModel(), homeViewModel = HomeViewModel(null, null, null))
+    LoginScreen(navController = navController, viewModel = LoginViewModel(null, null, null), mainViewModel = MainViewModel(), homeViewModel = HomeViewModel(null,null, null))
 }

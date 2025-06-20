@@ -43,9 +43,15 @@ fun PlayerScreen(
     val playerState by globalPlayerController.state.collectAsState()
 
     // Tải bài hát ban đầu dựa trên songId
+    LaunchedEffect(Unit) {
+        viewModel.loadSongById(songId)
+    }
+
     LaunchedEffect(songId) {
         viewModel.loadSongById(songId)
     }
+
+
 
     // Hiển thị giao diện dựa trên playerState
     playerState.currentSong?.let { song ->

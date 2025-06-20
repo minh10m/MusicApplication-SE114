@@ -115,40 +115,24 @@ class GlobalPlayerController @Inject constructor(
     }
 
     fun nextSong(context: Context) {
-        if (_state.value.isLooping) {
-            Log.d("GlobalPlayerController", "Looping enabled, skipping next song")
+        if (_state.value.isLooping) return
+        if (songList.isEmpty() || currentSongIndex >= songList.size - 1) {
+            // Dừng lại, không chuyển bài
+            Log.d("GlobalPlayerController", "Reached end of playlist")
             return
         }
-        if (songList.isEmpty()) {
-            _state.value = _state.value.copy(isPlaying = false)
-            Log.w("GlobalPlayerController", "Song list is empty, cannot play next song")
-            return
-        }
-        currentSongIndex = if (currentSongIndex < songList.size - 1) {
-            currentSongIndex + 1
-        } else {
-            0
-        }
-        Log.d("GlobalPlayerController", "Next song: ${songList[currentSongIndex].title}, index: $currentSongIndex")
+        currentSongIndex += 1
         play(songList[currentSongIndex])
     }
 
     fun previousSong(context: Context) {
-        if (_state.value.isLooping) {
-            Log.d("GlobalPlayerController", "Looping enabled, skipping previous song")
+        if (_state.value.isLooping) return
+        if (songList.isEmpty() || currentSongIndex <= 0) {
+            // Dừng lại, không quay ngược
+            Log.d("GlobalPlayerController", "At start of playlist")
             return
         }
-        if (songList.isEmpty()) {
-            _state.value = _state.value.copy(isPlaying = false)
-            Log.w("GlobalPlayerController", "Song list is empty, cannot play previous song")
-            return
-        }
-        currentSongIndex = if (currentSongIndex > 0) {
-            currentSongIndex - 1
-        } else {
-            songList.size - 1
-        }
-        Log.d("GlobalPlayerController", "Previous song: ${songList[currentSongIndex].title}, index: $currentSongIndex")
+        currentSongIndex -= 1
         play(songList[currentSongIndex])
     }
 
