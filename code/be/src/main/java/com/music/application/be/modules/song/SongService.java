@@ -234,6 +234,11 @@ public class SongService {
         return songRepository.findByArtistId(artistId, pageable).map(this::mapToDTO);
     }
 
+    // Get songs by album
+    public Page<SongDTO> getSongsByAlbumId(Long albumId, Pageable pageable) {
+        return songRepository.findByAlbumId(albumId, pageable).map(this::mapToDTO);
+    }
+
     // Get top songs by view count
     public Page<SongDTO> getTopSongsByViewCount(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);

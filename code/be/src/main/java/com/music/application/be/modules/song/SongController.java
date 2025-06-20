@@ -176,6 +176,24 @@ public class SongController {
     }
 
     @Operation(
+            summary = "Get songs by album",
+            description = "Retrieves a paginated list of songs by a specific album ID.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved songs",
+                            content = @Content(schema = @Schema(implementation = Page.class))),
+                    @ApiResponse(responseCode = "404", description = "Album not found")
+            }
+    )
+    @GetMapping("/album/{albumId}")
+    public ResponseEntity<Page<SongDTO>> getSongsByAlbumId(
+            @PathVariable Long albumId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(songService.getSongsByAlbumId(albumId, pageable));
+    }
+
+    @Operation(
             summary = "Share song link",
             description = "Generates a shareable link for a song.",
             responses = {
