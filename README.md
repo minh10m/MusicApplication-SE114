@@ -11,8 +11,9 @@ Hướng đi :
 - ![image](https://github.com/user-attachments/assets/677a9ff6-323f-483a-96a7-cd0d4d1ae092)
 
   
-- phần artist khi nhấn vào thì sẽ hiển thị list song của artist đó, đi kèm là phần search song artist và thêm một nút button follow để có thể theo dõi artist khi nhấn vào. Làm phần hiển thị bth, không cuộn lên vì nó không quá quan trọng. 
-  ![image](https://github.com/user-attachments/assets/b20cfd5a-76d7-462c-bc20-a89c234f6aff)
+- phần artist khi nhấn vào thì sẽ hiển thị list song của artist đó, đi kèm là phần search song artist và thêm một nút button follow để có thể theo dõi artist khi nhấn vào. Làm phần hiển thị bth, không cuộn lên vì không quá quan trọng
+
+-   ![image](https://github.com/user-attachments/assets/b20cfd5a-76d7-462c-bc20-a89c234f6aff)
 
   
 - Phần search type có thể search song, artist, album.
