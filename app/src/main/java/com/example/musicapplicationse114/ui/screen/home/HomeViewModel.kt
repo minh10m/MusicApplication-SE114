@@ -7,6 +7,7 @@ import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.common.enum.TimeOfDay
 import com.example.musicapplicationse114.model.AlbumResponse
+import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.DownloadedSongResponse
 import com.example.musicapplicationse114.model.FavoriteSongResponse
 import com.example.musicapplicationse114.model.RecentlyPlayed
@@ -23,6 +24,7 @@ import javax.inject.Inject
 data class HomeUiState(
     val albums: List<AlbumResponse> = emptyList(),
     val songs: List<SongResponse> = emptyList(),
+    val artists : List<ArtistResponse> = emptyList(),
     val recentPlayed: List<RecentlyPlayed> = emptyList(),
     val favoriteSongs: List<FavoriteSongResponse> = emptyList(),
     val downloadSongs: List<DownloadedSongResponse> = emptyList(),
@@ -89,6 +91,30 @@ class HomeViewModel @Inject constructor(
             } catch (ex: Exception) {
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Error(ex.message.toString()))
                 Log.e("HomeViewModel", "Failed to load albums: ${ex.message}")
+            }
+        }
+    }
+
+    fun loadArtist() {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+                val token = tokenManager?.getToken()
+                if (api != null && !token.isNullOrBlank()) {
+                    Log.d("ArtistRequest", "Token: $token")
+                    val artists = api.getArtists(token)
+                    Log.d("HomeViewModel", "Artists loaded: ${artists.content.size} items")
+                    _uiState.value = _uiState.value.copy(
+                        artists = artists.content,
+                        status = LoadStatus.Success()
+                    )
+                } else {
+                    Log.e("HomeViewModel", "API hoặc token null")
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
+                }
+            } catch (ex: Exception) {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(ex.message.toString()))
+                Log.e("HomeViewModel", "Failed to load artists: ${ex.message}")
             }
         }
     }

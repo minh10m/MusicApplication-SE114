@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -243,7 +244,7 @@ fun NavigationBar(navController: NavController) {
                 }
             )
             NavBarItem(
-                icon = Icons.Filled.Menu,
+                icon = Icons.Filled.LibraryMusic,
                 label = "Library",
                 selected = currentRoute == Screen.Library.route,
                 onClick = {
@@ -266,7 +267,7 @@ fun NavBarItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    val color = if (selected) Color.White else Color.LightGray
+    val color = if (selected) Color.White else Color.LightGray.copy(alpha = 0.5f)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         IconButton(onClick = onClick) {
             Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(30.dp))

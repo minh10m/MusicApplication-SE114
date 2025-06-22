@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -38,6 +40,7 @@ import com.example.musicapplicationse114.R
 import com.example.musicapplicationse114.Screen
 import com.example.musicapplicationse114.common.enum.TimeOfDay
 import com.example.musicapplicationse114.model.AlbumResponse
+import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import com.example.musicapplicationse114.ui.screen.player.PlayerViewModel
@@ -111,6 +114,27 @@ fun Home(
                             navController.navigate(Screen.Player.createRoute(song.id))
                         }
                     )
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "Nghệ sĩ top trending",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 2.dp)
+            ) {
+                items(items = state.artists) { artist ->
+                    ArtistItem(artist)
                 }
             }
         }
@@ -199,6 +223,37 @@ fun AlbumItem(album: AlbumResponse) {
             color = Color.LightGray,
             fontSize = 16.sp,
             maxLines = 1
+        )
+    }
+}
+
+@Composable
+fun ArtistItem(artist: ArtistResponse) {
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .width(170.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(170.dp)
+                .clip(CircleShape)
+        ) {
+            AsyncImage(
+                model = artist.avatar,
+                contentDescription = artist.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = artist.name,
+            color = Color.LightGray,
+            fontSize = 16.sp,
+            maxLines = 1,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         )
     }
 }
@@ -336,6 +391,7 @@ fun HomeScreen(
         viewModel.loadSong()
         viewModel.loadDownloadedSong()
         viewModel.loadFavoriteSong()
+        viewModel.loadArtist()
         Log.d("HomeScreen", "Username: ${viewModel.getUserName()}, TimeOfDay: ${viewModel.getTimeOfDay()}")
     }
 

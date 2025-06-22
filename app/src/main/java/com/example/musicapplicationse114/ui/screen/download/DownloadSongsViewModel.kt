@@ -2,22 +2,19 @@ package com.example.musicapplicationse114.ui.screen.download
 
 import androidx.lifecycle.ViewModel
 import com.example.musicapplicationse114.model.AlbumResponse
-import com.example.musicapplicationse114.model.Artist
+import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.Genre
 import com.example.musicapplicationse114.model.SongResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class DownloadSongsViewModel : ViewModel() {
-    private val dummyArtist = Artist(
+    private val dummyArtist = ArtistResponse(
         id = 1,
         name = "The Chainsmokers",
         avatar = "",
         description = "",
-        followersCount = 0,
-        albums = arrayListOf(),
-        songs = arrayListOf(),
-        followers = arrayListOf()
+        followersCount = 0
     )
 
     private val dummyAlbum = AlbumResponse(

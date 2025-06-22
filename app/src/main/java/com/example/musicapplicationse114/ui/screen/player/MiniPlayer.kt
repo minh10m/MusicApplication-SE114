@@ -1,5 +1,7 @@
 package com.example.musicapplicationse114.ui.screen.player
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,13 +15,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.musicapplicationse114.model.SongResponse
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun MiniPlayer(
     song: SongResponse,
@@ -32,26 +38,41 @@ fun MiniPlayer(
             .fillMaxWidth()
             .height(80.dp)
             .clickable { onClick() }
-            .background(Color.DarkGray)
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.CenterStart
     ) {
+        // 🔹 Nền mờ lấy từ hình ảnh thumbnail
+        AsyncImage(
+            model = song.thumbnail,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .matchParentSize()
+                .blur(20.dp) // Giảm độ blur để giữ chi tiết
+                .drawBehind {
+                    // Thêm lớp phủ để điều chỉnh độ trong suốt
+                    drawRect(color = Color.Black.copy(alpha = 0.6f))
+                }
+        )
+
+        // 🔹 Lớp nội dung
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxSize()
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
         ) {
             AsyncImage(
                 model = song.thumbnail,
                 contentDescription = null,
                 modifier = Modifier
                     .size(48.dp)
-                    .clip(RoundedCornerShape(8.dp)) // Bo góc ảnh
+                    .clip(RoundedCornerShape(8.dp))
             )
             Spacer(Modifier.width(12.dp))
             Text(
-                song.title,
+                text = song.title,
                 color = Color.White,
-                fontWeight = FontWeight.Bold, // In đậm tiêu đề
+                fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 modifier = Modifier.weight(1f)
             )
@@ -59,7 +80,8 @@ fun MiniPlayer(
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                     contentDescription = null,
-                    tint = Color.White
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
                 )
             }
         }
