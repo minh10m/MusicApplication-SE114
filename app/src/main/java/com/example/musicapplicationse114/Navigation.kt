@@ -1,7 +1,9 @@
 package com.example.musicapplicationse114
 
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -29,6 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.musicapplicationse114.common.enum.TimeOfDay
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
+import com.example.musicapplicationse114.ui.screen.album.AlbumSongListScreen
 import com.example.musicapplicationse114.ui.screen.detail.DetailScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
@@ -54,8 +57,14 @@ sealed class Screen(val route: String, val title: String) {
     object Player : Screen("player/{songId}", "Player") {
         fun createRoute(songId: Long) = "player/$songId"
     }
+    object Album: Screen("album/{albumId}", "Album")
+    {
+        fun createRoute(albumId: Long) = "album/$albumId"
+    }
+    object Artist: Screen("artist", "Artist")
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun Navigation() {
@@ -150,6 +159,25 @@ fun Navigation() {
                         )
                     }
                     composable(
+                        route = Screen.Album.route,
+                        arguments = listOf(navArgument("albumId") { type = NavType.LongType })
+                    ) { backStackEntry ->
+                        val albumId = backStackEntry.arguments?.getLong("albumId")
+                        if(albumId != null)
+                        {
+                            AlbumSongListScreen(
+                                navController = navController,
+                                albumId = albumId,
+                                viewModel = hiltViewModel()
+                            )
+                        }
+                        else
+                        {
+                            Log.e("Navigation", "Album ID is null for AlbumSongList screen")
+                            navController.popBackStack()
+                        }
+                    }
+                    composable(
                         route = Screen.Player.route,
                         arguments = listOf(navArgument("songId") { type = NavType.LongType })
                     ) { backStackEntry ->
@@ -173,7 +201,7 @@ fun Navigation() {
         bottomBar = {
             val currentRoute = currentRoute(navController)
             // Chỉ hiển thị bottomBar ở các màn hình Home, Search, Library
-            if (currentRoute in listOf(Screen.Home.route, Screen.Search.route, Screen.Library.route, "home?username={username}&timeOfDay={timeOfDay}")) {
+            if (currentRoute in listOf(Screen.Home.route, Screen.Album.route, Screen.Artist.route, Screen.Search.route, Screen.Library.route, "home?username={username}&timeOfDay={timeOfDay}")) {
                 Column {
                     if (playerState.currentSong != null && !mainViewModel.isFullScreenPlayer.value) {
                         MiniPlayer(

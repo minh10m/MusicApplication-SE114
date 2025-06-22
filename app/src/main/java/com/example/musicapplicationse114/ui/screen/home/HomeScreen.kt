@@ -83,7 +83,12 @@ fun Home(
                     .padding(start = 2.dp)
             ) {
                 items(items = state.albums) { album ->
-                    AlbumItem(album)
+                    AlbumItem(
+                        album = album,
+                        onClick = {
+                            navController.navigate(Screen.Album.createRoute(album.id))
+                        }
+                    )
                 }
             }
         }
@@ -198,11 +203,12 @@ fun Home(
 }
 
 @Composable
-fun AlbumItem(album: AlbumResponse) {
+fun AlbumItem(album: AlbumResponse, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .padding(8.dp)
             .width(170.dp)
+            .clickable { onClick() }
     ) {
         Box(
             modifier = Modifier

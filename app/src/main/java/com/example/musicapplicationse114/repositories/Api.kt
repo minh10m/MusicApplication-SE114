@@ -2,7 +2,9 @@ package com.example.musicapplicationse114.repositories
 
 import com.example.musicapplicationse114.model.AddFavoriteSongRequest
 import com.example.musicapplicationse114.model.AlbumPageResponse
+import com.example.musicapplicationse114.model.AlbumResponse
 import com.example.musicapplicationse114.model.ArtistPageResponse
+import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.AuthenticationResponse
 import com.example.musicapplicationse114.model.DownloadedSongPageResponse
 import com.example.musicapplicationse114.model.DownloadedSongResponse
@@ -106,5 +108,26 @@ interface Api {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ): ArtistPageResponse
+
+    @GET("api/albums/{id}")
+    suspend fun getAlbumById(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long
+    ): AlbumResponse
+
+    @GET("api/songs/album/{albumId}")
+    suspend fun getSongsByAlbumId(
+        @Header("Authorization") token: String,
+        @Path("albumId") albumId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): SongPageResponse
+
+    @GET("api/artists/{id}")
+    suspend fun getArtistById(
+        @Header("Authorization") token: String,
+        @Path("id") artistId: Long
+    ): Response<ArtistResponse>
+
 
 }

@@ -49,7 +49,7 @@ fun MiniPlayer(
                 .blur(20.dp) // Giảm độ blur để giữ chi tiết
                 .drawBehind {
                     // Thêm lớp phủ để điều chỉnh độ trong suốt
-                    drawRect(color = Color.Black.copy(alpha = 0.6f))
+                    drawRect(color = Color.Black.copy(alpha = 0.85f))
                 }
         )
 

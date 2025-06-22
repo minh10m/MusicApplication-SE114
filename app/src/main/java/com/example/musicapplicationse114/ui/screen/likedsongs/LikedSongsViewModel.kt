@@ -23,7 +23,7 @@ open class LikedSongsViewModel : ViewModel() {
         releaseDate = "2020-01-01",
         coverImage = "",
         description = "",
-        artist = dummyArtist,
+        artistId = 46546,
     )
 
     private val dummyGenre = Genre(

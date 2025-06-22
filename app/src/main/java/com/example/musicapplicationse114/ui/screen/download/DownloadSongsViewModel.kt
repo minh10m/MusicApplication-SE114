@@ -23,7 +23,7 @@ class DownloadSongsViewModel : ViewModel() {
         releaseDate = "2020-01-01",
         coverImage = "",
         description = "",
-        artist = dummyArtist,
+        artistId = 454534,
     )
 
     private val dummyGenre = Genre(
