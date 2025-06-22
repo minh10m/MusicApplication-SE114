@@ -123,6 +123,14 @@ interface Api {
         @Query("size") size: Int = 20
     ): SongPageResponse
 
+    @GET("api/songs/artist/{artistId}")
+    suspend fun getSongsByArtistId(
+        @Header("Authorization") token: String,
+        @Path("artistId") artistId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): SongPageResponse
+
     @GET("api/artists/{id}")
     suspend fun getArtistById(
         @Header("Authorization") token: String,

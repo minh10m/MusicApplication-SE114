@@ -139,7 +139,8 @@ fun Home(
                     .padding(start = 2.dp)
             ) {
                 items(items = state.artists) { artist ->
-                    ArtistItem(artist)
+                    ArtistItem(artist = artist,
+                        onClick = {navController.navigate(Screen.Artist.createRoute(artist.id))})
                 }
             }
         }
@@ -234,11 +235,12 @@ fun AlbumItem(album: AlbumResponse, onClick: () -> Unit) {
 }
 
 @Composable
-fun ArtistItem(artist: ArtistResponse) {
+fun ArtistItem(artist: ArtistResponse, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .padding(8.dp)
             .width(170.dp)
+            .clickable { onClick() }
     ) {
         Box(
             modifier = Modifier

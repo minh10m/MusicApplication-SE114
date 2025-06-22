@@ -14,7 +14,7 @@ open class LikedSongsViewModel : ViewModel() {
         name = "The Chainsmokers",
         avatar = "",
         description = "",
-        followersCount = 0
+        followerCount = 0
     )
 
     private val dummyAlbum = AlbumResponse(

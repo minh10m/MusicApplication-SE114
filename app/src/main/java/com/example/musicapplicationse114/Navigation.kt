@@ -32,6 +32,7 @@ import androidx.navigation.navArgument
 import com.example.musicapplicationse114.common.enum.TimeOfDay
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import com.example.musicapplicationse114.ui.screen.album.AlbumSongListScreen
+import com.example.musicapplicationse114.ui.screen.artist.ArtistSongListScreen
 import com.example.musicapplicationse114.ui.screen.detail.DetailScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
@@ -61,7 +62,10 @@ sealed class Screen(val route: String, val title: String) {
     {
         fun createRoute(albumId: Long) = "album/$albumId"
     }
-    object Artist: Screen("artist", "Artist")
+    object Artist: Screen("artist/{artistId}", "Artist")
+    {
+        fun createRoute(artistId: Long) = "artist/$artistId"
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -159,6 +163,26 @@ fun Navigation() {
                         )
                     }
                     composable(
+                        route = Screen.Artist.route,
+                        arguments = listOf(navArgument("artistId") { type = NavType.LongType })
+                    ) { backStackEntry ->
+                        val artistId = backStackEntry.arguments?.getLong("artistId")
+                        if(artistId != null)
+                        {
+                            ArtistSongListScreen(
+                                navController = navController,
+                                artistId = artistId,
+                                viewModel = hiltViewModel(),
+                                mainViewModel = hiltViewModel()
+                            )
+                        }
+                        else
+                        {
+                            Log.e("Navigation", "Artist ID is null for ArtistSongList screen")
+                            navController.popBackStack()
+                        }
+                    }
+                    composable(
                         route = Screen.Album.route,
                         arguments = listOf(navArgument("albumId") { type = NavType.LongType })
                     ) { backStackEntry ->
@@ -168,7 +192,8 @@ fun Navigation() {
                             AlbumSongListScreen(
                                 navController = navController,
                                 albumId = albumId,
-                                viewModel = hiltViewModel()
+                                viewModel = hiltViewModel(),
+                                mainViewModel = hiltViewModel()
                             )
                         }
                         else

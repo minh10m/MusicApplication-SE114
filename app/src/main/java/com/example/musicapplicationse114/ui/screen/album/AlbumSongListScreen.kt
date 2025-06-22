@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.Screen
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 
@@ -40,9 +41,11 @@ fun AlbumSongListScreen(
     navController: NavController,
     albumId: Long,
     viewModel: AlbumSongListViewModel = hiltViewModel(),
-    sharedViewModel: PlayerSharedViewModel = hiltViewModel()
+    sharedViewModel: PlayerSharedViewModel = hiltViewModel(),
+    mainViewModel: MainViewModel,
 ) {
     val state = viewModel.uiState.collectAsState().value
+    val globalPlayerController = sharedViewModel.player
 
     LaunchedEffect(albumId) {
         viewModel.loadAlbumById(albumId)
@@ -132,6 +135,8 @@ fun AlbumSongListScreen(
                     onClick = {
                         if (state.songAlbums.isNotEmpty()) {
                             sharedViewModel.setSongList(state.songAlbums, 0)
+                            globalPlayerController.play(state.songAlbums[0])
+                            mainViewModel.setFullScreenPlayer(true)
                             navController.navigate(Screen.Player.createRoute(state.songAlbums[0].id))
                         }
                     },
@@ -157,6 +162,8 @@ fun AlbumSongListScreen(
                         .fillMaxWidth()
                         .clickable {
                             sharedViewModel.setSongList(state.songAlbums, state.songAlbums.indexOf(song))
+                            globalPlayerController.play(song)
+                            mainViewModel.setFullScreenPlayer(true)
                             navController.navigate(Screen.Player.createRoute(song.id))
                         }
                         .padding(horizontal = 16.dp, vertical = 12.dp),
