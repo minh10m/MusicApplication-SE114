@@ -31,6 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.musicapplicationse114.common.enum.TimeOfDay
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
+import com.example.musicapplicationse114.ui.queue.QueueScreen
 import com.example.musicapplicationse114.ui.screen.album.AlbumSongListScreen
 import com.example.musicapplicationse114.ui.screen.artist.ArtistSongListScreen
 import com.example.musicapplicationse114.ui.screen.detail.DetailScreen
@@ -66,6 +67,8 @@ sealed class Screen(val route: String, val title: String) {
     {
         fun createRoute(artistId: Long) = "artist/$artistId"
     }
+    object Queue: Screen("queue", "Queue")
+
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -159,6 +162,14 @@ fun Navigation() {
                         LibraryScreen(
                             navController = navController,
                             viewModel = hiltViewModel(),
+                            mainViewModel
+                        )
+                    }
+                    composable(Screen.Queue.route){
+                        QueueScreen(
+                            navController = navController,
+                            viewModel = hiltViewModel(),
+                            sharedViewModel,
                             mainViewModel
                         )
                     }

@@ -50,6 +50,7 @@ fun AlbumSongListScreen(
     LaunchedEffect(albumId) {
         viewModel.loadAlbumById(albumId)
         viewModel.loadSongByAlbumId(albumId)
+//        sharedViewModel.setSongList(state.songAlbums, 0)
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.Black).padding(bottom = 129.dp)) {
