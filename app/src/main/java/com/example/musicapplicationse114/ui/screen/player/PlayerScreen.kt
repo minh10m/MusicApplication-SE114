@@ -72,12 +72,10 @@ fun PlayerScreen(
             isPlaying = playerState.isPlaying,
             isLooping = playerState.isLooping,
             onTogglePlay = { globalPlayerController.toggle() },
-            onSeek = { globalPlayerController.seekTo(it) },
+            onSeek = { globalPlayerController.seekTo(it)},
             onToggleLoop = { globalPlayerController.setLooping(!playerState.isLooping) },
-            onNext = { globalPlayerController.nextSong(context)
-                        sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())},
-            onPrevious = { globalPlayerController.previousSong(context)
-                        sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())},
+            onNext = { globalPlayerController.nextSong(context)},
+            onPrevious = { globalPlayerController.previousSong(context)},
             upNextSong = sharedViewModel.getUpNext()
 
         )

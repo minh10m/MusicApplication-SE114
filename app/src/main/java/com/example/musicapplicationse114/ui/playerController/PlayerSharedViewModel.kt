@@ -4,8 +4,11 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.musicapplicationse114.model.SongResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,27 +31,19 @@ class PlayerSharedViewModel @Inject constructor(
         player.setSongList(songs, startIndex)
     }
 
-//    fun play(song: SongResponse) {
-//        val index = _queue.indexOfFirst { it.id == song.id }
-//        if (index != -1) {
-//            _currentIndex.value = index
-//            player.play(song)
-//        }
-//    }
-//
-//    fun next() {
-//        if (_currentIndex.value + 1 < _queue.size) {
-//            _currentIndex.value++
-//            player.play(_queue[_currentIndex.value])
-//        }
-//    }
-//
-//    fun previous() {
-//        if (_currentIndex.value > 0) {
-//            _currentIndex.value--
-//            player.play(_queue[_currentIndex.value])
-//        }
-//    }
+    init {
+        // Lắng nghe trạng thái của GlobalPlayerController
+        viewModelScope.launch {
+            player.state.collectLatest { state ->
+                state.currentSong?.let { currentSong ->
+                    val index = player.getSongList().indexOfFirst { it.id == currentSong.id }
+                    if (index != -1 && index != _currentIndex.value) {
+                        _currentIndex.value = index
+                    }
+                }
+            }
+        }
+    }
 
     fun getUpNext(): SongResponse? {
         return _queue.getOrNull(_currentIndex.value + 1)
