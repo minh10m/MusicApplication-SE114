@@ -47,8 +47,8 @@ fun PlayerScreen(
     val context = LocalContext.current
     val globalPlayerController = sharedViewModel.player
     val playerState by globalPlayerController.state.collectAsState()
+    var isSongEnded by remember { mutableStateOf(false) }
 
-    // Tải bài hát ban đầu dựa trên songId
     LaunchedEffect(Unit) {
         viewModel.loadSongById(songId)
     }
@@ -57,9 +57,15 @@ fun PlayerScreen(
         viewModel.loadSongById(songId)
     }
 
+    LaunchedEffect(playerState.position, playerState.duration, playerState.isPlaying) {
+        if (playerState.duration > 0 && playerState.position >= playerState.duration - 100) { // Kiểm tra khi gần kết thúc (dung sai 100ms)
+            isSongEnded = true
+            // Đợi một chút để đảm bảo UI nhận ra trước khi chuyển bài
+            delay(200)
+            isSongEnded = false // Reset sau khi chuyển bài
+        }
+    }
 
-
-    // Hiển thị giao diện dựa trên playerState
     playerState.currentSong?.let { song ->
         PlayerContent(
             song = song,
@@ -72,14 +78,15 @@ fun PlayerScreen(
             isPlaying = playerState.isPlaying,
             isLooping = playerState.isLooping,
             onTogglePlay = { globalPlayerController.toggle() },
-            onSeek = { globalPlayerController.seekTo(it)},
+            onSeek = { globalPlayerController.seekTo(it) },
             onToggleLoop = { globalPlayerController.setLooping(!playerState.isLooping) },
-            onNext = { globalPlayerController.nextSong(context)},
-            onPrevious = { globalPlayerController.previousSong(context)},
-            upNextSong = sharedViewModel.getUpNext()
-
+            onNext = { globalPlayerController.nextSong(context)
+                        sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())},
+            onPrevious = { globalPlayerController.previousSong(context)
+                sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())},
+            upNextSong = sharedViewModel.getUpNext(),
+            isSongEnded = isSongEnded
         )
-        Log.d("PlayerScreen", "Up Next Song: ${sharedViewModel.getUpNext()?.title}")
     } ?: run {
         Box(
             modifier = Modifier
@@ -113,10 +120,12 @@ fun PlayerContent(
     onNext: () -> Unit,
     onPrevious: () -> Unit,
     upNextSong: SongResponse?,
+    isSongEnded : Boolean
 ) {
     val state by viewModel.uiState.collectAsState()
     val isLiked = state.likedSongIds.contains(song.id)
     val isDownloaded = state.downloadedSongIds.contains(song.id)
+    val globalPlayerController = sharedViewModel.player
 
     val lyricsList = remember(song.id) { parseLyrics(song.lyrics ?: "") }
     val hasValidLyrics = lyricsList.isNotEmpty()
@@ -129,6 +138,9 @@ fun PlayerContent(
             delay(100)
         }
     }
+    if (isSongEnded) {
+        sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())
+    }
 
     Column(
         modifier = Modifier
@@ -137,7 +149,7 @@ fun PlayerContent(
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -149,8 +161,16 @@ fun PlayerContent(
             }) {
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Back", tint = Color.White, modifier = Modifier.size(32.dp))
             }
-        }
 
+            Spacer(modifier = Modifier.width(290.dp))
+
+            IconButton(onClick = {/*DO STH */})
+            {
+                Icon(Icons.Default.MoreVert, contentDescription = "MoreVert", tint = Color.White, modifier = Modifier.size(32.dp))
+
+            }
+        }
+        Spacer(modifier = Modifier.height(20.dp))
         Box(
             modifier = Modifier
                 .size(350.dp)

@@ -34,6 +34,7 @@ import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewMod
 import com.example.musicapplicationse114.ui.queue.QueueScreen
 import com.example.musicapplicationse114.ui.screen.album.AlbumSongListScreen
 import com.example.musicapplicationse114.ui.screen.artist.ArtistSongListScreen
+import com.example.musicapplicationse114.ui.screen.artist.ArtistViewModel
 import com.example.musicapplicationse114.ui.screen.detail.DetailScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
@@ -79,6 +80,8 @@ fun Navigation() {
     val mainViewModel: MainViewModel = hiltViewModel()
     val loginViewModel: LoginViewModel = hiltViewModel()
     val mainState = mainViewModel.uiState.collectAsState()
+    val homeViewModel: HomeViewModel = hiltViewModel()
+    val artistViewModel: ArtistViewModel = hiltViewModel()
 
     val sharedViewModel: PlayerSharedViewModel = hiltViewModel()
     val globalPlayerController = sharedViewModel.player
@@ -170,7 +173,8 @@ fun Navigation() {
                             navController = navController,
                             viewModel = hiltViewModel(),
                             sharedViewModel,
-                            mainViewModel
+                            mainViewModel,
+                            artistViewModel
                         )
                     }
                     composable(

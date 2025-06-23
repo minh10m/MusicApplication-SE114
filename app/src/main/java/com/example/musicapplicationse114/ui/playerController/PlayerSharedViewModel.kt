@@ -38,7 +38,7 @@ class PlayerSharedViewModel @Inject constructor(
                 state.currentSong?.let { currentSong ->
                     val index = player.getSongList().indexOfFirst { it.id == currentSong.id }
                     if (index != -1 && index != _currentIndex.value) {
-                        _currentIndex.value = index
+                        setSongList(player.getSongList(), index)
                     }
                 }
             }
