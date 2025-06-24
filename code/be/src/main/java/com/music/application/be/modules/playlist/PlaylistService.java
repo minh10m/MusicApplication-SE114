@@ -61,18 +61,16 @@ public class PlaylistService {
         // Cập nhật thumbnail từ bài hát đầu tiên (nếu có)
         updateThumbnail(savedPlaylist.getId());
         return mapToDTO(savedPlaylist);
-    }
-
-    // Create playlist for admin with genres (auto-add songs)
+    }    // Create playlist for admin with genres (auto-add songs)
     public PlaylistDTO createPlaylistWithGenres(PlaylistRequestDTO playlistRequestDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
             throw new EntityNotFoundException("User not authenticated");
-        }
-        User user = (User) authentication.getPrincipal();        Playlist playlist = new Playlist();
+        }        User user = (User) authentication.getPrincipal();        Playlist playlist = new Playlist();
         playlist.setName(playlistRequestDTO.getName());
         playlist.setDescription(playlistRequestDTO.getDescription());
-        playlist.setIsPublic(playlistRequestDTO.getIsPublic() != null ? playlistRequestDTO.getIsPublic() : false);
+        // Bỏ qua isPublic từ request, luôn set thành true cho playlist có genre
+        playlist.setIsPublic(true);
         playlist.setCreatedAt(LocalDateTime.now());
         playlist.setCreatedBy(user);
 
@@ -81,6 +79,15 @@ public class PlaylistService {
             if (genres.size() != playlistRequestDTO.getGenreIds().size()) {
                 throw new EntityNotFoundException("One or more genres not found");
             }
+            
+            // Kiểm tra trùng genre - không cho phép tạo playlist mới với genre đã tồn tại
+            for (Genre genre : genres) {
+                Page<Playlist> existingPlaylists = playlistRepository.findByGenresId(genre.getId(), Pageable.unpaged());
+                if (!existingPlaylists.isEmpty()) {
+                    throw new IllegalArgumentException("Playlist with genre '" + genre.getName() + "' already exists");
+                }
+            }
+            
             playlist.setGenres(genres);
         } else {
             throw new IllegalArgumentException("Genre IDs are required for admin-created playlists");
@@ -194,9 +201,7 @@ public class PlaylistService {
         // Cập nhật thumbnail từ bài hát đầu tiên (nếu có)
         updateThumbnail(id);
         return mapToDTO(updatedPlaylist);
-    }
-
-    // Update playlist for admin with genres (auto-add songs)
+    }    // Update playlist for admin with genres (auto-add songs)
 
     public PlaylistDTO updatePlaylistWithGenres(Long id, PlaylistRequestDTO playlistRequestDTO) {
         Playlist playlist = playlistRepository.findById(id)
@@ -208,18 +213,32 @@ public class PlaylistService {
         }
         User currentUser = (User) authentication.getPrincipal();
         if (!currentUser.getId().equals(playlist.getCreatedBy().getId()) && !currentUser.getRole().equals(Role.ADMIN)) {
-            throw new SecurityException("You do not have permission to update this playlist");
-        }        playlist.setName(playlistRequestDTO.getName());
-        playlist.setDescription(playlistRequestDTO.getDescription());
-        if (playlistRequestDTO.getIsPublic() != null) {
-            playlist.setIsPublic(playlistRequestDTO.getIsPublic());
-        }
-
-        if (playlistRequestDTO.getGenreIds() != null) {
+            throw new SecurityException("You do not have permission to update this playlist");        }        
+        // Kiểm tra trùng genre trước khi update - không cho phép update nếu có genre trùng
+        if (playlistRequestDTO.getGenreIds() != null && !playlistRequestDTO.getGenreIds().isEmpty()) {
             List<Genre> genres = genreRepository.findAllById(playlistRequestDTO.getGenreIds());
             if (genres.size() != playlistRequestDTO.getGenreIds().size()) {
                 throw new EntityNotFoundException("One or more genres not found");
             }
+            
+            // Kiểm tra trùng genre - không cho phép cập nhật với genre đã tồn tại (trừ playlist hiện tại)
+            for (Genre genre : genres) {
+                Page<Playlist> existingPlaylists = playlistRepository.findByGenresId(genre.getId(), Pageable.unpaged());
+                for (Playlist existingPlaylist : existingPlaylists) {
+                    if (!existingPlaylist.getId().equals(id)) {
+                        throw new IllegalArgumentException("Cannot update playlist: Genre '" + genre.getName() + "' is already used by another playlist");
+                    }
+                }
+            }
+        }
+        
+        // Chỉ update nếu không có genre trùng
+        playlist.setName(playlistRequestDTO.getName());
+        playlist.setDescription(playlistRequestDTO.getDescription());
+        // Bỏ qua isPublic từ request, luôn set thành true cho playlist có genre
+        playlist.setIsPublic(true);        if (playlistRequestDTO.getGenreIds() != null && !playlistRequestDTO.getGenreIds().isEmpty()) {
+            // Genres đã được validate ở trên, chỉ cần set lại
+            List<Genre> genres = genreRepository.findAllById(playlistRequestDTO.getGenreIds());
             playlist.setGenres(genres);
         } else {
             playlist.setGenres(null);
@@ -275,7 +294,12 @@ public class PlaylistService {
         }
         // Guest chỉ tìm kiếm public playlist
         return playlistRepository.findByNameContainingIgnoreCaseAndIsPublicTrue(query, pageable).map(this::mapToDTO);
-    }// Share playlist
+    }    // Get playlists by genre (playlist có genre luôn là public)
+    public Page<PlaylistDTO> getPlaylistsByGenre(Long genreId, Pageable pageable) {
+        return playlistRepository.findByGenresId(genreId, pageable).map(this::mapToDTO);
+    }
+
+    // Share playlist
 
     public String sharePlaylist(Long id) {
         Playlist playlist = playlistRepository.findById(id)

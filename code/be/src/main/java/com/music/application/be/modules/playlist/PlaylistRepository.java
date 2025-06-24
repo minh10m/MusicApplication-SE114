@@ -28,9 +28,11 @@ public interface PlaylistRepository extends JpaRepository<Playlist, Long> {
     Page<Playlist> findByNameContainingIgnoreCaseAndIsPublicTrue(String name, Pageable pageable);
 
     // Tìm tất cả playlist public
-    Page<Playlist> findByIsPublicTrue(Pageable pageable);
-
-    // Tìm playlist theo tên và (public hoặc của user)
+    Page<Playlist> findByIsPublicTrue(Pageable pageable);    // Tìm playlist theo tên và (public hoặc của user)
     @Query("SELECT p FROM Playlist p WHERE p.name LIKE %:name% AND (p.isPublic = true OR p.createdBy = :user)")
     Page<Playlist> findByNameContainingIgnoreCaseAndIsPublicTrueOrCreatedBy(String name, User user, Pageable pageable);
+
+    // Tìm playlist theo genre (playlist có genre luôn là public)
+    @Query("SELECT p FROM Playlist p JOIN p.genres g WHERE g.id = :genreId")
+    Page<Playlist> findByGenresId(Long genreId, Pageable pageable);
 }
