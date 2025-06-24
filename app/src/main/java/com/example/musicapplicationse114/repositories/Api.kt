@@ -10,6 +10,8 @@ import com.example.musicapplicationse114.model.DownloadedSongPageResponse
 import com.example.musicapplicationse114.model.DownloadedSongResponse
 import com.example.musicapplicationse114.model.FavoriteSongPageResponse
 import com.example.musicapplicationse114.model.FavoriteSongResponse
+import com.example.musicapplicationse114.model.GenrePageResponse
+import com.example.musicapplicationse114.model.GenreResponse
 import com.example.musicapplicationse114.model.SongPageResponse
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.model.UserLoginRequest
@@ -79,6 +81,14 @@ interface Api {
     suspend fun getSongsByAlbumId(
         @Header("Authorization") token: String,
         @Path("albumId") albumId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): SongPageResponse
+
+    @GET("api/songs/genre/{genreId}")
+    suspend fun getSongByGenreId(
+        @Header("Authorization") token: String,
+        @Path("genreId") genreId: Long,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ): SongPageResponse
@@ -168,5 +178,14 @@ interface Api {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ): ArtistPageResponse
+
+    //Genre
+    @GET("/api/genres")
+    suspend fun getGenres(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<GenrePageResponse>
+
 
 }

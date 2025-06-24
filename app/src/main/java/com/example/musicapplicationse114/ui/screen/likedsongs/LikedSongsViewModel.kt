@@ -3,7 +3,7 @@ package com.example.musicapplicationse114.ui.screen.likedsongs
 import androidx.lifecycle.ViewModel
 import com.example.musicapplicationse114.model.AlbumResponse
 import com.example.musicapplicationse114.model.ArtistResponse
-import com.example.musicapplicationse114.model.Genre
+import com.example.musicapplicationse114.model.GenreResponse
 import com.example.musicapplicationse114.model.SongResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,11 +26,10 @@ open class LikedSongsViewModel : ViewModel() {
         artistId = 46546,
     )
 
-    private val dummyGenre = Genre(
+    private val dummyGenre = GenreResponse(
         id = 1,
         name = "EDM",
         description = "",
-        Song = arrayListOf()
     )
 
     private val dummySongs = listOf(
