@@ -19,17 +19,19 @@ public class SearchHistoryController {
     @PostMapping
     public ResponseEntity<?> addSearchHistory(@RequestBody SearchHistoryRequest request) {
         try {
-            SearchHistory searchHistory = searchHistoryService.addSearchHistory(request.getUser(), request.getQuery());
+            SearchHistory searchHistory = searchHistoryService.addSearchHistory(request.getUserId(), request.getQuery());
             return ResponseEntity.ok(searchHistory);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(404).body("User not found.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error adding to search history: " + e.getMessage());
         }
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<?> getSearchHistory(@PathVariable User user) {
+    public ResponseEntity<?> getSearchHistory(@PathVariable Long userId) {
         try {
-            List<SearchHistory> searchHistoryList = searchHistoryService.getSearchHistoryByUser(user);
+            List<SearchHistory> searchHistoryList = searchHistoryService.getSearchHistoryByUserId(userId);
             return ResponseEntity.ok(searchHistoryList);
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(404).body("User not found.");
@@ -39,9 +41,9 @@ public class SearchHistoryController {
     }
 
     @DeleteMapping("/clear/{userId}")
-    public ResponseEntity<?> clearSearchHistory(@PathVariable User user) {
+    public ResponseEntity<?> clearSearchHistory(@PathVariable Long userId) {
         try {
-            searchHistoryService.clearSearchHistory(user);
+            searchHistoryService.clearSearchHistoryByUserId(userId);
             return ResponseEntity.noContent().build();
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(404).body("User not found.");

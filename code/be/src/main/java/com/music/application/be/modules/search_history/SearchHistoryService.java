@@ -1,6 +1,7 @@
 package com.music.application.be.modules.search_history;
 
 import com.music.application.be.modules.user.User;
+import com.music.application.be.modules.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -8,6 +9,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -15,23 +17,26 @@ import java.util.List;
 public class SearchHistoryService {
 
     private final SearchHistoryRepository searchHistoryRepository;
-
-    public SearchHistory addSearchHistory(User user, String query) {
-        SearchHistory searchHistory = SearchHistory.builder()
-                .user(user)
-                .query(query)
-                .build();
-        return searchHistoryRepository.save(searchHistory);
+    private final UserRepository userRepository;
+    public SearchHistory addSearchHistory(Long userId, String query) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+        SearchHistory history = new SearchHistory();
+        history.setUser(user);
+        history.setQuery(query);
+        return searchHistoryRepository.save(history);
     }
 
-    @Cacheable(value = "searchHistory", key = "#user.id")
-    public List<SearchHistory> getSearchHistoryByUser(User user) {
-        return searchHistoryRepository.findByUserOrderBySearchedAtDesc(user);
+
+    public List<SearchHistory> getSearchHistoryByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+        return searchHistoryRepository.findByUser(user);
     }
 
-    @CacheEvict(value = "searchHistory", key = "#user.id")
-    public void clearSearchHistory(User user) {
-        List<SearchHistory> userHistory = searchHistoryRepository.findByUserOrderBySearchedAtDesc(user);
-        searchHistoryRepository.deleteAll(userHistory);
+    public void clearSearchHistoryByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+        searchHistoryRepository.deleteByUser(user);
     }
 }
