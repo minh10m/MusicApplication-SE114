@@ -111,6 +111,24 @@ public class SongController {
     }
 
     @Operation(
+            summary = "Update song thumbnail",
+            description = "Updates only the thumbnail of a song by uploading a new image file.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully updated song thumbnail",
+                            content = @Content(schema = @Schema(implementation = SongDTO.class))),
+                    @ApiResponse(responseCode = "400", description = "Invalid thumbnail file"),
+                    @ApiResponse(responseCode = "404", description = "Song not found")
+            }
+    )
+    @PutMapping(value = "/{id}/thumbnail", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SongDTO> updateSongThumbnail(
+            @PathVariable Long id,
+            @Parameter(description = "Thumbnail image file (JPG, PNG, etc.)")
+            @RequestPart("thumbnail") MultipartFile thumbnailFile) throws Exception {
+        return ResponseEntity.ok(songService.updateSongThumbnail(id, thumbnailFile));
+    }
+
+    @Operation(
             summary = "Delete a song",
             description = "Deletes a song by its ID.",
             responses = {

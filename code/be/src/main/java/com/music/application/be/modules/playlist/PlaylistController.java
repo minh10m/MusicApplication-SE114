@@ -106,6 +106,27 @@ public class PlaylistController {
         return ResponseEntity.ok(response);
     }
 
+    // Get playlists by genre
+    @GetMapping("/genre/{genreId}")
+    public ResponseEntity<PagedResponseDTO<PlaylistDTO>> getPlaylistsByGenre(
+            @PathVariable Long genreId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<PlaylistDTO> pageResult = playlistService.getPlaylistsByGenre(genreId, pageable);
+        PagedResponseDTO<PlaylistDTO> response = new PagedResponseDTO<>(
+                pageResult.getContent(),
+                pageResult.getNumber(),
+                pageResult.getSize(),
+                pageResult.getTotalElements(),
+                pageResult.getTotalPages()
+        );
+        return ResponseEntity.ok(response);
+    }
+
     // Share playlist
     @GetMapping("/{playlistId}/share")
     public ResponseEntity<String> sharePlaylist(@PathVariable Long playlistId) {

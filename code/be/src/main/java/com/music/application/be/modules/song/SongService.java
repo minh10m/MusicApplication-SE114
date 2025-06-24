@@ -196,6 +196,25 @@ public class SongService {
         return mapToDTO(updatedSong);
     }
 
+    // Update thumbnail only
+    @CachePut(value = "songs", key = "#id")
+    @CacheEvict(value = {"searchedSongs", "songsByGenre", "songsByArtist", "topSongs"}, allEntries = true)
+    public SongDTO updateSongThumbnail(Long id, MultipartFile thumbnailFile) throws IOException {
+        if (thumbnailFile == null || thumbnailFile.isEmpty()) {
+            throw new IllegalArgumentException("Thumbnail file is required");
+        }
+
+        Song song = songRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Song not found with id: " + id));
+
+        // Upload file thumbnail lên Cloudinary
+        String thumbnailUrl = cloudinaryService.uploadFile(thumbnailFile, "image");
+        song.setThumbnail(thumbnailUrl);
+
+        Song updatedSong = songRepository.save(song);
+        return mapToDTO(updatedSong);
+    }
+
     // Read by ID
     @Cacheable(value = "songs", key = "#id")
     public SongDTO getSongById(Long id) {
@@ -251,7 +270,9 @@ public class SongService {
         Song song = songRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Song not found with id: " + id));
         return "http://localhost:8080/api/songs/" + id;
-    }    private SongDTO mapToDTO(Song song) {
+    }
+
+    private SongDTO mapToDTO(Song song) {
         SongDTO dto = new SongDTO();
         dto.setId(song.getId());
         dto.setTitle(song.getTitle());
