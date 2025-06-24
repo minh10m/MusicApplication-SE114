@@ -8,4 +8,5 @@ import lombok.Getter;
 public class SongSummaryDto {
     private String title;
     private String thumbnail;
+    private String artistName;
 }
