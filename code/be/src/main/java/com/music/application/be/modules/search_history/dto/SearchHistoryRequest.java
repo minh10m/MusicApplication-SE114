@@ -9,7 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SearchHistoryRequest {
-    private User user;
+    private Long userId;
     private String query;
+    // getters, setters
 }
+
 
