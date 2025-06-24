@@ -34,6 +34,10 @@ public class Playlist {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    // Thêm trường để xác định playlist có public không
+    @Column(name = "is_public", nullable = false)
+    private Boolean isPublic = false;
+
     @ManyToMany
     @JoinTable(
             name = "playlist_genre",

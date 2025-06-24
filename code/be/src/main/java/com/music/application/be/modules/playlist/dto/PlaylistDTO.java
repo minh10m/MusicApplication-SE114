@@ -25,6 +25,8 @@ public class PlaylistDTO {
 
     private LocalDateTime createdAt;
 
+    private Boolean isPublic; // Thêm trường isPublic
+
     private List<Long> genreIds;
 
     private List<SongPlaylistDTO> songPlaylists;
