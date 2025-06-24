@@ -1,7 +1,9 @@
 package com.example.musicapplicationse114
 
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -10,7 +12,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.SavedSearch
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +32,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.musicapplicationse114.common.enum.TimeOfDay
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
+import com.example.musicapplicationse114.ui.queue.QueueScreen
+import com.example.musicapplicationse114.ui.screen.album.AlbumSongListScreen
+import com.example.musicapplicationse114.ui.screen.artist.ArtistSongListScreen
+import com.example.musicapplicationse114.ui.screen.artist.ArtistViewModel
 import com.example.musicapplicationse114.ui.screen.detail.DetailScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
@@ -53,8 +61,19 @@ sealed class Screen(val route: String, val title: String) {
     object Player : Screen("player/{songId}", "Player") {
         fun createRoute(songId: Long) = "player/$songId"
     }
+    object Album: Screen("album/{albumId}", "Album")
+    {
+        fun createRoute(albumId: Long) = "album/$albumId"
+    }
+    object Artist: Screen("artist/{artistId}", "Artist")
+    {
+        fun createRoute(artistId: Long) = "artist/$artistId"
+    }
+    object Queue: Screen("queue", "Queue")
+
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun Navigation() {
@@ -62,6 +81,8 @@ fun Navigation() {
     val mainViewModel: MainViewModel = hiltViewModel()
     val loginViewModel: LoginViewModel = hiltViewModel()
     val mainState = mainViewModel.uiState.collectAsState()
+    val homeViewModel: HomeViewModel = hiltViewModel()
+    val artistViewModel: ArtistViewModel = hiltViewModel()
 
     val sharedViewModel: PlayerSharedViewModel = hiltViewModel()
     val globalPlayerController = sharedViewModel.player
@@ -138,7 +159,8 @@ fun Navigation() {
                         SearchTypeScreen(
                             navController = navController,
                             viewModel = hiltViewModel(),
-                            mainViewModel
+                            mainViewModel,
+                            sharedViewModel
                         )
                     }
                     composable(Screen.Library.route) {
@@ -147,6 +169,55 @@ fun Navigation() {
                             viewModel = hiltViewModel(),
                             mainViewModel
                         )
+                    }
+                    composable(Screen.Queue.route){
+                        QueueScreen(
+                            navController = navController,
+                            viewModel = hiltViewModel(),
+                            sharedViewModel,
+                            mainViewModel,
+                            artistViewModel
+                        )
+                    }
+                    composable(
+                        route = Screen.Artist.route,
+                        arguments = listOf(navArgument("artistId") { type = NavType.LongType })
+                    ) { backStackEntry ->
+                        val artistId = backStackEntry.arguments?.getLong("artistId")
+                        if(artistId != null)
+                        {
+                            ArtistSongListScreen(
+                                navController = navController,
+                                artistId = artistId,
+                                viewModel = hiltViewModel(),
+                                mainViewModel = hiltViewModel()
+                            )
+                        }
+                        else
+                        {
+                            Log.e("Navigation", "Artist ID is null for ArtistSongList screen")
+                            navController.popBackStack()
+                        }
+                    }
+                    composable(
+                        route = Screen.Album.route,
+                        arguments = listOf(navArgument("albumId") { type = NavType.LongType })
+                    ) { backStackEntry ->
+                        val albumId = backStackEntry.arguments?.getLong("albumId")
+                        if(albumId != null)
+                        {
+                            AlbumSongListScreen(
+                                navController = navController,
+                                albumId = albumId,
+                                viewModel = hiltViewModel(),
+                                mainViewModel = hiltViewModel()
+                            )
+                        }
+                        else
+                        {
+                            Log.e("Navigation", "Album ID is null for AlbumSongList screen")
+                            navController.popBackStack()
+                        }
                     }
                     composable(
                         route = Screen.Player.route,
@@ -172,7 +243,7 @@ fun Navigation() {
         bottomBar = {
             val currentRoute = currentRoute(navController)
             // Chỉ hiển thị bottomBar ở các màn hình Home, Search, Library
-            if (currentRoute in listOf(Screen.Home.route, Screen.Search.route, Screen.Library.route, "home?username={username}&timeOfDay={timeOfDay}")) {
+            if (currentRoute in listOf(Screen.Home.route, Screen.Album.route, Screen.Artist.route, Screen.Search.route, Screen.Library.route, "home?username={username}&timeOfDay={timeOfDay}")) {
                 Column {
                     if (playerState.currentSong != null && !mainViewModel.isFullScreenPlayer.value) {
                         MiniPlayer(
@@ -230,7 +301,7 @@ fun NavigationBar(navController: NavController) {
                 }
             )
             NavBarItem(
-                icon = Icons.Filled.Search,
+                icon = Icons.Filled.SavedSearch,
                 label = "Search",
                 selected = currentRoute == Screen.Search.route,
                 onClick = {
@@ -243,7 +314,7 @@ fun NavigationBar(navController: NavController) {
                 }
             )
             NavBarItem(
-                icon = Icons.Filled.Menu,
+                icon = Icons.Filled.LibraryMusic,
                 label = "Library",
                 selected = currentRoute == Screen.Library.route,
                 onClick = {
@@ -266,7 +337,7 @@ fun NavBarItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    val color = if (selected) Color.White else Color.LightGray
+    val color = if (selected) Color.White else Color.LightGray.copy(alpha = 0.5f)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         IconButton(onClick = onClick) {
             Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(30.dp))

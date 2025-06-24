@@ -26,183 +26,235 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
+import com.example.musicapplicationse114.Screen
+import com.example.musicapplicationse114.common.enum.LoadStatus
+import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchTypeScreen(
     navController: NavController,
     viewModel: SearchTypeViewModel,
-    mainViewModel: MainViewModel
+    mainViewModel: MainViewModel,
+    sharedViewModel: PlayerSharedViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var showLoading by remember { mutableStateOf(false) }
+    val status = uiState.status
+    val globalPlayerController = sharedViewModel.player
 
-    // Khi showLoading = true, hiển thị loading indicator
-    if (showLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-    }
-
-    // Tắt loading sau 1 giây
-    LaunchedEffect(showLoading) {
-        if (showLoading) {
-            delay(1000)
-            showLoading = false
-        }
-    }
-
-    Scaffold (){ innerPadding ->
+    Scaffold { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
-                .padding(horizontal = 16.dp, vertical = 0.dp)
-                .then(Modifier.padding(bottom = 129.dp))
-
+                .padding(horizontal = 16.dp)
+                .padding(top = 40.dp, bottom = 130.dp)
         ) {
-            SearchTypeTopBar(onBackClick = { navController.navigate("home") {
-                popUpTo(navController.graph.startDestinationId) { saveState = true }
-                launchSingleTop = true
-                restoreState = true
-            } })
-
-            Spacer(modifier = Modifier.height(30.dp))
-
-            Text(
-                text = "Recent searches",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(uiState.recentSearches) { item ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Image(
-                            painter = painterResource(id = item.imageRes),
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = item.title, color = Color.White, fontSize = 14.sp)
-                            Text(text = item.subtitle, color = Color.Gray, fontSize = 12.sp)
+            // Back + Search bar
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White,
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clickable {
+                            navController.navigate("home") {
+                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
-                        Icon(
-                            imageVector = Icons.Default.Clear,
-                            contentDescription = "Remove",
-                            tint = Color.LightGray,
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                SearchBar(
+                    query = uiState.query,
+                    onQueryChange = {
+                        viewModel.updateQuery(it)
+                        viewModel.searchAllDebounced(it)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Recent Searches
+            if (uiState.recentSearches.isNotEmpty() && uiState.query.isBlank()) {
+                Text(
+                    text = "Recent searches",
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                LazyColumn {
+                    items(uiState.recentSearches) { item ->
+                        Row(
                             modifier = Modifier
-                                .size(20.dp)
-                                .clickable { viewModel.removeFromHistory(item) }
-                        )
+                                .fillMaxWidth()
+//                                .clickable { viewModel.updateQuery(item.name) }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+//                            Text(text = item.name, color = Color.White, fontSize = 14.sp)
+                            Spacer(modifier = Modifier.weight(1f))
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear",
+                                tint = Color.Gray,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clickable { /* Xóa recent search */ }
+                            )
+                        }
+                    }
+                }
+                Text(
+                    text = "Clear history",
+                    color = Color(0xFF1DA1F2), // Màu xanh tương tự Twitter
+                    fontSize = 14.sp,
+                    modifier = Modifier
+//                        .clickable { viewModel.clearRecentSearches() }
+                        .padding(top = 8.dp, bottom = 16.dp)
+                )
+//                Divider(color = Color.Gray, thickness = 1.dp)
+            }
+
+            // Search Results
+            if (status is LoadStatus.Loading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if ((status is LoadStatus.Success || status is LoadStatus.Error) && !uiState.query.isBlank()) {
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(uiState.artists) { artist ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { navController.navigate("artist/${artist.id}") }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = artist.avatar,
+                                contentDescription = artist.name,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = artist.name, color = Color.White, fontSize = 14.sp)
+                                Text(text = "Artist", color = Color.Gray, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                    items(uiState.songs) { song ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    globalPlayerController.play(song)
+                                    mainViewModel.setFullScreenPlayer(true)
+                                    navController.navigate(Screen.Player.createRoute(song.id)) }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = song.thumbnail,
+                                contentDescription = song.title,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(6.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = song.title, color = Color.White, fontSize = 14.sp)
+                                Text(text = "Song", color = Color.Gray, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                    items(uiState.albums) { album ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { navController.navigate("album/${album.id}") }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = album.coverImage,
+                                contentDescription = album.name,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(6.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = album.name, color = Color.White, fontSize = 14.sp)
+                                Text(text = "Album", color = Color.Gray, fontSize = 12.sp)
+                            }
+                        }
                     }
                 }
             }
-
-            Text(
-                text = "Clear history",
-                color = Color.Gray,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .clickable { viewModel.clearHistory() }
-                    .padding(vertical = 80.dp)
-            )
         }
-
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchTypeTopBar(onBackClick: () -> Unit) {
-    Spacer(modifier = Modifier.height(50.dp))
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = Icons.Default.ArrowBack,
-            contentDescription = "Back",
-            tint = Color.White,
-            modifier = Modifier
-                .size(28.dp)
-                .clickable { onBackClick() }
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = "Search songs, artist, album or playlist...",
-            fontSize = 16.sp,
-            color = Color.DarkGray
-        )
-    }
-}
-
-@Composable
-fun SearchBottomNavigationBar(
-    modifier: Modifier = Modifier,
-    onHomeClick: () -> Unit = {},
-    onSearchClick: () -> Unit = {},
-    onLibraryClick: () -> Unit = {}
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Box(
+    TextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = {
+            Text(
+                text = "Search songs, artist, album or playlist",
+                color = Color.Gray,
+                fontSize = 16.sp
+            )
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = TextFieldDefaults.textFieldColors(
+            containerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            cursorColor = Color.White
+        ),
         modifier = modifier
             .fillMaxWidth()
-            .height(80.dp)
-            .background(Color.Black.copy(alpha = 0.5f))
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { onHomeClick() }) {
-                Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.LightGray, modifier = Modifier.size(30.dp))
-                Spacer(modifier = Modifier.height(3.dp))
-                Text("Home", fontSize = 12.sp, color = Color.LightGray)
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { onSearchClick() }) {
-                Icon(Icons.Filled.Search, contentDescription = "Search", tint = Color.LightGray, modifier = Modifier.size(30.dp))
-                Spacer(modifier = Modifier.height(3.dp))
-                Text("Search", fontSize = 12.sp, color = Color.LightGray)
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { onLibraryClick() }) {
-                Icon(Icons.Filled.Menu, contentDescription = "Library", tint = Color.LightGray, modifier = Modifier.size(30.dp))
-                Spacer(modifier = Modifier.height(3.dp))
-                Text("Library", fontSize = 12.sp, color = Color.LightGray)
-            }
-        }
-    }
+            .heightIn(min = 80.dp)
+            .background(Color.Transparent, RoundedCornerShape(12.dp)) // Thêm background để đẹp hơn
+    )
 }
 
-@Preview(showSystemUi = true, showBackground = true)
-@Composable
-fun PreviewSearchTypeScreen() {
-    val navController = rememberNavController()
-    MusicApplicationSE114Theme(darkTheme = true) {
-        val navController = rememberNavController()
-        SearchTypeScreen(
-            navController = navController,
-            viewModel = SearchTypeViewModel(null, null),
-            mainViewModel = MainViewModel()
-        )
-    }
-}

@@ -1,8 +1,10 @@
 package com.example.musicapplicationse114.ui.screen.player
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -21,13 +23,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.common.enum.LoadStatus
+import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.model.getCurrentLyric
 import com.example.musicapplicationse114.model.parseLyrics
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
+import com.example.musicapplicationse114.ui.screen.artist.ArtistViewModel
 import kotlinx.coroutines.delay
 
 @Composable
@@ -36,13 +41,14 @@ fun PlayerScreen(
     songId: Long,
     viewModel: PlayerViewModel = hiltViewModel(),
     mainViewModel: MainViewModel,
-    sharedViewModel: PlayerSharedViewModel
+    sharedViewModel: PlayerSharedViewModel,
+    artistViewModel: ArtistViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val globalPlayerController = sharedViewModel.player
     val playerState by globalPlayerController.state.collectAsState()
+    var isSongEnded by remember { mutableStateOf(false) }
 
-    // Tải bài hát ban đầu dựa trên songId
     LaunchedEffect(Unit) {
         viewModel.loadSongById(songId)
     }
@@ -51,15 +57,22 @@ fun PlayerScreen(
         viewModel.loadSongById(songId)
     }
 
+    LaunchedEffect(playerState.position, playerState.duration, playerState.isPlaying) {
+        if (playerState.duration > 0 && playerState.position >= playerState.duration - 100) { // Kiểm tra khi gần kết thúc (dung sai 100ms)
+            isSongEnded = true
+            // Đợi một chút để đảm bảo UI nhận ra trước khi chuyển bài
+            delay(200)
+            isSongEnded = false // Reset sau khi chuyển bài
+        }
+    }
 
-
-    // Hiển thị giao diện dựa trên playerState
     playerState.currentSong?.let { song ->
         PlayerContent(
             song = song,
             navController = navController,
             viewModel = viewModel,
             mainViewModel = mainViewModel,
+            sharedViewModel = sharedViewModel,
             currentPosition = playerState.position,
             duration = playerState.duration,
             isPlaying = playerState.isPlaying,
@@ -67,8 +80,12 @@ fun PlayerScreen(
             onTogglePlay = { globalPlayerController.toggle() },
             onSeek = { globalPlayerController.seekTo(it) },
             onToggleLoop = { globalPlayerController.setLooping(!playerState.isLooping) },
-            onNext = { globalPlayerController.nextSong(context) },
-            onPrevious = { globalPlayerController.previousSong(context) }
+            onNext = { globalPlayerController.nextSong(context)
+                        sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())},
+            onPrevious = { globalPlayerController.previousSong(context)
+                sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())},
+            upNextSong = sharedViewModel.getUpNext(),
+            isSongEnded = isSongEnded
         )
     } ?: run {
         Box(
@@ -92,6 +109,7 @@ fun PlayerContent(
     navController: NavController,
     viewModel: PlayerViewModel,
     mainViewModel: MainViewModel,
+    sharedViewModel: PlayerSharedViewModel,
     currentPosition: Long,
     duration: Long,
     isPlaying: Boolean,
@@ -100,11 +118,14 @@ fun PlayerContent(
     onSeek: (Long) -> Unit,
     onToggleLoop: () -> Unit,
     onNext: () -> Unit,
-    onPrevious: () -> Unit
+    onPrevious: () -> Unit,
+    upNextSong: SongResponse?,
+    isSongEnded : Boolean
 ) {
     val state by viewModel.uiState.collectAsState()
     val isLiked = state.likedSongIds.contains(song.id)
     val isDownloaded = state.downloadedSongIds.contains(song.id)
+    val globalPlayerController = sharedViewModel.player
 
     val lyricsList = remember(song.id) { parseLyrics(song.lyrics ?: "") }
     val hasValidLyrics = lyricsList.isNotEmpty()
@@ -117,6 +138,9 @@ fun PlayerContent(
             delay(100)
         }
     }
+    if (isSongEnded) {
+        sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())
+    }
 
     Column(
         modifier = Modifier
@@ -125,7 +149,7 @@ fun PlayerContent(
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -137,8 +161,16 @@ fun PlayerContent(
             }) {
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Back", tint = Color.White, modifier = Modifier.size(32.dp))
             }
-        }
 
+            Spacer(modifier = Modifier.width(290.dp))
+
+            IconButton(onClick = {/*DO STH */})
+            {
+                Icon(Icons.Default.MoreVert, contentDescription = "MoreVert", tint = Color.White, modifier = Modifier.size(32.dp))
+
+            }
+        }
+        Spacer(modifier = Modifier.height(20.dp))
         Box(
             modifier = Modifier
                 .size(350.dp)
@@ -265,6 +297,61 @@ fun PlayerContent(
                 )
             }
         }
+        Spacer(modifier = Modifier.height(12.dp))
+//        Divider(color = Color.Gray.copy(alpha = 0.3f))
+
+        // Đây là hàng chứa "Up Next" bên trái và "Queue >" bên phải
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Up Next", color = Color.LightGray.copy(alpha = 0.5f), fontSize = 20.sp)
+            Spacer(modifier = Modifier.width(170.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { navController.navigate("queue")
+                    println("Navigating to Queue, current queue size: ${sharedViewModel.queue.size}")}
+            ) {
+                Text("Queue", color = Color.White, fontSize = 20.sp)
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Queue", tint = Color.White, modifier = Modifier.size(32.dp))
+            }
+
+        }
+        upNextSong?.let { song ->
+            // Bài hát kế tiếp với nền vuông xám
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp)) // Nền vuông xám
+                    .padding(8.dp), // Padding bên trong để không sát mép
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AsyncImage(
+                    model = song.thumbnail,
+                    contentDescription = song.title,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = song.title,
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        maxLines = Int.MAX_VALUE, // Không giới hạn dòng, loại bỏ dấu ba chấm
+                        overflow = TextOverflow.Clip // Không hiển thị dấu ba chấm
+                    )
+                }
+            }
+        }
+
     }
 }
 

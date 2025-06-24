@@ -68,6 +68,10 @@ class GlobalPlayerController @Inject constructor(
         }
     }
 
+    fun getSongList(): List<SongResponse> {
+        return songList
+    }
+
     private fun updatePlayerState() {
         _state.value = _state.value.copy(
             position = player.currentPosition.coerceAtLeast(0L),
@@ -140,5 +144,9 @@ class GlobalPlayerController @Inject constructor(
         updateJob?.cancel()
         player.release()
         coroutineScope.cancel()
+    }
+
+    fun getCurrentIndex(): Int {
+        return currentSongIndex
     }
 }

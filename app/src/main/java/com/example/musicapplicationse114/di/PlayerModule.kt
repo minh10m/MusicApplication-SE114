@@ -3,6 +3,7 @@ package com.example.musicapplicationse114.di
 import android.content.Context
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.musicapplicationse114.ui.playerController.GlobalPlayerController
+import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,5 +25,11 @@ object PlayerModule {
     @Singleton
     fun provideGlobalPlayerController(@ApplicationContext context: Context): GlobalPlayerController {
         return GlobalPlayerController(context)
+    }
+
+    @Provides
+    @Singleton
+    fun providePlayerSharedViewModel(globalPlayerController: GlobalPlayerController): PlayerSharedViewModel {
+        return PlayerSharedViewModel(globalPlayerController)
     }
 }
