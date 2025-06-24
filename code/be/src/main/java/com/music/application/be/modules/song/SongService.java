@@ -251,9 +251,7 @@ public class SongService {
         Song song = songRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Song not found with id: " + id));
         return "http://localhost:8080/api/songs/" + id;
-    }
-
-    private SongDTO mapToDTO(Song song) {
+    }    private SongDTO mapToDTO(Song song) {
         SongDTO dto = new SongDTO();
         dto.setId(song.getId());
         dto.setTitle(song.getTitle());
@@ -263,9 +261,11 @@ public class SongService {
         dto.setLyrics(song.getLyrics());
         dto.setReleaseDate(song.getReleaseDate());
         dto.setViewCount(song.getViewCount());
-        dto.setArtistId(song.getArtist().getId());
+        dto.setArtistId(song.getArtist() != null ? song.getArtist().getId() : null);
+        dto.setArtistName(song.getArtist() != null ? song.getArtist().getName() : null); // Thêm tên artist
         dto.setAlbumId(song.getAlbum() != null ? song.getAlbum().getId() : null);
-        dto.setGenreIds(song.getGenres().stream().map(Genre::getId).collect(Collectors.toList()));
+        dto.setAlbumName(song.getAlbum() != null ? song.getAlbum().getName() : null); // Thêm tên album
+        dto.setGenreIds(song.getGenres() != null ? song.getGenres().stream().map(Genre::getId).collect(Collectors.toList()) : null);
         return dto;
     }
 

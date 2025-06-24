@@ -329,9 +329,7 @@ public class PlaylistService {
         dto.setAddedAt(songPlaylist.getAddedAt());
         dto.setSong(mapSongToDTO(songPlaylist.getSong())); // Thêm thông tin chi tiết của song
         return dto;
-    }
-
-    // Map Song to DTO
+    }    // Map Song to DTO
     private SongDTO mapSongToDTO(Song song) {
         SongDTO dto = new SongDTO();
         dto.setId(song.getId());
@@ -343,7 +341,9 @@ public class PlaylistService {
         dto.setReleaseDate(song.getReleaseDate());
         dto.setViewCount(song.getViewCount());
         dto.setArtistId(song.getArtist() != null ? song.getArtist().getId() : null);
+        dto.setArtistName(song.getArtist() != null ? song.getArtist().getName() : null); // Thêm tên artist
         dto.setAlbumId(song.getAlbum() != null ? song.getAlbum().getId() : null);
+        dto.setAlbumName(song.getAlbum() != null ? song.getAlbum().getName() : null); // Thêm tên album
         dto.setGenreIds(song.getGenres() != null ? song.getGenres().stream().map(genre -> genre.getId()).collect(Collectors.toList()) : null);
         return dto;
     }

@@ -84,30 +84,23 @@ public class SearchService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User) {
                 User currentUser = (User) authentication.getPrincipal();
-                System.out.println("Global Search - User ID: " + currentUser.getId() + ", Role: " + currentUser.getRole());
                 
                 // Admin có thể search tất cả playlist
                 if (currentUser.getRole().name().equals("ADMIN")) {
-                    System.out.println("Admin search - finding all playlists");
                     return playlistRepository.findByNameContainingIgnoreCase(query, pageable).getContent();
                 } else {
                     // User chỉ search playlist public hoặc của mình
-                    System.out.println("User search - finding public playlists or own playlists");
                     return playlistRepository.findByNameContainingIgnoreCaseAndIsPublicTrueOrCreatedBy(query, currentUser, pageable).getContent();
                 }
             } else {
                 // Không đăng nhập chỉ search playlist public
-                System.out.println("Guest search - finding only public playlists");
                 return playlistRepository.findByNameContainingIgnoreCaseAndIsPublicTrue(query, pageable).getContent();
             }
         } catch (Exception e) {
             // Fallback: chỉ trả về playlist public
-            System.out.println("Error in search, fallback to public playlists: " + e.getMessage());
             return playlistRepository.findByNameContainingIgnoreCaseAndIsPublicTrue(query, pageable).getContent();
         }
-    }
-
-    // Mapping methods
+    }// Mapping methods
     private SongDTO mapSongToDTO(Song song) {
         SongDTO dto = new SongDTO();
         dto.setId(song.getId());
@@ -119,10 +112,12 @@ public class SearchService {
         dto.setReleaseDate(song.getReleaseDate());
         dto.setViewCount(song.getViewCount());
         dto.setArtistId(song.getArtist() != null ? song.getArtist().getId() : null);
+        dto.setArtistName(song.getArtist() != null ? song.getArtist().getName() : null); // Thêm tên artist
         dto.setAlbumId(song.getAlbum() != null ? song.getAlbum().getId() : null);
-        dto.setGenreIds(song.getGenres().stream().map(genre -> genre.getId()).collect(Collectors.toList()));
+        dto.setAlbumName(song.getAlbum() != null ? song.getAlbum().getName() : null); // Thêm tên album
+        dto.setGenreIds(song.getGenres() != null ? song.getGenres().stream().map(genre -> genre.getId()).collect(Collectors.toList()) : null);
         return dto;
-    }    private PlaylistDTO mapPlaylistToDTO(Playlist playlist) {
+    }private PlaylistDTO mapPlaylistToDTO(Playlist playlist) {
         PlaylistDTO dto = new PlaylistDTO();
         dto.setId(playlist.getId());
         dto.setUserId(playlist.getCreatedBy() != null ? playlist.getCreatedBy().getId() : null);

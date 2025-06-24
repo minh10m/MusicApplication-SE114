@@ -99,9 +99,7 @@ public class FavoriteSongService {
         dto.setSong(mapSongToDTO(favoriteSong.getSong())); // Map song entity thành SongDTO
         dto.setAddedAt(favoriteSong.getAddedAt());
         return dto;
-    }
-
-    // Helper method để map Song entity thành SongDTO
+    }    // Helper method để map Song entity thành SongDTO
     private SongDTO mapSongToDTO(Song song) {
         SongDTO songDTO = new SongDTO();
         songDTO.setId(song.getId());
@@ -113,8 +111,10 @@ public class FavoriteSongService {
         songDTO.setReleaseDate(song.getReleaseDate());
         songDTO.setViewCount(song.getViewCount());
         songDTO.setArtistId(song.getArtist() != null ? song.getArtist().getId() : null);
+        songDTO.setArtistName(song.getArtist() != null ? song.getArtist().getName() : null); // Thêm tên artist
         songDTO.setAlbumId(song.getAlbum() != null ? song.getAlbum().getId() : null);
-        songDTO.setGenreIds(song.getGenres().stream().map(genre -> genre.getId()).collect(Collectors.toList()));
+        songDTO.setAlbumName(song.getAlbum() != null ? song.getAlbum().getName() : null); // Thêm tên album
+        songDTO.setGenreIds(song.getGenres() != null ? song.getGenres().stream().map(genre -> genre.getId()).collect(Collectors.toList()) : null);
         return songDTO;
     }
 }
