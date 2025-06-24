@@ -1,5 +1,6 @@
 package com.music.application.be.modules.song_playlist.dto;
 
+import com.music.application.be.modules.song.dto.SongDTO;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -10,4 +11,5 @@ public class SongPlaylistDTO {
     private Long songId;
     private Long playlistId;
     private LocalDateTime addedAt;
+    private SongDTO song; // Thêm thông tin chi tiết của song
 }

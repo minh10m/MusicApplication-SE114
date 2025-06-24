@@ -16,5 +16,7 @@ public class PlaylistRequestDTO {
     @Size(max = 1000, message = "Description must be less than 1000 characters")
     private String description;
 
+    private Boolean isPublic = false; // Mặc định là private
+
     private List<Long> genreIds; // Optional, chỉ admin được sử dụng
 }

@@ -22,6 +22,8 @@ public class SongDTO {
     private LocalDate releaseDate;
     private Integer viewCount;
     private Long artistId;
+    private String artistName; // Thêm tên artist
     private Long albumId;
+    private String albumName; // Thêm tên album
     private List<Long> genreIds;
 }

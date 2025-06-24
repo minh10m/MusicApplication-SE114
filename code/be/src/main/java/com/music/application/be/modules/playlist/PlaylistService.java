@@ -7,6 +7,7 @@ import com.music.application.be.modules.playlist.dto.PlaylistRequestDTO;
 import com.music.application.be.modules.role.Role;
 import com.music.application.be.modules.song.Song;
 import com.music.application.be.modules.song.SongRepository;
+import com.music.application.be.modules.song.dto.SongDTO;
 import com.music.application.be.modules.song_playlist.SongPlaylist;
 import com.music.application.be.modules.song_playlist.SongPlaylistRepository;
 import com.music.application.be.modules.song_playlist.dto.SongPlaylistDTO;
@@ -14,9 +15,6 @@ import com.music.application.be.modules.user.User;
 import com.music.application.be.modules.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -46,17 +44,16 @@ public class PlaylistService {
     private UserRepository userRepository;
 
     // Create playlist for user (no genre)
-    @CacheEvict(value = {"playlists", "searchedPlaylists"}, allEntries = true)
     public PlaylistDTO createPlaylist(PlaylistRequestDTO playlistRequestDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
             throw new EntityNotFoundException("User not authenticated");
-        }
-        User user = (User) authentication.getPrincipal();
+        }        User user = (User) authentication.getPrincipal();
 
         Playlist playlist = new Playlist();
         playlist.setName(playlistRequestDTO.getName());
         playlist.setDescription(playlistRequestDTO.getDescription());
+        playlist.setIsPublic(playlistRequestDTO.getIsPublic() != null ? playlistRequestDTO.getIsPublic() : false);
         playlist.setCreatedAt(LocalDateTime.now());
         playlist.setCreatedBy(user);
 
@@ -67,17 +64,15 @@ public class PlaylistService {
     }
 
     // Create playlist for admin with genres (auto-add songs)
-    @CacheEvict(value = {"playlists", "searchedPlaylists"}, allEntries = true)
     public PlaylistDTO createPlaylistWithGenres(PlaylistRequestDTO playlistRequestDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
             throw new EntityNotFoundException("User not authenticated");
         }
-        User user = (User) authentication.getPrincipal();
-
-        Playlist playlist = new Playlist();
+        User user = (User) authentication.getPrincipal();        Playlist playlist = new Playlist();
         playlist.setName(playlistRequestDTO.getName());
         playlist.setDescription(playlistRequestDTO.getDescription());
+        playlist.setIsPublic(playlistRequestDTO.getIsPublic() != null ? playlistRequestDTO.getIsPublic() : false);
         playlist.setCreatedAt(LocalDateTime.now());
         playlist.setCreatedBy(user);
 
@@ -107,21 +102,47 @@ public class PlaylistService {
         }
 
         return mapToDTO(savedPlaylist);
-    }
+    }    // Read by ID
 
-    // Read by ID
-    @Cacheable(value = "playlists", key = "#id")
     public PlaylistDTO getPlaylistById(Long id) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
+        
+        // Kiểm tra quyền truy cập
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            // Admin có thể xem tất cả, user có thể xem public playlist hoặc playlist của mình
+            if (!currentUser.getRole().equals(Role.ADMIN) && !playlist.getIsPublic() && !playlist.getCreatedBy().getId().equals(currentUser.getId())) {
+                throw new SecurityException("You do not have permission to view this playlist");
+            }
+        } else {
+            // Guest chỉ có thể xem public playlist
+            if (!playlist.getIsPublic()) {
+                throw new SecurityException("You do not have permission to view this playlist");
+            }
+        }
+        
         return mapToDTO(playlist);
-    }
-
-    // Read playlist with songs by ID
-    @Cacheable(value = "playlists", key = "'with-songs-' + #id")
+    }    // Read playlist with songs by ID
     public PlaylistDTO getPlaylistWithSongs(Long id) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
+
+        // Kiểm tra quyền truy cập
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            // Admin có thể xem tất cả, user có thể xem public playlist hoặc playlist của mình
+            if (!currentUser.getRole().equals(Role.ADMIN) && !playlist.getIsPublic() && !playlist.getCreatedBy().getId().equals(currentUser.getId())) {
+                throw new SecurityException("You do not have permission to view this playlist");
+            }
+        } else {
+            // Guest chỉ có thể xem public playlist
+            if (!playlist.getIsPublic()) {
+                throw new SecurityException("You do not have permission to view this playlist");
+            }
+        }
 
         // Lấy danh sách bài hát từ SongPlaylist
         List<SongPlaylist> songPlaylists = songPlaylistRepository.findByPlaylistIdOrderByAddedAtDesc(id);
@@ -132,17 +153,25 @@ public class PlaylistService {
         PlaylistDTO dto = mapToDTO(playlist);
         dto.setSongPlaylists(songPlaylistDTOs); // Thêm danh sách bài hát
         return dto;
-    }
+    }    // Read all with pagination
 
-    // Read all with pagination
-    @Cacheable(value = "playlists", key = "'all-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<PlaylistDTO> getAllPlaylists(Pageable pageable) {
-        return playlistRepository.findAll(pageable).map(this::mapToDTO);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            // Admin có thể xem tất cả playlist, user thường chỉ xem public playlist và playlist của mình
+            if (currentUser.getRole().equals(Role.ADMIN)) {
+                return playlistRepository.findAll(pageable).map(this::mapToDTO);
+            } else {
+                return playlistRepository.findByIsPublicTrueOrCreatedBy(currentUser, pageable).map(this::mapToDTO);
+            }
+        }
+        // Guest chỉ xem public playlist
+        return playlistRepository.findByIsPublicTrue(pageable).map(this::mapToDTO);
     }
 
     // Update playlist for user (no genre)
-    @CachePut(value = "playlists", key = "#id")
-    @CacheEvict(value = "searchedPlaylists", allEntries = true)
+
     public PlaylistDTO updatePlaylist(Long id, PlaylistRequestDTO playlistRequestDTO) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
@@ -154,10 +183,11 @@ public class PlaylistService {
         User currentUser = (User) authentication.getPrincipal();
         if (!currentUser.getId().equals(playlist.getCreatedBy().getId()) && !currentUser.getRole().equals(Role.ADMIN)) {
             throw new SecurityException("You do not have permission to update this playlist");
-        }
-
-        playlist.setName(playlistRequestDTO.getName());
+        }        playlist.setName(playlistRequestDTO.getName());
         playlist.setDescription(playlistRequestDTO.getDescription());
+        if (playlistRequestDTO.getIsPublic() != null) {
+            playlist.setIsPublic(playlistRequestDTO.getIsPublic());
+        }
 
         // Không xử lý genre cho playlist của user
         Playlist updatedPlaylist = playlistRepository.save(playlist);
@@ -167,8 +197,7 @@ public class PlaylistService {
     }
 
     // Update playlist for admin with genres (auto-add songs)
-    @CachePut(value = "playlists", key = "#id")
-    @CacheEvict(value = "searchedPlaylists", allEntries = true)
+
     public PlaylistDTO updatePlaylistWithGenres(Long id, PlaylistRequestDTO playlistRequestDTO) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
@@ -180,10 +209,11 @@ public class PlaylistService {
         User currentUser = (User) authentication.getPrincipal();
         if (!currentUser.getId().equals(playlist.getCreatedBy().getId()) && !currentUser.getRole().equals(Role.ADMIN)) {
             throw new SecurityException("You do not have permission to update this playlist");
-        }
-
-        playlist.setName(playlistRequestDTO.getName());
+        }        playlist.setName(playlistRequestDTO.getName());
         playlist.setDescription(playlistRequestDTO.getDescription());
+        if (playlistRequestDTO.getIsPublic() != null) {
+            playlist.setIsPublic(playlistRequestDTO.getIsPublic());
+        }
 
         if (playlistRequestDTO.getGenreIds() != null) {
             List<Genre> genres = genreRepository.findAllById(playlistRequestDTO.getGenreIds());
@@ -216,7 +246,7 @@ public class PlaylistService {
     }
 
     // Delete
-    @CacheEvict(value = {"playlists", "searchedPlaylists"}, allEntries = true)
+
     public void deletePlaylist(Long id) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
@@ -231,23 +261,54 @@ public class PlaylistService {
         }
 
         playlistRepository.delete(playlist);
-    }
-
-    // Search playlists
-    @Cacheable(value = "searchedPlaylists", key = "#query + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
+    }    // Search playlists
     public Page<PlaylistDTO> searchPlaylists(String query, Pageable pageable) {
-        return playlistRepository.findByNameContainingIgnoreCase(query, pageable).map(this::mapToDTO);
-    }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            // Admin có thể tìm kiếm tất cả playlist, user thường chỉ tìm kiếm public playlist và playlist của mình
+            if (currentUser.getRole().equals(Role.ADMIN)) {
+                return playlistRepository.findByNameContainingIgnoreCase(query, pageable).map(this::mapToDTO);
+            } else {
+                return playlistRepository.findByNameContainingIgnoreCaseAndIsPublicTrueOrCreatedBy(query, currentUser, pageable).map(this::mapToDTO);
+            }
+        }
+        // Guest chỉ tìm kiếm public playlist
+        return playlistRepository.findByNameContainingIgnoreCaseAndIsPublicTrue(query, pageable).map(this::mapToDTO);
+    }// Share playlist
 
-    // Share playlist
-    @Cacheable(value = "playlists", key = "'share-' + #id")
     public String sharePlaylist(Long id) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
+        
+        // Kiểm tra quyền truy cập - chỉ có thể share public playlist hoặc playlist của mình
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            // Admin có thể share tất cả, user có thể share public playlist hoặc playlist của mình
+            if (!currentUser.getRole().equals(Role.ADMIN) && !playlist.getIsPublic() && !playlist.getCreatedBy().getId().equals(currentUser.getId())) {
+                throw new SecurityException("You do not have permission to share this playlist");
+            }
+        } else {
+            // Guest chỉ có thể share public playlist
+            if (!playlist.getIsPublic()) {
+                throw new SecurityException("You do not have permission to share this playlist");
+            }
+        }
+        
         return "http://localhost:8080/api/playlists/" + id;
     }
 
-    // Map entity to DTO
+    // Get user's own playlists
+
+    public Page<PlaylistDTO> getMyPlaylists(Pageable pageable) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User currentUser = (User) authentication.getPrincipal();
+        return playlistRepository.findByCreatedBy(currentUser, pageable).map(this::mapToDTO);
+    }    // Map entity to DTO
     private PlaylistDTO mapToDTO(Playlist playlist) {
         PlaylistDTO dto = new PlaylistDTO();
         dto.setId(playlist.getId());
@@ -255,18 +316,35 @@ public class PlaylistService {
         dto.setDescription(playlist.getDescription());
         dto.setThumbnail(playlist.getThumbnail()); // Thêm thumbnail
         dto.setCreatedAt(playlist.getCreatedAt());
+        dto.setIsPublic(playlist.getIsPublic()); // Thêm isPublic
         dto.setGenreIds(playlist.getGenres() != null ? playlist.getGenres().stream().map(Genre::getId).collect(Collectors.toList()) : null);
         dto.setUserId(playlist.getCreatedBy().getId());
         return dto;
-    }
-
-    // Map SongPlaylist to DTO
+    }// Map SongPlaylist to DTO
     private SongPlaylistDTO mapToSongPlaylistDTO(SongPlaylist songPlaylist) {
         SongPlaylistDTO dto = new SongPlaylistDTO();
         dto.setId(songPlaylist.getId());
         dto.setSongId(songPlaylist.getSong().getId());
         dto.setPlaylistId(songPlaylist.getPlaylist().getId());
         dto.setAddedAt(songPlaylist.getAddedAt());
+        dto.setSong(mapSongToDTO(songPlaylist.getSong())); // Thêm thông tin chi tiết của song
+        return dto;
+    }    // Map Song to DTO
+    private SongDTO mapSongToDTO(Song song) {
+        SongDTO dto = new SongDTO();
+        dto.setId(song.getId());
+        dto.setTitle(song.getTitle());
+        dto.setDuration(song.getDuration());
+        dto.setAudioUrl(song.getAudioUrl());
+        dto.setThumbnail(song.getThumbnail());
+        dto.setLyrics(song.getLyrics());
+        dto.setReleaseDate(song.getReleaseDate());
+        dto.setViewCount(song.getViewCount());
+        dto.setArtistId(song.getArtist() != null ? song.getArtist().getId() : null);
+        dto.setArtistName(song.getArtist() != null ? song.getArtist().getName() : null); // Thêm tên artist
+        dto.setAlbumId(song.getAlbum() != null ? song.getAlbum().getId() : null);
+        dto.setAlbumName(song.getAlbum() != null ? song.getAlbum().getName() : null); // Thêm tên album
+        dto.setGenreIds(song.getGenres() != null ? song.getGenres().stream().map(genre -> genre.getId()).collect(Collectors.toList()) : null);
         return dto;
     }
 
