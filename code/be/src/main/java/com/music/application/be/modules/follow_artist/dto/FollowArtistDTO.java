@@ -1,5 +1,6 @@
 package com.music.application.be.modules.follow_artist.dto;
 
+import com.music.application.be.modules.artist.dto.ArtistDTO;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -8,6 +9,6 @@ import java.time.LocalDateTime;
 public class FollowArtistDTO {
     private Long id;
     private Long userId;
-    private Long artistId;
+    private ArtistDTO artist; // Thay đổi từ artistId thành ArtistDTO
     private LocalDateTime followedAt;
 }

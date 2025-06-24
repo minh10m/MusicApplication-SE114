@@ -1,5 +1,6 @@
 package com.music.application.be.modules.downloaded_song;
 
+import com.music.application.be.modules.downloaded_song.dto.DownloadedSongDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,39 +15,35 @@ public class DownloadedSongController {
     @Autowired
     private DownloadedSongService downloadedSongService;
 
-    // Add downloaded song
+    // Add downloaded song - chỉ cần songId, userId tự động lấy từ authentication
     @PostMapping
-    public ResponseEntity<DownloadedSongDTO> addDownloadedSong(
-            @RequestParam Long userId,
-            @RequestParam Long songId) {
-        return ResponseEntity.ok(downloadedSongService.addDownloadedSong(userId, songId));
+    public ResponseEntity<DownloadedSongDTO> addDownloadedSong(@RequestParam Long songId) {
+        return ResponseEntity.ok(downloadedSongService.addDownloadedSong(songId));
     }
 
-    // Get downloaded songs
-    @GetMapping("/user/{userId}")
+    // Get downloaded songs - tự động lấy user từ authentication
+    @GetMapping
     public ResponseEntity<Page<DownloadedSongDTO>> getDownloadedSongs(
-            @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(downloadedSongService.getDownloadedSongs(userId, pageable));
+        return ResponseEntity.ok(downloadedSongService.getDownloadedSongs(pageable));
     }
 
-    // Search downloaded songs
-    @GetMapping("/user/{userId}/search")
+    // Search downloaded songs - tự động lấy user từ authentication
+    @GetMapping("/search")
     public ResponseEntity<Page<DownloadedSongDTO>> searchDownloadedSongs(
-            @PathVariable Long userId,
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(downloadedSongService.searchDownloadedSongs(userId, query, pageable));
+        return ResponseEntity.ok(downloadedSongService.searchDownloadedSongs(query, pageable));
     }
 
-    // Remove downloaded song
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> removeDownloadedSong(@PathVariable Long id) {
-        downloadedSongService.removeDownloadedSong(id);
+    // Remove downloaded song - chỉ cần songId, userId tự động lấy từ authentication
+    @DeleteMapping
+    public ResponseEntity<Void> removeDownloadedSong(@RequestParam Long songId) {
+        downloadedSongService.removeDownloadedSong(songId);
         return ResponseEntity.ok().build();
     }
 }

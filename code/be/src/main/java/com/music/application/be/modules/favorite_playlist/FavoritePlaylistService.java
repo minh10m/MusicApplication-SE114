@@ -3,6 +3,7 @@ package com.music.application.be.modules.favorite_playlist;
 import com.music.application.be.modules.favorite_playlist.dto.FavoritePlaylistDTO;
 import com.music.application.be.modules.playlist.Playlist;
 import com.music.application.be.modules.playlist.PlaylistRepository;
+import com.music.application.be.modules.playlist.dto.PlaylistDTO;
 import com.music.application.be.modules.user.User;
 import com.music.application.be.modules.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @Service
 public class FavoritePlaylistService {
@@ -89,15 +91,24 @@ public class FavoritePlaylistService {
                 .orElseThrow(() -> new EntityNotFoundException("Favorite playlist not found with userId: " + user.getId() + " and playlistId: " + playlistId));
 
         favoritePlaylistRepository.delete(favoritePlaylist);
-    }
-
-    // Map entity to DTO
+    }    // Map entity to DTO - cập nhật để include thông tin playlist đầy đủ
     private FavoritePlaylistDTO mapToDTO(FavoritePlaylist favoritePlaylist) {
         FavoritePlaylistDTO dto = new FavoritePlaylistDTO();
         dto.setId(favoritePlaylist.getId());
         dto.setUserId(favoritePlaylist.getUser().getId());
-        dto.setPlaylistId(favoritePlaylist.getPlaylist().getId());
+        dto.setPlaylist(mapPlaylistToDTO(favoritePlaylist.getPlaylist())); // Map playlist entity thành PlaylistDTO
         dto.setAddedAt(favoritePlaylist.getAddedAt());
         return dto;
+    }    // Helper method để map Playlist entity thành PlaylistDTO
+    private PlaylistDTO mapPlaylistToDTO(Playlist playlist) {
+        PlaylistDTO playlistDTO = new PlaylistDTO();
+        playlistDTO.setId(playlist.getId());
+        playlistDTO.setUserId(playlist.getCreatedBy() != null ? playlist.getCreatedBy().getId() : null);
+        playlistDTO.setName(playlist.getName());
+        playlistDTO.setDescription(playlist.getDescription());
+        playlistDTO.setThumbnail(playlist.getThumbnail());
+        playlistDTO.setCreatedAt(playlist.getCreatedAt());
+        playlistDTO.setGenreIds(playlist.getGenres().stream().map(genre -> genre.getId()).collect(Collectors.toList()));
+        return playlistDTO;
     }
 }

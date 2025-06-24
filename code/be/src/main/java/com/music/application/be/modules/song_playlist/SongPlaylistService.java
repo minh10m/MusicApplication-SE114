@@ -11,6 +11,8 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -120,6 +122,11 @@ public class SongPlaylistService {
             playlist.setThumbnail(null);
             playlistRepository.save(playlist);
         }
+    }
+
+    // Get all song playlists với pagination để admin theo dõi dữ liệu
+    public Page<SongPlaylistDTO> getAllSongPlaylists(Pageable pageable) {
+        return songPlaylistRepository.findAll(pageable).map(this::mapToDTO);
     }
 
     // Map entity to DTO

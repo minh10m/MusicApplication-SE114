@@ -2,6 +2,7 @@ package com.music.application.be.modules.favorite_album;
 
 import com.music.application.be.modules.album.Album;
 import com.music.application.be.modules.album.AlbumRepository;
+import com.music.application.be.modules.album.dto.AlbumDTO;
 import com.music.application.be.modules.favorite_album.dto.FavoriteAlbumDTO;
 import com.music.application.be.modules.user.User;
 import com.music.application.be.modules.user.UserRepository;
@@ -89,15 +90,26 @@ public class FavoriteAlbumService {
                 .orElseThrow(() -> new EntityNotFoundException("Favorite album not found with userId: " + user.getId() + " and albumId: " + albumId));
 
         favoriteAlbumRepository.delete(favoriteAlbum);
-    }
-
-    // Map entity to DTO
+    }    // Map entity to DTO - cập nhật để include thông tin album đầy đủ
     private FavoriteAlbumDTO mapToDTO(FavoriteAlbum favoriteAlbum) {
         FavoriteAlbumDTO dto = new FavoriteAlbumDTO();
         dto.setId(favoriteAlbum.getId());
         dto.setUserId(favoriteAlbum.getUser().getId());
-        dto.setAlbumId(favoriteAlbum.getAlbum().getId());
+        dto.setAlbum(mapAlbumToDTO(favoriteAlbum.getAlbum())); // Map album entity thành AlbumDTO
         dto.setAddedAt(favoriteAlbum.getAddedAt());
         return dto;
+    }
+
+    // Helper method để map Album entity thành AlbumDTO
+    private AlbumDTO mapAlbumToDTO(Album album) {
+        AlbumDTO albumDTO = new AlbumDTO();
+        albumDTO.setId(album.getId());
+        albumDTO.setName(album.getName());
+        albumDTO.setReleaseDate(album.getReleaseDate());
+        albumDTO.setCoverImage(album.getCoverImage());
+        albumDTO.setDescription(album.getDescription());
+        albumDTO.setArtistId(album.getArtist() != null ? album.getArtist().getId() : null);
+        albumDTO.setArtistName(album.getArtist() != null ? album.getArtist().getName() : null);
+        return albumDTO;
     }
 }
