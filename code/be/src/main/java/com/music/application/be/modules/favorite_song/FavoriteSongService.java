@@ -3,6 +3,7 @@ package com.music.application.be.modules.favorite_song;
 import com.music.application.be.modules.favorite_song.dto.FavoriteSongDTO;
 import com.music.application.be.modules.song.Song;
 import com.music.application.be.modules.song.SongRepository;
+import com.music.application.be.modules.song.dto.SongDTO;
 import com.music.application.be.modules.user.User;
 import com.music.application.be.modules.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @Service
 public class FavoriteSongService {
@@ -89,15 +91,30 @@ public class FavoriteSongService {
                 .orElseThrow(() -> new EntityNotFoundException("Favorite song not found with userId: " + user.getId() + " and songId: " + songId));
 
         favoriteSongRepository.delete(favoriteSong);
-    }
-
-    // Map entity to DTO
+    }    // Map entity to DTO - cập nhật để include thông tin song đầy đủ
     private FavoriteSongDTO mapToDTO(FavoriteSong favoriteSong) {
         FavoriteSongDTO dto = new FavoriteSongDTO();
         dto.setId(favoriteSong.getId());
         dto.setUserId(favoriteSong.getUser().getId());
-        dto.setSongId(favoriteSong.getSong().getId());
+        dto.setSong(mapSongToDTO(favoriteSong.getSong())); // Map song entity thành SongDTO
         dto.setAddedAt(favoriteSong.getAddedAt());
         return dto;
+    }
+
+    // Helper method để map Song entity thành SongDTO
+    private SongDTO mapSongToDTO(Song song) {
+        SongDTO songDTO = new SongDTO();
+        songDTO.setId(song.getId());
+        songDTO.setTitle(song.getTitle());
+        songDTO.setDuration(song.getDuration());
+        songDTO.setAudioUrl(song.getAudioUrl());
+        songDTO.setThumbnail(song.getThumbnail());
+        songDTO.setLyrics(song.getLyrics());
+        songDTO.setReleaseDate(song.getReleaseDate());
+        songDTO.setViewCount(song.getViewCount());
+        songDTO.setArtistId(song.getArtist() != null ? song.getArtist().getId() : null);
+        songDTO.setAlbumId(song.getAlbum() != null ? song.getAlbum().getId() : null);
+        songDTO.setGenreIds(song.getGenres().stream().map(genre -> genre.getId()).collect(Collectors.toList()));
+        return songDTO;
     }
 }

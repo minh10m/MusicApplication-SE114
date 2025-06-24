@@ -2,6 +2,7 @@ package com.music.application.be.modules.follow_artist;
 
 import com.music.application.be.modules.artist.Artist;
 import com.music.application.be.modules.artist.ArtistRepository;
+import com.music.application.be.modules.artist.dto.ArtistDTO;
 import com.music.application.be.modules.follow_artist.dto.FollowArtistDTO;
 import com.music.application.be.modules.user.User;
 import jakarta.persistence.EntityNotFoundException;
@@ -90,15 +91,24 @@ public class FollowArtistService {
         User user = (User) authentication.getPrincipal();
         return followArtistRepository.findByUserIdAndArtistNameContainingIgnoreCase(user.getId(), query, pageable)
                 .map(this::mapToDTO);
-    }
-
-    // Map entity to DTO
+    }    // Map entity to DTO - cập nhật để include thông tin artist đầy đủ
     private FollowArtistDTO mapToDTO(FollowArtist followArtist) {
         FollowArtistDTO dto = new FollowArtistDTO();
         dto.setId(followArtist.getId());
         dto.setUserId(followArtist.getUserId());
-        dto.setArtistId(followArtist.getArtist().getId());
+        dto.setArtist(mapArtistToDTO(followArtist.getArtist())); // Map artist entity thành ArtistDTO
         dto.setFollowedAt(followArtist.getFollowedAt());
         return dto;
+    }
+
+    // Helper method để map Artist entity thành ArtistDTO
+    private ArtistDTO mapArtistToDTO(Artist artist) {
+        ArtistDTO artistDTO = new ArtistDTO();
+        artistDTO.setId(artist.getId());
+        artistDTO.setName(artist.getName());
+        artistDTO.setAvatar(artist.getAvatar());
+        artistDTO.setDescription(artist.getDescription());
+        artistDTO.setFollowerCount(artist.getFollowerCount());
+        return artistDTO;
     }
 }
