@@ -44,10 +44,12 @@ public class RecentlyPlayedService {
                 .stream()
                 .map(recentlyPlayed -> {
                     Song song = recentlyPlayed.getSong();
-                    return new SongSummaryDto(song.getTitle(), song.getThumbnail());
+                    String artistName = song.getArtist().getName(); // đảm bảo fetch artist
+                    return new SongSummaryDto(song.getTitle(), song.getThumbnail(), artistName);
                 })
                 .toList();
     }
+
 
     @CacheEvict(value = "recentlyPlayed", key = "#user.id")
     public void clearRecentlyPlayed(User user) {
