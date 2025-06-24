@@ -30,12 +30,16 @@ interface Api {
 //    suspend fun loadSong():ArrayList<Song>
 //    suspend fun loadRecentPlayed():ArrayList<RecentlyPlayed>
 
+
+    //auth
     @POST("/login")
     suspend fun login(@Body request : UserLoginRequest): Response<AuthenticationResponse>
 
     @POST("/register")
     suspend fun register(@Body request: UserSignUpRequest): Response<AuthenticationResponse>
 
+
+    //album
     @GET("api/albums")
     suspend fun getAlbums(
         @Header("Authorization") token: String,
@@ -43,6 +47,21 @@ interface Api {
         @Query("size") size: Int = 20
     ): AlbumPageResponse
 
+    @GET("api/albums/{id}")
+    suspend fun getAlbumById(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long
+    ): AlbumResponse
+
+    @GET("/api/albums/search")
+    suspend fun searchAlbums(
+        @Header("Authorization") token: String,
+        @Query("query") query: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): AlbumPageResponse
+
+    //song
     @GET("api/songs")
     suspend fun getSongs(
         @Header("Authorization") token: String,
@@ -56,6 +75,24 @@ interface Api {
         @Path("id") id: Long
         ) : SongResponse
 
+    @GET("api/songs/album/{albumId}")
+    suspend fun getSongsByAlbumId(
+        @Header("Authorization") token: String,
+        @Path("albumId") albumId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): SongPageResponse
+
+    @GET("/api/songs/search")
+    suspend fun searchSongs(
+        @Header("Authorization") token: String,
+        @Query("query") query: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): SongPageResponse
+
+
+    //favorite song
     @POST("api/favorite-songs")
     suspend fun addFavoriteSong(
         @Header("Authorization") token: String,
@@ -79,13 +116,13 @@ interface Api {
     ): Response<Void>
 
 
+    //download song
     @POST("api/downloaded-songs")
     suspend fun addDownloadedSong(
         @Header("Authorization") token: String,
         @Query("userId") userId: Long,
         @Query("songId") songId: Long
     ): Response<DownloadedSongResponse>
-
 
     @GET("api/downloaded-songs/user/{userId}")
     suspend fun getDownloadedSongs(
@@ -95,33 +132,20 @@ interface Api {
         @Query("size") size: Int = 20
     ): Response<DownloadedSongPageResponse>
 
-
     @DELETE("api/downloaded-songs/{id}")
     suspend fun removeDownloadedSong(
         @Header("Authorization") token: String,
         @Path("id") downloadedSongId: Long
     ): Response<Void>
 
+
+    //artist
     @GET("api/artists")
     suspend fun getArtists(
         @Header("Authorization") token: String,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ): ArtistPageResponse
-
-    @GET("api/albums/{id}")
-    suspend fun getAlbumById(
-        @Header("Authorization") token: String,
-        @Path("id") id: Long
-    ): AlbumResponse
-
-    @GET("api/songs/album/{albumId}")
-    suspend fun getSongsByAlbumId(
-        @Header("Authorization") token: String,
-        @Path("albumId") albumId: Long,
-        @Query("page") page: Int = 0,
-        @Query("size") size: Int = 20
-    ): SongPageResponse
 
     @GET("api/songs/artist/{artistId}")
     suspend fun getSongsByArtistId(
@@ -137,5 +161,12 @@ interface Api {
         @Path("id") artistId: Long
     ): Response<ArtistResponse>
 
+    @GET("/api/artists/search")
+    suspend fun searchArtists(
+        @Header("Authorization") token: String,
+        @Query("query") query: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): ArtistPageResponse
 
 }

@@ -34,7 +34,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.ui.screen.search.SearchBottomNavigationBar
 import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
-import com.example.musicapplicationse114.ui.screen.searchtype.SearchBottomNavigationBar
 import kotlinx.coroutines.delay
 
 @Composable
