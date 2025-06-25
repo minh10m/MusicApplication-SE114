@@ -104,6 +104,16 @@ public class AlbumController {
         return ResponseEntity.ok(result);
     }
 
+    @PutMapping(value = "/{id}/cover", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AlbumResponseDTO> updateAlbumCover(
+            @PathVariable Long id,
+            @RequestPart("coverImage") MultipartFile coverImageFile) throws Exception {
+
+        AlbumResponseDTO result = albumService.updateAlbumCover(id, coverImageFile);
+        return ResponseEntity.ok(result);
+    }
+
+
     @Operation(
             summary = "Delete an album",
             description = "Deletes an album by its ID.",
