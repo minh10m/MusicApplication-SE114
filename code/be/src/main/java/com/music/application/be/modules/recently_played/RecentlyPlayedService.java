@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -28,13 +30,18 @@ public class RecentlyPlayedService {
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new NoSuchElementException("Song not found"));
 
+        // Kiểm tra xem bài hát đã tồn tại trong danh sách chưa
+        Optional<RecentlyPlayed> existing = recentlyPlayedRepository.findByUserAndSong(user, song);
+        existing.ifPresent(recentlyPlayedRepository::delete); // Nếu có thì xoá bản ghi cũ
+
         RecentlyPlayed recentlyPlayed = RecentlyPlayed.builder()
                 .user(user)
                 .song(song)
                 .build();
 
-        return recentlyPlayedRepository.save(recentlyPlayed);
+        return recentlyPlayedRepository.save(recentlyPlayed); // Lưu mới
     }
+
 
     public List<SongSummaryDto> getRecentlyPlayedSongsByUserId(Long userId) {
         User user = userRepository.findById(userId)
