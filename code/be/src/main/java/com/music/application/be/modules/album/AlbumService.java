@@ -6,6 +6,7 @@ import com.music.application.be.modules.album.dto.UpdateAlbumDTO;
 import com.music.application.be.modules.artist.Artist;
 import com.music.application.be.modules.artist.ArtistRepository;
 import com.music.application.be.modules.cloudinary.CloudinaryService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -79,6 +80,21 @@ public class AlbumService {
         Album updatedAlbum = albumRepository.save(album);
         return mapToResponseDTO(updatedAlbum);
     }
+
+    @CachePut(value = "albums", key = "#id")
+    public AlbumResponseDTO updateAlbumCover(Long id, MultipartFile coverImageFile) throws IOException {
+        Album album = albumRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Album not found with id: " + id));
+
+        if (coverImageFile != null && !coverImageFile.isEmpty()) {
+            String coverImageUrl = cloudinaryService.uploadFile(coverImageFile, "image");
+            album.setCoverImage(coverImageUrl);
+        }
+
+        Album updatedAlbum = albumRepository.save(album);
+        return mapToResponseDTO(updatedAlbum);
+    }
+
 
     @Cacheable(value = "albums", key = "#id")
     public AlbumResponseDTO getAlbumById(Long id) {
