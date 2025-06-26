@@ -30,7 +30,9 @@ public class DownloadedSongService {
     private UserRepository userRepository;
 
     @Autowired
-    private SongRepository songRepository;    // Add downloaded song - tự động lấy user từ authentication
+    private SongRepository songRepository;
+
+    // Add downloaded song - tự động lấy user từ authentication
     public DownloadedSongDTO addDownloadedSong(Long songId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
@@ -54,6 +56,20 @@ public class DownloadedSongService {
 
         DownloadedSong savedDownload = downloadedSongRepository.save(downloadedSong);
         return mapToDTO(savedDownload);
+    }
+
+    // New method: Get downloaded song by songId - tự động lấy user từ authentication
+    public DownloadedSongDTO getDownloadedSongBySongId(Long songId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        User user = (User) authentication.getPrincipal();
+
+        DownloadedSong downloadedSong = downloadedSongRepository.findByUserIdAndSongId(user.getId(), songId)
+                .orElseThrow(() -> new EntityNotFoundException("Downloaded song not found for userId: " + user.getId() + " and songId: " + songId));
+
+        return mapToDTO(downloadedSong);
     }
 
     public Page<SongDTO> getDownloadedSongsAsSongDTOs(Pageable pageable) {
@@ -106,7 +122,9 @@ public class DownloadedSongService {
         }
         User user = (User) authentication.getPrincipal();
         return downloadedSongRepository.findByUserId(user.getId(), pageable).map(this::mapToDTO);
-    }    // Search downloaded songs - tự động lấy user từ authentication
+    }
+
+    // Search downloaded songs - tự động lấy user từ authentication
     public Page<DownloadedSongDTO> searchDownloadedSongs(String query, Pageable pageable) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
@@ -115,7 +133,9 @@ public class DownloadedSongService {
         User user = (User) authentication.getPrincipal();
         return downloadedSongRepository.findByUserIdAndSongTitleContainingIgnoreCase(user.getId(), query, pageable)
                 .map(this::mapToDTO);
-    }    // Remove downloaded song - tự động lấy user từ authentication
+    }
+
+    // Remove downloaded song - tự động lấy user từ authentication
     public void removeDownloadedSong(Long songId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
@@ -125,9 +145,11 @@ public class DownloadedSongService {
 
         DownloadedSong downloadedSong = downloadedSongRepository.findByUserIdAndSongId(user.getId(), songId)
                 .orElseThrow(() -> new EntityNotFoundException("Downloaded song not found with userId: " + user.getId() + " and songId: " + songId));
-        
+
         downloadedSongRepository.delete(downloadedSong);
-    }    // Map entity to DTO - cập nhật để include thông tin song bảo mật hơn
+    }
+
+    // Map entity to DTO - cập nhật để include thông tin song bảo mật hơn
     private DownloadedSongDTO mapToDTO(DownloadedSong downloadedSong) {
         DownloadedSongDTO dto = new DownloadedSongDTO();
         dto.setId(downloadedSong.getId());

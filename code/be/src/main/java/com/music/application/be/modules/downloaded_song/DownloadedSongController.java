@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/downloaded-songs")
-public class  DownloadedSongController {
+public class DownloadedSongController {
 
     @Autowired
     private DownloadedSongService downloadedSongService;
@@ -30,6 +30,12 @@ public class  DownloadedSongController {
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(downloadedSongService.getDownloadedSongs(pageable));
+    }
+
+    // New endpoint: Get downloaded song by songId - tự động lấy user từ authentication
+    @GetMapping("/song/{songId}")
+    public ResponseEntity<DownloadedSongDTO> getDownloadedSongBySongId(@PathVariable Long songId) {
+        return ResponseEntity.ok(downloadedSongService.getDownloadedSongBySongId(songId));
     }
 
     @GetMapping("/downloaded/songs")
