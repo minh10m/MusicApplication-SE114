@@ -122,6 +122,16 @@ interface Api {
         @Query("sortDir") sortDir: String = "desc"
     ): Response<FavoriteSongPageResponse>
 
+    @GET("api/favorite-songs/search")
+    suspend fun searchFavoriteSongs(
+        @Header("Authorization") token: String,
+        @Query("query") query: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20,
+        @Query("sortBy") sortBy: String = "addedAt",
+        @Query("sortDir") sortDir: String = "desc"
+    ): Response<FavoriteSongPageResponse>
+
     @DELETE("api/favorite-songs")
     suspend fun removeFavoriteSong(
         @Header("Authorization") token: String,

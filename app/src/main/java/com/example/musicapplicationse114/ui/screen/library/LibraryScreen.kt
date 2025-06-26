@@ -86,7 +86,14 @@ fun LibraryScreen(navController: NavController,
             Text("Your Library", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(modifier = Modifier.height(24.dp))
 
-            LibraryGrid(state, homeViewModel)
+            LibraryGrid(state, homeViewModel,
+                onItemClick = { tile->
+                    when (tile.title) {
+                        "Liked Songs" -> {
+                            navController.navigate(Screen.LikedSong.route)
+                        }
+                    }
+                })
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -148,7 +155,7 @@ fun LibraryScreen(navController: NavController,
 }
 
 @Composable
-fun LibraryGrid(state: LibraryUiState, homeViewModel: HomeViewModel) {
+fun LibraryGrid(state: LibraryUiState, homeViewModel: HomeViewModel, onItemClick: (LibraryTile) -> Unit) {
     val homeState = homeViewModel.uiState.collectAsState().value
     val items = listOf(
         LibraryTile("Liked Songs", "${homeState.likeCount} songs", Icons.Default.Favorite),
@@ -166,6 +173,7 @@ fun LibraryGrid(state: LibraryUiState, homeViewModel: HomeViewModel) {
                             .weight(1f)
                             .background(Color.DarkGray, RoundedCornerShape(12.dp))
                             .padding(16.dp)
+                            .clickable { onItemClick(item) }
                     ) {
                         Icon(
                             imageVector = item.icon,

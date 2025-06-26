@@ -40,6 +40,7 @@ import com.example.musicapplicationse114.ui.screen.detail.DetailScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
 import com.example.musicapplicationse114.ui.screen.library.LibraryScreen
+import com.example.musicapplicationse114.ui.screen.likedsongs.LikedSongsScreen
 import com.example.musicapplicationse114.ui.screen.login.LoginScreen
 import com.example.musicapplicationse114.ui.screen.login.LoginViewModel
 import com.example.musicapplicationse114.ui.screen.player.MiniPlayer
@@ -70,6 +71,7 @@ sealed class Screen(val route: String, val title: String) {
         fun createRoute(artistId: Long) = "artist/$artistId"
     }
     object Queue: Screen("queue", "Queue")
+    object LikedSong : Screen("LikeSong", "Liked Song")
 
 }
 
@@ -158,6 +160,16 @@ fun Navigation() {
                     composable(Screen.Search.route) {
                         SearchTypeScreen(
                             navController = navController,
+                            viewModel = hiltViewModel(),
+                            mainViewModel,
+                            sharedViewModel
+                        )
+                    }
+                    composable(Screen.LikedSong.route)
+                    {
+                        LikedSongsScreen(
+                            navController = navController,
+                            homeViewModel,
                             viewModel = hiltViewModel(),
                             mainViewModel,
                             sharedViewModel
