@@ -3,6 +3,7 @@ package com.music.application.be.modules.recently_played;
 import com.music.application.be.modules.recently_played.dto.RecentlyPlayedRequest;
 import com.music.application.be.modules.recently_played.dto.SongSummaryDto;
 import com.music.application.be.modules.song.Song;
+import com.music.application.be.modules.song.dto.SongDTO;
 import com.music.application.be.modules.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,7 @@ public class RecentlyPlayedController {
     @GetMapping("/{userId}")
     public ResponseEntity<?> getRecentlyPlayed(@PathVariable Long userId) {
         try {
-            List<SongSummaryDto> recentlyPlayedSongs = recentlyPlayedService.getRecentlyPlayedSongsByUserId(userId);
+            List<SongDTO> recentlyPlayedSongs = recentlyPlayedService.getRecentlyPlayedSongsByUserId(userId);
             return ResponseEntity.ok(recentlyPlayedSongs);
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(404).body("User not found.");
@@ -42,7 +43,15 @@ public class RecentlyPlayedController {
         }
     }
 
-
+    @GetMapping
+    public ResponseEntity<?> getAllRecentlyPlayed() {
+        try {
+            List<SongDTO> allRecent = recentlyPlayedService.getAllRecentlyPlayed();
+            return ResponseEntity.ok(allRecent);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching all recently played: " + e.getMessage());
+        }
+    }
 
     @DeleteMapping("/clear/{userId}")
     public ResponseEntity<?> clearRecentlyPlayed(@PathVariable User user) {

@@ -1,8 +1,10 @@
 package com.music.application.be.modules.recently_played;
 
+import com.music.application.be.modules.genre.Genre;
 import com.music.application.be.modules.recently_played.dto.SongSummaryDto;
 import com.music.application.be.modules.song.Song;
 import com.music.application.be.modules.song.SongRepository;
+import com.music.application.be.modules.song.dto.SongDTO;
 import com.music.application.be.modules.user.User;
 import com.music.application.be.modules.user.UserRepository;
 import jakarta.transaction.Transactional;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,8 +45,7 @@ public class RecentlyPlayedService {
         return recentlyPlayedRepository.save(recentlyPlayed); // Lưu mới
     }
 
-
-    public List<SongSummaryDto> getRecentlyPlayedSongsByUserId(Long userId) {
+    public List<SongDTO> getRecentlyPlayedSongsByUserId(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
@@ -51,8 +53,72 @@ public class RecentlyPlayedService {
                 .stream()
                 .map(recentlyPlayed -> {
                     Song song = recentlyPlayed.getSong();
-                    String artistName = song.getArtist().getName(); // đảm bảo fetch artist
-                    return new SongSummaryDto(song.getTitle(), song.getThumbnail(), artistName);
+
+                    SongDTO dto = new SongDTO();
+                    dto.setId(song.getId());
+                    dto.setTitle(song.getTitle());
+                    dto.setDuration(song.getDuration());
+                    dto.setAudioUrl(song.getAudioUrl());
+                    dto.setThumbnail(song.getThumbnail());
+                    dto.setLyrics(song.getLyrics());
+                    dto.setReleaseDate(song.getReleaseDate());
+                    dto.setViewCount(song.getViewCount());
+
+                    if (song.getArtist() != null) {
+                        dto.setArtistId(song.getArtist().getId());
+                        dto.setArtistName(song.getArtist().getName());
+                    }
+
+                    if (song.getAlbum() != null) {
+                        dto.setAlbumId(song.getAlbum().getId());
+                        dto.setAlbumName(song.getAlbum().getName());
+                    }
+
+                    if (song.getGenres() != null) {
+                        List<Long> genreIds = song.getGenres().stream()
+                                .map(Genre::getId)
+                                .collect(Collectors.toList());
+                        dto.setGenreIds(genreIds);
+                    }
+
+                    return dto;
+                })
+                .toList();
+    }
+
+    public List<SongDTO> getAllRecentlyPlayed() {
+        return recentlyPlayedRepository.findAllByOrderByPlayedAtDesc()
+                .stream()
+                .map(recentlyPlayed -> {
+                    Song song = recentlyPlayed.getSong();
+
+                    SongDTO dto = new SongDTO();
+                    dto.setId(song.getId());
+                    dto.setTitle(song.getTitle());
+                    dto.setDuration(song.getDuration());
+                    dto.setAudioUrl(song.getAudioUrl());
+                    dto.setThumbnail(song.getThumbnail());
+                    dto.setLyrics(song.getLyrics());
+                    dto.setReleaseDate(song.getReleaseDate());
+                    dto.setViewCount(song.getViewCount());
+
+                    if (song.getArtist() != null) {
+                        dto.setArtistId(song.getArtist().getId());
+                        dto.setArtistName(song.getArtist().getName());
+                    }
+
+                    if (song.getAlbum() != null) {
+                        dto.setAlbumId(song.getAlbum().getId());
+                        dto.setAlbumName(song.getAlbum().getName());
+                    }
+
+                    if (song.getGenres() != null) {
+                        dto.setGenreIds(song.getGenres().stream()
+                                .map(genre -> genre.getId())
+                                .collect(Collectors.toList()));
+                    }
+
+                    return dto;
                 })
                 .toList();
     }

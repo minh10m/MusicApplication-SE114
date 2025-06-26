@@ -1,6 +1,8 @@
 package com.music.application.be.modules.downloaded_song;
 
 import com.music.application.be.modules.downloaded_song.dto.DownloadedSongDTO;
+import com.music.application.be.modules.song.dto.SongDTO;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -10,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/downloaded-songs")
-public class DownloadedSongController {
+public class  DownloadedSongController {
 
     @Autowired
     private DownloadedSongService downloadedSongService;
@@ -28,6 +30,18 @@ public class DownloadedSongController {
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(downloadedSongService.getDownloadedSongs(pageable));
+    }
+
+    @GetMapping("/downloaded/songs")
+    public ResponseEntity<?> getDownloadedSongsAsSongDTOs(Pageable pageable) {
+        try {
+            Page<SongDTO> songs = downloadedSongService.getDownloadedSongsAsSongDTOs(pageable);
+            return ResponseEntity.ok(songs);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(401).body("User not authenticated");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error fetching downloaded songs: " + e.getMessage());
+        }
     }
 
     // Search downloaded songs - tự động lấy user từ authentication
