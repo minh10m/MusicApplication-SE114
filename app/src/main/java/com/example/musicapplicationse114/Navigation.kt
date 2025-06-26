@@ -167,7 +167,9 @@ fun Navigation() {
                         LibraryScreen(
                             navController = navController,
                             viewModel = hiltViewModel(),
-                            mainViewModel
+                            mainViewModel,
+                            homeViewModel,
+                            sharedViewModel
                         )
                     }
                     composable(Screen.Queue.route){
@@ -228,6 +230,7 @@ fun Navigation() {
                             PlayerScreen(
                                 navController = navController,
                                 songId = songId,
+                                homeViewModel,
                                 viewModel = hiltViewModel(),
                                 mainViewModel,
                                 sharedViewModel

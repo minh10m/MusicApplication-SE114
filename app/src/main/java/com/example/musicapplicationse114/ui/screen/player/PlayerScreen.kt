@@ -33,12 +33,14 @@ import com.example.musicapplicationse114.model.getCurrentLyric
 import com.example.musicapplicationse114.model.parseLyrics
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import com.example.musicapplicationse114.ui.screen.artist.ArtistViewModel
+import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
 import kotlinx.coroutines.delay
 
 @Composable
 fun PlayerScreen(
     navController: NavController,
     songId: Long,
+    homeViewModel: HomeViewModel = hiltViewModel(),
     viewModel: PlayerViewModel = hiltViewModel(),
     mainViewModel: MainViewModel,
     sharedViewModel: PlayerSharedViewModel,
@@ -73,6 +75,7 @@ fun PlayerScreen(
         PlayerContent(
             song = song,
             navController = navController,
+            homeViewModel = homeViewModel,
             viewModel = viewModel,
             mainViewModel = mainViewModel,
             sharedViewModel = sharedViewModel,
@@ -116,6 +119,7 @@ fun PlayerScreen(
 fun PlayerContent(
     song: SongResponse,
     navController: NavController,
+    homeViewModel: HomeViewModel,
     viewModel: PlayerViewModel,
     mainViewModel: MainViewModel,
     sharedViewModel: PlayerSharedViewModel,
@@ -234,7 +238,7 @@ fun PlayerContent(
                         )
                     }
 
-                    IconButton(onClick = { viewModel.toggleDownload(song.id) }) {
+                    IconButton(onClick = { viewModel.toggleDownload(song.id)}) {
                         Icon(
                             imageVector = Icons.Default.Download,
                             contentDescription = "Download",

@@ -1,49 +1,77 @@
 package com.example.musicapplicationse114.ui.screen.library
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import com.example.musicapplicationse114.R
+import com.example.musicapplicationse114.auth.TokenManager
+import com.example.musicapplicationse114.common.enum.LoadStatus
+import com.example.musicapplicationse114.model.RecentlyPlayedResponse
+import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
 import com.example.musicapplicationse114.repositories.MainLog
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class RecentLibraryItem(
-    val title: String,
-    val subtitle: String,
-    val imageRes: Int
-)
 
 data class LibraryUiState(
-    val likedCount: Int = 0,
-    val downloadedCount: Int = 0,
-    val playlistCount: Int = 0,
-    val artistCount: Int = 0,
-    val recentItems: List<RecentLibraryItem> = emptyList()
+    val recentlyPlayed: List<SongResponse> = emptyList(),
+    val status: LoadStatus = LoadStatus.Init()
 )
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val mainLog : MainLog?,
-    private val api : Api?
+    private val api : Api?,
+    private val tokenManager: TokenManager?
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(
-        LibraryUiState(
-            likedCount = 120,
-            downloadedCount = 210,
-            playlistCount = 12,
-            artistCount = 3,
-            recentItems = listOf(
-                RecentLibraryItem("Inside Out", "The Chainsmokers, Charlee", R.drawable.cover1),
-                RecentLibraryItem("Young", "The Chainsmokers", R.drawable.cover2),
-                RecentLibraryItem("Beach House", "The Chainsmokers - Sick", R.drawable.cover3),
-                RecentLibraryItem("Kills You Slowly", "The Chainsmokers - World", R.drawable.cover4),
-                RecentLibraryItem("Setting Fires", "The Chainsmokers, XYLO", R.drawable.cover5),
-                RecentLibraryItem("Somebody", "The Chainsmokers, Drew", R.drawable.cover6)
-            )
-        )
-    )
-    val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
+    val _uiState = MutableStateFlow(LibraryUiState())
+    val uiState =  _uiState.asStateFlow()
+
+    fun loadRecentlyPlayed()
+    {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+            try {
+                val token = tokenManager?.getToken()?.takeIf { it.isNotBlank() }
+                val userId = tokenManager?.getUserId()?.takeIf { it != -1L }
+                if (!token.isNullOrBlank() && api != null && userId != null)
+                {
+                    val response = api.getRecentlyPlayed(token, userId)
+                    if (response.isSuccessful)
+                    {
+                        _uiState.value = _uiState.value.copy(
+                            recentlyPlayed = response.body()?: emptyList(),
+                            status = LoadStatus.Success()
+                        )
+                    }
+                    else
+                    {
+                        val errorBody = response.errorBody()?.string()
+                        _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Failed: HTTP ${response.code()} - $errorBody"))
+                        Log.e(
+                            "LibraryViewModel",
+                            "Failed: HTTP ${response.code()} - $errorBody"
+                        )
+                    }
+                }
+                else
+                {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Missing token or userId or api is null"))
+                    Log.e("LibraryViewModel", "Missing token or userId or api is null")
+                }
+
+            }
+            catch(e:Exception)
+            {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message ?: "Lỗi không xác định"))
+                    Log.e("LibraryViewModel", "Failed to load recently played: ${e.message}")
+            }
+        }
+    }
 }

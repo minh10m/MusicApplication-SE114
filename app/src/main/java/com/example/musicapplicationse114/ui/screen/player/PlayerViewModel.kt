@@ -109,12 +109,10 @@ class PlayerViewModel @Inject constructor(
                     Log.d("FavoriteSong", "favoriteId=$favoriteId, favoriteSongs=$favoriteSongs")
 
                     if (favoriteId != null) {
-                        delay(1000) // Tăng thời gian chờ
                         val response = api.removeFavoriteSong(token, songId)
                         Log.d("FavoriteSong", "removeFavoriteSong response: ${response.code()}, isSuccessful=${response.isSuccessful}, body=${response.body()}")
                         if (response.isSuccessful) {
                             Log.d("FavoriteSong", "Đã xóa khỏi danh sách yêu thích")
-                            delay(500)
                             val updatedLikedSongs = api.getFavoriteSongs(token)
                                 .body()?.content?.map { it.song.id }?.toSet() ?: emptySet()
                             Log.d("FavoriteSong", "Updated likedSongIds=$updatedLikedSongs")
@@ -184,12 +182,10 @@ class PlayerViewModel @Inject constructor(
                     Log.d("DownloadSong", "downloadedId=$downloadedId, downloadedSongs=$downloadedSongs")
 
                     if (downloadedId != null) {
-                        delay(1000) // Tăng thời gian chờ
                         val response = api.removeDownloadedSong(token, songId)
                         Log.d("DownloadSong", "removeDownloadedSong response: ${response.code()}, isSuccessful=${response.isSuccessful}, body=${response.body()}")
                         if (response.isSuccessful) {
                             Log.d("DownloadSong", "Đã xóa khỏi danh sách tải xuống")
-                            delay(500)
                             val updatedDownloadedSongs = api.getDownloadedSongs(token)
                                 .body()?.content?.map { it.song.id }?.toSet() ?: emptySet()
                             Log.d("DownloadSong", "Updated downloadedSongIds=$updatedDownloadedSongs")

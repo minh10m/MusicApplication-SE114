@@ -1,5 +1,6 @@
 package com.example.musicapplicationse114.ui.screen.library
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,16 +33,31 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
+import com.example.musicapplicationse114.Screen
+import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
+import com.example.musicapplicationse114.ui.screen.home.HomeUiState
+import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
 import com.example.musicapplicationse114.ui.screen.search.SearchBottomNavigationBar
 import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
 import kotlinx.coroutines.delay
 
 @Composable
-fun LibraryScreen(navController: NavController, viewModel: LibraryViewModel = viewModel(), mainViewModel: MainViewModel) {
+fun LibraryScreen(navController: NavController,
+                  viewModel: LibraryViewModel = viewModel(),
+                  mainViewModel: MainViewModel,
+                  homeViewModel: HomeViewModel,
+                  sharedViewModel: PlayerSharedViewModel) {
     val state by viewModel.uiState.collectAsState()
     var showLoading by remember { mutableStateOf(false) }
+    val globalPlayerController = sharedViewModel.player
 
+    LaunchedEffect(Unit) {
+        viewModel.loadRecentlyPlayed()
+        homeViewModel.loadFavoriteSong()
+        homeViewModel.loadDownloadedSong()
+    }
     // Khi showLoading = true, hiển thị loading indicator
     if (showLoading) {
         Box(
@@ -69,7 +86,7 @@ fun LibraryScreen(navController: NavController, viewModel: LibraryViewModel = vi
             Text("Your Library", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(modifier = Modifier.height(24.dp))
 
-            LibraryGrid(state)
+            LibraryGrid(state, homeViewModel)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -85,22 +102,31 @@ fun LibraryScreen(navController: NavController, viewModel: LibraryViewModel = vi
             Spacer(modifier = Modifier.height(12.dp))
 
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(state.recentItems) { song ->
+                items(state.recentlyPlayed) { song ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clickable {
+                                sharedViewModel.setSongList(state.recentlyPlayed, state.recentlyPlayed.indexOf(song))
+                                sharedViewModel.addRecentlyPlayed(song.id)
+                                Log.d("LibraryScreen", "Called addRecentlyPlayed for songId: ${song.id}")
+                                globalPlayerController.play(song)
+                                mainViewModel.setFullScreenPlayer(true)
+                                navController.navigate(Screen.Player.createRoute(song.id))
+                            }
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Image(
-                            painter = painterResource(id = song.imageRes),
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp)
+                        AsyncImage(
+                            model = song.thumbnail,
+                            contentDescription = song.title,
+                            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(4.dp)),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(song.title, color = Color.White, fontSize = 14.sp)
-                            Text(song.subtitle, color = Color.Gray, fontSize = 12.sp)
+                            Text(song.artistName, color = Color.Gray, fontSize = 12.sp)
                         }
                         Icon(
                             imageVector = Icons.Default.MoreVert,
@@ -122,12 +148,13 @@ fun LibraryScreen(navController: NavController, viewModel: LibraryViewModel = vi
 }
 
 @Composable
-fun LibraryGrid(state: LibraryUiState) {
+fun LibraryGrid(state: LibraryUiState, homeViewModel: HomeViewModel) {
+    val homeState = homeViewModel.uiState.collectAsState().value
     val items = listOf(
-        LibraryTile("Liked Songs", "${state.likedCount} songs", Icons.Default.Favorite),
-        LibraryTile("Downloads", "${state.downloadedCount} songs", Icons.Default.Download),
-        LibraryTile("Playlists", "${state.playlistCount} playlists", Icons.Default.List),
-        LibraryTile("Artists", "${state.artistCount} artists", Icons.Default.Person)
+        LibraryTile("Liked Songs", "${homeState.likeCount} songs", Icons.Default.Favorite),
+        LibraryTile("Downloads", "${homeState.downloadCount} songs", Icons.Default.Download),
+        LibraryTile("Playlists", "12 playlists", Icons.Default.List),
+        LibraryTile("Artists", "5 artists", Icons.Default.Person)
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -159,11 +186,3 @@ fun LibraryGrid(state: LibraryUiState) {
 
 data class LibraryTile(val title: String, val subtitle: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun LibraryScreenPreview() {
-    MusicApplicationSE114Theme(darkTheme = true) {
-        val navController = rememberNavController()
-        LibraryScreen(navController = navController, viewModel = LibraryViewModel(null, null), mainViewModel = MainViewModel())
-    }
-}

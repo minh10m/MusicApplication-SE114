@@ -26,6 +26,8 @@ data class HomeUiState(
     val albums: List<AlbumResponse> = emptyList(),
     val songs: List<SongResponse> = emptyList(),
     val songsByGenre: Map<Long, List<SongResponse>> = emptyMap(),
+    val likeCount : Int = 0,
+    val downloadCount : Int = 0,
     val artists : List<ArtistResponse> = emptyList(),
     val genres : List<GenreResponse> = emptyList(),
     val recentPlayed: List<RecentlyPlayedResponse> = emptyList(),
@@ -200,6 +202,7 @@ class HomeViewModel @Inject constructor(
 
                     _uiState.value = _uiState.value.copy(
                         favoriteSongs = songs,
+                        likeCount = songs.size,
                         status = LoadStatus.Success()
                     )
 
@@ -237,6 +240,7 @@ class HomeViewModel @Inject constructor(
 
                     _uiState.value = _uiState.value.copy(
                         downloadSongs = downloadedSongs,
+                        downloadCount = downloadedSongs.size,
                         status = LoadStatus.Success()
                     )
 

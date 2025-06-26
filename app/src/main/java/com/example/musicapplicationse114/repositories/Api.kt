@@ -207,5 +207,5 @@ interface Api {
     suspend fun getRecentlyPlayed(
         @Header("Authorization") token: String,
         @Path("userId") userId: Long
-    ): Response<RecentlyPlayedPageResponse>
+    ): Response<List<SongResponse>>
 }
