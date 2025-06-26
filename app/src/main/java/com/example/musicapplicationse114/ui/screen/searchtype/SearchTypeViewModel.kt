@@ -12,6 +12,7 @@ import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.model.AlbumResponse
 import com.example.musicapplicationse114.model.ArtistResponse
+import com.example.musicapplicationse114.model.PlaylistResponse
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
 import com.example.musicapplicationse114.repositories.MainLog
@@ -27,6 +28,8 @@ data class SearchTypeUiState(
     val songs: List<SongResponse> = emptyList(),
     val albums : List<AlbumResponse> = emptyList(),
     val artists: List<ArtistResponse> = emptyList(),
+    val playlists: List<PlaylistResponse> = emptyList(),
+    val totalResults : Long = 0,
     val status : LoadStatus = LoadStatus.Init(),
 
     )
@@ -41,11 +44,11 @@ class SearchTypeViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
     private var searchJob: Job? = null
 
-    fun searchAllDebounced(query: String) {
+    fun searchAllDebounced(query: String, limit: Int = 10) {
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(100)
-            searchAll(query)
+            searchAll(query, limit)
         }
     }
 
@@ -54,7 +57,7 @@ class SearchTypeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(query = query)
     }
 
-    fun searchAll(query: String)
+    fun searchAll(query: String, limit: Int = 10)
     {
         if(query.isBlank()) return
         viewModelScope.launch {
@@ -63,10 +66,14 @@ class SearchTypeViewModel @Inject constructor(
                 val token = tokenManager?.getToken()
                 if(api != null && !token.isNullOrBlank())
                 {
-                    val songs = api.searchSongs(token, query)
-                    val albums = api.searchAlbums(token, query)
-                    val artists = api.searchArtists(token, query)
-                    _uiState.value = _uiState.value.copy(songs = songs.content, albums = albums.content, artists = artists.content, status = LoadStatus.Success())
+                   val result = api.globalSearch(token, query, limit)
+                    _uiState.value = _uiState.value.copy(
+                        songs = result.songs,
+                        albums = result.albums,
+                        artists = result.artists,
+                        playlists = result.playlists,
+                        totalResults = result.totalResults,
+                        status = LoadStatus.Success())
                 }
                 else
                 {

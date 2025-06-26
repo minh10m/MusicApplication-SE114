@@ -2,10 +2,13 @@ package com.example.musicapplicationse114.ui.playerController
 
 import android.content.Context
 import android.util.Log
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.musicapplicationse114.model.SongResponse
+import com.example.musicapplicationse114.repositories.Api
+import com.example.musicapplicationse114.ui.screen.player.PlayerViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,7 +22,7 @@ import javax.inject.Singleton
 
 @Singleton
 class GlobalPlayerController @Inject constructor(
-    context: Context
+    context: Context,
 ) {
     private val _state = MutableStateFlow(PlayerState())
     val state: StateFlow<PlayerState> = _state

@@ -25,7 +25,7 @@ class SongRepository @Inject constructor(
 
     // Cung cấp likedSongIds và downloadedSongIds cho PlayerViewModel
     val likedSongIds: StateFlow<Set<Long>>
-        get() = MutableStateFlow(_favoriteSongs.value.map { it.songId }.toSet()).asStateFlow()
+        get() = MutableStateFlow(_favoriteSongs.value.map { it.song.id }.toSet()).asStateFlow()
 
     val downloadedSongIds: StateFlow<Set<Long>>
         get() = MutableStateFlow(_downloadedSongs.value.map { it.songId }.toSet()).asStateFlow()
@@ -44,7 +44,7 @@ class SongRepository @Inject constructor(
         }
 
         try {
-            val response = api.getFavoriteSongs(token, userId)
+            val response = api.getFavoriteSongs(token)
             if (response.isSuccessful) {
                 _favoriteSongs.value = response.body()?.content.orEmpty()
                 Log.d("SongRepository", "Loaded favorite songs: ${_favoriteSongs.value.size}")
@@ -70,7 +70,7 @@ class SongRepository @Inject constructor(
         }
 
         try {
-            val response = api.getDownloadedSongs(token, userId)
+            val response = api.getDownloadedSongs(token)
             if (response.isSuccessful) {
                 _downloadedSongs.value = response.body()?.content.orEmpty()
                 Log.d("SongRepository", "Loaded downloaded songs: ${_downloadedSongs.value.size}")
@@ -96,14 +96,14 @@ class SongRepository @Inject constructor(
         }
 
         val currentFavorites = _favoriteSongs.value
-        val isLiked = currentFavorites.any { it.songId == songId }
+        val isLiked = currentFavorites.any { it.song.id == songId }
 
         if (isLiked) {
-            val favorite = currentFavorites.firstOrNull { it.songId == songId }
+            val favorite = currentFavorites.firstOrNull { it.song.id == songId }
             if (favorite != null) {
                 try {
                     api.removeFavoriteSong(token, favorite.id)
-                    _favoriteSongs.value = currentFavorites.filter { it.songId != songId }
+                    _favoriteSongs.value = currentFavorites.filter { it.song.id != songId }
                     Log.d("SongRepository", "Removed favorite song: $songId")
                 } catch (e: Exception) {
                     Log.e("SongRepository", "Failed to remove favorite song: ${e.message}")
@@ -111,7 +111,7 @@ class SongRepository @Inject constructor(
             }
         } else {
             try {
-                api.addFavoriteSong(token, AddFavoriteSongRequest(userId, songId))
+                api.addFavoriteSong(token, AddFavoriteSongRequest(songId))
                 // Tải lại danh sách yêu thích để lấy ID và addedAt mới
                 refreshLikedSongs()
                 Log.d("SongRepository", "Added favorite song: $songId")
@@ -150,7 +150,7 @@ class SongRepository @Inject constructor(
             }
         } else {
             try {
-                api.addDownloadedSong(token, userId, songId)
+                api.addDownloadedSong(token, songId)
                 // Tải lại danh sách tải về để lấy ID và downloadedAt mới
                 refreshDownloadedSongs()
                 Log.d("SongRepository", "Added downloaded song: $songId")

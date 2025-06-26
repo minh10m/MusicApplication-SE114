@@ -36,137 +36,137 @@ import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
 import kotlinx.coroutines.delay
 
-@Composable
-fun LikedSongsScreen(
-    navController: NavController,
-    viewModel: LikedSongsViewModel = viewModel(),
-    mainViewModel: MainViewModel
-) {
-    val songs by viewModel.likedSongs.collectAsState()
-    var showLoading by remember { mutableStateOf(false) }
-
-    if (showLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-    }
-
-    LaunchedEffect(showLoading) {
-        if (showLoading) {
-            delay(1000)
-            showLoading = false
-        }
-    }
-
-    Scaffold(
-        contentWindowInsets = WindowInsets
-            .safeDrawing
-            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
-//        bottomBar = { NavigationBar(navController = navController) { showLoading = true } }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .padding(innerPadding)
-                .padding(start = 24.dp, end = 24.dp, top = 48.dp, bottom = 80.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clickable {
-                            if (!navController.popBackStack()) {
-                                navController.navigate("library")
-                            }
-                        }
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = "Liked Songs",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "${songs.size} liked songs",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-
-            SearchBar()
-            Spacer(modifier = Modifier.height(12.dp))
-
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(songs) { song ->
-                    SongItem(song)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SearchBar() {
-    var text by remember { mutableStateOf("") }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF2C2C2C), RoundedCornerShape(12.dp))
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Default.Search, contentDescription = null, tint = Color.White.copy(alpha = 0.8f))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = "Search", color = Color.White.copy(alpha = 0.6f), fontSize = 14.sp)
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(Icons.Default.SwapVert, contentDescription = null, tint = Color.White.copy(alpha = 0.8f))
-    }
-}
-
-@Composable
-fun SongItem(song: SongResponse) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(45.dp)
-                .background(Color.Gray, RoundedCornerShape(5.dp))
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(song.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-            //Text(song.artist.name, color = Color.Gray, fontSize = 13.sp)
-        }
-        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.LightGray)
-        Spacer(modifier = Modifier.width(10.dp))
-        Icon(Icons.Default.MoreVert, contentDescription = null, tint = Color.LightGray)
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewLikedSongsScreen() {
-    MusicApplicationSE114Theme(darkTheme = true) {
-        LikedSongsScreen(
-            navController = rememberNavController(),
-            viewModel = LikedSongsViewModel(),
-            mainViewModel = MainViewModel()
-        )
-    }
-}
+//@Composable
+//fun LikedSongsScreen(
+//    navController: NavController,
+//    viewModel: LikedSongsViewModel = viewModel(),
+//    mainViewModel: MainViewModel
+//) {
+//    val songs by viewModel.likedSongs.collectAsState()
+//    var showLoading by remember { mutableStateOf(false) }
+//
+//    if (showLoading) {
+//        Box(
+//            modifier = Modifier.fillMaxSize(),
+//            contentAlignment = Alignment.Center
+//        ) {
+//            CircularProgressIndicator()
+//        }
+//    }
+//
+//    LaunchedEffect(showLoading) {
+//        if (showLoading) {
+//            delay(1000)
+//            showLoading = false
+//        }
+//    }
+//
+//    Scaffold(
+//        contentWindowInsets = WindowInsets
+//            .safeDrawing
+//            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
+////        bottomBar = { NavigationBar(navController = navController) { showLoading = true } }
+//    ) { innerPadding ->
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .background(Color.Black)
+//                .padding(innerPadding)
+//                .padding(start = 24.dp, end = 24.dp, top = 48.dp, bottom = 80.dp)
+//        ) {
+//            Row(verticalAlignment = Alignment.CenterVertically) {
+//                Icon(
+//                    imageVector = Icons.Default.ArrowBack,
+//                    contentDescription = "Back",
+//                    tint = Color.White,
+//                    modifier = Modifier
+//                        .size(28.dp)
+//                        .clickable {
+//                            if (!navController.popBackStack()) {
+//                                navController.navigate("library")
+//                            }
+//                        }
+//                )
+//                Spacer(modifier = Modifier.width(12.dp))
+//                Column {
+//                    Text(
+//                        text = "Liked Songs",
+//                        fontSize = 24.sp,
+//                        fontWeight = FontWeight.Bold,
+//                        color = Color.White
+//                    )
+//                    Spacer(modifier = Modifier.height(4.dp))
+//                    Text(
+//                        text = "${songs.size} liked songs",
+//                        fontSize = 14.sp,
+//                        color = Color.Gray
+//                    )
+//                }
+//            }
+//            Spacer(modifier = Modifier.height(24.dp))
+//
+//            SearchBar()
+//            Spacer(modifier = Modifier.height(12.dp))
+//
+//            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+//                items(songs) { song ->
+//                    SongItem(song)
+//                }
+//            }
+//        }
+//    }
+//}
+//
+//@Composable
+//fun SearchBar() {
+//    var text by remember { mutableStateOf("") }
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .background(Color(0xFF2C2C2C), RoundedCornerShape(12.dp))
+//            .padding(12.dp),
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        Icon(Icons.Default.Search, contentDescription = null, tint = Color.White.copy(alpha = 0.8f))
+//        Spacer(modifier = Modifier.width(8.dp))
+//        Text(text = "Search", color = Color.White.copy(alpha = 0.6f), fontSize = 14.sp)
+//        Spacer(modifier = Modifier.weight(1f))
+//        Icon(Icons.Default.SwapVert, contentDescription = null, tint = Color.White.copy(alpha = 0.8f))
+//    }
+//}
+//
+//@Composable
+//fun SongItem(song: SongResponse) {
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(vertical = 10.dp),
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        Box(
+//            modifier = Modifier
+//                .size(45.dp)
+//                .background(Color.Gray, RoundedCornerShape(5.dp))
+//        )
+//        Spacer(modifier = Modifier.width(16.dp))
+//        Column(modifier = Modifier.weight(1f)) {
+//            Text(song.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+//            //Text(song.artist.name, color = Color.Gray, fontSize = 13.sp)
+//        }
+//        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.LightGray)
+//        Spacer(modifier = Modifier.width(10.dp))
+//        Icon(Icons.Default.MoreVert, contentDescription = null, tint = Color.LightGray)
+//    }
+//}
+//
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun PreviewLikedSongsScreen() {
+//    MusicApplicationSE114Theme(darkTheme = true) {
+//        LikedSongsScreen(
+//            navController = rememberNavController(),
+//            viewModel = LikedSongsViewModel(),
+//            mainViewModel = MainViewModel()
+//        )
+//    }
+//}

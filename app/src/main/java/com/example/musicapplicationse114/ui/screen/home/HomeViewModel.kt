@@ -11,7 +11,7 @@ import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.DownloadedSongResponse
 import com.example.musicapplicationse114.model.FavoriteSongResponse
 import com.example.musicapplicationse114.model.GenreResponse
-import com.example.musicapplicationse114.model.RecentlyPlayed
+import com.example.musicapplicationse114.model.RecentlyPlayedResponse
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
 import com.example.musicapplicationse114.repositories.MainLog
@@ -28,7 +28,7 @@ data class HomeUiState(
     val songsByGenre: Map<Long, List<SongResponse>> = emptyMap(),
     val artists : List<ArtistResponse> = emptyList(),
     val genres : List<GenreResponse> = emptyList(),
-    val recentPlayed: List<RecentlyPlayed> = emptyList(),
+    val recentPlayed: List<RecentlyPlayedResponse> = emptyList(),
     val favoriteSongs: List<FavoriteSongResponse> = emptyList(),
     val downloadSongs: List<DownloadedSongResponse> = emptyList(),
     val status : LoadStatus = LoadStatus.Init(),
@@ -194,7 +194,7 @@ class HomeViewModel @Inject constructor(
             try {
                 Log.d("FavoriteSong", "Token: $token - UserId: $userId")
 
-                val response = api.getFavoriteSongs(token, userId)
+                val response = api.getFavoriteSongs(token)
                 if (response.isSuccessful) {
                     val songs = response.body()?.content.orEmpty()
 
@@ -231,7 +231,7 @@ class HomeViewModel @Inject constructor(
             try {
                 Log.d("DownloadedSongs", "Token: $token - UserId: $userId")
 
-                val response = api.getDownloadedSongs(token, userId)
+                val response = api.getDownloadedSongs(token)
                 if (response.isSuccessful) {
                     val downloadedSongs = response.body()?.content.orEmpty()
 

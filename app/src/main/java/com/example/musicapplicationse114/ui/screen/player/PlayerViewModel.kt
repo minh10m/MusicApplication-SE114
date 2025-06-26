@@ -4,10 +4,12 @@ import android.util.Log
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.model.AddFavoriteSongRequest
+import com.example.musicapplicationse114.model.RecentlyPlayedRequest
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,8 +46,8 @@ class PlayerViewModel @Inject constructor(
                     val playlist = api.getSongs(token).content.orEmpty()
                     val index = playlist.indexOfFirst { it.id == songId }
 
-                    val likedSongs = api.getFavoriteSongs(token, userId).body()?.content?.map { it.songId } ?: emptyList()
-                    val downloadedSongs = api.getDownloadedSongs(token, userId).body()?.content?.map { it.songId } ?: emptyList()
+                    val likedSongs = api.getFavoriteSongs(token).body()?.content?.map { it.song.id } ?: emptyList()
+                    val downloadedSongs = api.getDownloadedSongs(token).body()?.content?.map { it.songId } ?: emptyList()
 
                     if (index != -1) {
                         _uiState.value = PlayerUiState(
@@ -87,11 +89,12 @@ class PlayerViewModel @Inject constructor(
 
                 if (isLiked) {
                     try {
-                        val favoriteId = api.getFavoriteSongs(token, userId)
-                            .body()?.content?.firstOrNull { it.songId == songId }?.id
+                        val favoriteId = api.getFavoriteSongs(token)
+                            .body()?.content?.firstOrNull { it.song.id == songId }?.id
 
                         if (favoriteId != null) {
                             api.removeFavoriteSong(token, favoriteId)
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Success())
                             // Nếu thành công thì không làm gì thêm
                         } else {
                             throw Exception("Không tìm thấy favoriteId để xóa")
@@ -103,11 +106,12 @@ class PlayerViewModel @Inject constructor(
                     }
                 } else {
                     try {
-                        val existed = api.getFavoriteSongs(token, userId)
-                            .body()?.content?.any { it.songId == songId } ?: false
+                        val existed = api.getFavoriteSongs(token)
+                            .body()?.content?.any { it.song.id == songId } ?: false
 
                         if (!existed) {
-                            api.addFavoriteSong(token, AddFavoriteSongRequest(userId, songId))
+                            api.addFavoriteSong(token, AddFavoriteSongRequest(songId))
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Success())
                         } else {
                             Log.d("FavoriteSong", "Đã tồn tại trong danh sách, không thêm lại.")
                         }
@@ -139,11 +143,13 @@ class PlayerViewModel @Inject constructor(
 
                 if (isDownloaded) {
                     try {
-                        val downloadedId = api.getDownloadedSongs(token, userId)
+                        val downloadedId = api.getDownloadedSongs(token)
                             .body()?.content?.firstOrNull { it.songId == songId }?.id
 
                         if (downloadedId != null) {
                             api.removeDownloadedSong(token, downloadedId)
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Success())
+
                         } else {
                             throw Exception("Không tìm thấy downloadedId để xóa")
                         }
@@ -153,11 +159,12 @@ class PlayerViewModel @Inject constructor(
                     }
                 } else {
                     try {
-                        val existed = api.getDownloadedSongs(token, userId)
+                        val existed = api.getDownloadedSongs(token)
                             .body()?.content?.any { it.songId == songId } ?: false
 
                         if (!existed) {
-                            api.addDownloadedSong(token, userId, songId)
+                            api.addDownloadedSong(token, songId)
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Success())
                         } else {
                             Log.d("DownloadSong", "Đã tồn tại trong danh sách tải, không thêm lại.")
                         }
@@ -169,9 +176,6 @@ class PlayerViewModel @Inject constructor(
             }
         }
     }
-
-
-
 
     fun nextSong() {
         val state = _uiState.value

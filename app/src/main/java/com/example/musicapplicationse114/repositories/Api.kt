@@ -12,6 +12,10 @@ import com.example.musicapplicationse114.model.FavoriteSongPageResponse
 import com.example.musicapplicationse114.model.FavoriteSongResponse
 import com.example.musicapplicationse114.model.GenrePageResponse
 import com.example.musicapplicationse114.model.GenreResponse
+import com.example.musicapplicationse114.model.GlobalSearchResultDTO
+import com.example.musicapplicationse114.model.RecentlyPlayed
+import com.example.musicapplicationse114.model.RecentlyPlayedPageResponse
+import com.example.musicapplicationse114.model.RecentlyPlayedRequest
 import com.example.musicapplicationse114.model.SongPageResponse
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.model.UserLoginRequest
@@ -109,20 +113,19 @@ interface Api {
         @Body request: AddFavoriteSongRequest
     ) : FavoriteSongResponse
 
-    @GET("api/favorite-songs/user/{userId}")
+    @GET("api/favorite-songs")
     suspend fun getFavoriteSongs(
         @Header("Authorization") token: String,
-        @Path("userId") userId: Long,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20,
         @Query("sortBy") sortBy: String = "addedAt",
         @Query("sortDir") sortDir: String = "desc"
     ): Response<FavoriteSongPageResponse>
 
-    @DELETE("api/favorite-songs/{id}")
+    @DELETE("api/favorite-songs")
     suspend fun removeFavoriteSong(
         @Header("Authorization") token: String,
-        @Path("id") favoriteSongId: Long
+        @Query("songId") songId: Long
     ): Response<Void>
 
 
@@ -130,22 +133,20 @@ interface Api {
     @POST("api/downloaded-songs")
     suspend fun addDownloadedSong(
         @Header("Authorization") token: String,
-        @Query("userId") userId: Long,
         @Query("songId") songId: Long
     ): Response<DownloadedSongResponse>
 
-    @GET("api/downloaded-songs/user/{userId}")
+    @GET("api/downloaded-songs")
     suspend fun getDownloadedSongs(
         @Header("Authorization") token: String,
-        @Path("userId") userId: Long,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ): Response<DownloadedSongPageResponse>
 
-    @DELETE("api/downloaded-songs/{id}")
+    @DELETE("api/downloaded-songs")
     suspend fun removeDownloadedSong(
         @Header("Authorization") token: String,
-        @Path("id") downloadedSongId: Long
+        @Query("songId") songId: Long
     ): Response<Void>
 
 
@@ -187,5 +188,24 @@ interface Api {
         @Query("size") size: Int = 20
     ): Response<GenrePageResponse>
 
+    //search global
+    @GET("/api/search/global")
+    suspend fun globalSearch(
+        @Header("Authorization") token: String,
+        @Query("query") query: String,
+        @Query("limit") limit: Int = 10
+    ): GlobalSearchResultDTO
 
+    //recently-played
+    @POST("/recently-played")
+    suspend fun addRecentlyPlayed(
+        @Header("Authorization") token: String,
+        @Body request: RecentlyPlayedRequest
+    ): Response<Unit>
+
+    @GET("/recently-played/{userId}")
+    suspend fun getRecentlyPlayed(
+        @Header("Authorization") token: String,
+        @Path("userId") userId: Long
+    ): Response<RecentlyPlayedPageResponse>
 }

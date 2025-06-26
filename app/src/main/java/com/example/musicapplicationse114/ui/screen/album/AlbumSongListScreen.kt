@@ -1,5 +1,6 @@
 package com.example.musicapplicationse114.ui.screen.album
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,6 +45,7 @@ fun AlbumSongListScreen(
     sharedViewModel: PlayerSharedViewModel = hiltViewModel(),
     mainViewModel: MainViewModel,
 ) {
+    Log.d("AlbumSongListScreen", "PlayerSharedViewModel instance: ${sharedViewModel.hashCode()}")
     val state = viewModel.uiState.collectAsState().value
     val globalPlayerController = sharedViewModel.player
 
@@ -136,6 +138,8 @@ fun AlbumSongListScreen(
                     onClick = {
                         if (state.songAlbums.isNotEmpty()) {
                             sharedViewModel.setSongList(state.songAlbums, 0)
+                            sharedViewModel.addRecentlyPlayed(state.songAlbums[0].id)
+                            Log.d("AlbumSongListScreen", "Called addRecentlyPlayed for songId: ${state.songAlbums[0].id}")
                             globalPlayerController.play(state.songAlbums[0])
                             mainViewModel.setFullScreenPlayer(true)
                             navController.navigate(Screen.Player.createRoute(state.songAlbums[0].id))
@@ -163,6 +167,8 @@ fun AlbumSongListScreen(
                         .fillMaxWidth()
                         .clickable {
                             sharedViewModel.setSongList(state.songAlbums, state.songAlbums.indexOf(song))
+                            sharedViewModel.addRecentlyPlayed(song.id)
+                            Log.d("AlbumSongListScreen", "Called addRecentlyPlayed for songId: ${song.id}")
                             globalPlayerController.play(song)
                             mainViewModel.setFullScreenPlayer(true)
                             navController.navigate(Screen.Player.createRoute(song.id))

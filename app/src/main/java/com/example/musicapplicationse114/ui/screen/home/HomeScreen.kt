@@ -119,6 +119,7 @@ fun Home(
                         onClick = {
                             Log.d("HomeScreen", "Playing song: ${song.title}, id: ${song.id}")
                             sharedViewModel.setSongList(state.songs, state.songs.indexOf(song))
+                            sharedViewModel.addRecentlyPlayed(song.id)
                             globalPlayerController.play(song)
                             mainViewModel.setFullScreenPlayer(true)
                             navController.navigate(Screen.Player.createRoute(song.id))
@@ -172,7 +173,7 @@ fun Home(
                             .background(Color.DarkGray, RoundedCornerShape(8.dp))
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Text(text = "ID: $id", color = Color.White)
+                        Text(text = "ID: ${id.id}", color = Color.White)
                     }
                 }
             }
@@ -200,7 +201,7 @@ fun Home(
                             .background(Color.DarkGray, RoundedCornerShape(8.dp))
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Text(text = "ID: $id", color = Color.White)
+                        Text(text = "ID: ${id.id}", color = Color.White)
                     }
                 }
             }
@@ -448,6 +449,7 @@ fun GenreItemWithSongs(
                 onClick = {
                     if (songs.isNotEmpty()) {
                         sharedViewModel.setSongList(songs, 0)
+                        sharedViewModel.addRecentlyPlayed(songs[0].id)
                         sharedViewModel.player.play(songs[0])
                         mainViewModel.setFullScreenPlayer(true)
                         navController.navigate(Screen.Player.createRoute(songs[0].id))
@@ -476,6 +478,7 @@ fun GenreItemWithSongs(
                     song = song,
                     onClick = {
                         sharedViewModel.setSongList(songs, songs.indexOf(song))
+                        sharedViewModel.addRecentlyPlayed(song.id)
                         sharedViewModel.player.play(song)
                         mainViewModel.setFullScreenPlayer(true)
                         navController.navigate(Screen.Player.createRoute(song.id))
@@ -562,6 +565,7 @@ fun HomeScreen(
     playerViewModel: PlayerViewModel = hiltViewModel(),
     sharedViewModel: PlayerSharedViewModel = hiltViewModel()
 ) {
+    Log.d("HomeScreen", "PlayerSharedViewModel instance: ${sharedViewModel.hashCode()}")
     val state by viewModel.uiState.collectAsState()
     var tabIndex by rememberSaveable { mutableStateOf(0) }
 

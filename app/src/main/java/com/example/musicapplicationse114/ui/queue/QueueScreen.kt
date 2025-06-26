@@ -136,6 +136,7 @@ fun QueueScreen(
                     isCurrent = index == currentIndex,
                     onClick = {
                         sharedViewModel.setSongList(songList, index)
+                        sharedViewModel.addRecentlyPlayed(song.id)
                         sharedViewModel.player.play(song)
                     },
                     artistViewModel
@@ -196,7 +197,7 @@ fun QueueSongItem(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                // Text("Artist Name", color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
+                Text(song.artistName, color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
             }
             Icon(
                 Icons.Default.MoreVert,

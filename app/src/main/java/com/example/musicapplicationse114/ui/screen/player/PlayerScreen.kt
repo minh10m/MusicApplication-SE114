@@ -81,9 +81,11 @@ fun PlayerScreen(
             onSeek = { globalPlayerController.seekTo(it) },
             onToggleLoop = { globalPlayerController.setLooping(!playerState.isLooping) },
             onNext = { globalPlayerController.nextSong(context)
-                        sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())},
+                        sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())
+                        sharedViewModel.addRecentlyPlayed(song.id)},
             onPrevious = { globalPlayerController.previousSong(context)
-                sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())},
+                sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())
+                         sharedViewModel.addRecentlyPlayed(song.id)},
             upNextSong = sharedViewModel.getUpNext(),
             isSongEnded = isSongEnded
         )
@@ -140,6 +142,7 @@ fun PlayerContent(
     }
     if (isSongEnded) {
         sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())
+        sharedViewModel.addRecentlyPlayed(song.id)
     }
 
     Column(
@@ -200,43 +203,50 @@ fun PlayerContent(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = song.title,
-                    color = Color.LightGray,
-                    fontSize = MaterialTheme.typography.headlineMedium.fontSize,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Row {
-                IconButton(onClick = { viewModel.toggleFavorite(song.id) }) {
-                    Icon(
-                        imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Like",
-                        tint = if (isLiked) Color.Red else Color.White
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = song.title,
+                        color = Color.LightGray,
+                        fontSize = MaterialTheme.typography.headlineMedium.fontSize,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                IconButton(onClick = { viewModel.toggleDownload(song.id) }) {
-                    Icon(
-                        imageVector = Icons.Default.Download,
-                        contentDescription = "Download",
-                        tint = if (isDownloaded) Color.Cyan else Color.White
-                    )
+                Row {
+                    IconButton(onClick = { viewModel.toggleFavorite(song.id) }) {
+                        Icon(
+                            imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Like",
+                            tint = if (isLiked) Color.Red else Color.White
+                        )
+                    }
+
+                    IconButton(onClick = { viewModel.toggleDownload(song.id) }) {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = "Download",
+                            tint = if (isDownloaded) Color.Cyan else Color.White
+                        )
+                    }
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(song.artistName,
+                color = Color.LightGray,
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 20.sp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis)
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Slider(
             value = currentPosition.toFloat(),
@@ -253,7 +263,7 @@ fun PlayerContent(
             Text(formatDuration(duration), color = Color.Gray)
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -348,6 +358,7 @@ fun PlayerContent(
                         maxLines = Int.MAX_VALUE, // Không giới hạn dòng, loại bỏ dấu ba chấm
                         overflow = TextOverflow.Clip // Không hiển thị dấu ba chấm
                     )
+                    Text(song.artistName, color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
