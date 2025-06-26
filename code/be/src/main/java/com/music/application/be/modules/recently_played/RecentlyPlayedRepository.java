@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface RecentlyPlayedRepository extends JpaRepository<RecentlyPlayed, Long> {
     @EntityGraph(attributePaths = {"song", "song.artist"})
     List<RecentlyPlayed> findByUserOrderByPlayedAtDesc(User user);
-
+    List<RecentlyPlayed> findAllByOrderByPlayedAtDesc();
     Optional<RecentlyPlayed> findByUserAndSong(User user, Song song);
 
 }

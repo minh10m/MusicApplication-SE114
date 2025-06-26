@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class DownloadedSongInfoDTO {
+public class  DownloadedSongInfoDTO {
     private Long id;
     private String title;
     private Integer duration;

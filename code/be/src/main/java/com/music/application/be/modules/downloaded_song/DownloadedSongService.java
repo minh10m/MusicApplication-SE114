@@ -4,6 +4,7 @@ import com.music.application.be.modules.downloaded_song.dto.DownloadedSongDTO;
 import com.music.application.be.modules.downloaded_song.dto.DownloadedSongInfoDTO;
 import com.music.application.be.modules.song.Song;
 import com.music.application.be.modules.song.SongRepository;
+import com.music.application.be.modules.song.dto.SongDTO;
 import com.music.application.be.modules.user.User;
 import com.music.application.be.modules.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @Service
 public class DownloadedSongService {
@@ -52,6 +54,48 @@ public class DownloadedSongService {
 
         DownloadedSong savedDownload = downloadedSongRepository.save(downloadedSong);
         return mapToDTO(savedDownload);
+    }
+
+    public Page<SongDTO> getDownloadedSongsAsSongDTOs(Pageable pageable) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+
+        User user = (User) authentication.getPrincipal();
+
+        return downloadedSongRepository.findByUserId(user.getId(), pageable)
+                .map(downloadedSong -> {
+                    Song song = downloadedSong.getSong();
+
+                    SongDTO dto = new SongDTO();
+                    dto.setId(song.getId());
+                    dto.setTitle(song.getTitle());
+                    dto.setDuration(song.getDuration());
+                    dto.setAudioUrl(song.getAudioUrl());
+                    dto.setThumbnail(song.getThumbnail());
+                    dto.setLyrics(song.getLyrics());
+                    dto.setReleaseDate(song.getReleaseDate());
+                    dto.setViewCount(song.getViewCount());
+
+                    if (song.getArtist() != null) {
+                        dto.setArtistId(song.getArtist().getId());
+                        dto.setArtistName(song.getArtist().getName());
+                    }
+
+                    if (song.getAlbum() != null) {
+                        dto.setAlbumId(song.getAlbum().getId());
+                        dto.setAlbumName(song.getAlbum().getName());
+                    }
+
+                    if (song.getGenres() != null) {
+                        dto.setGenreIds(song.getGenres().stream()
+                                .map(genre -> genre.getId())
+                                .collect(Collectors.toList()));
+                    }
+
+                    return dto;
+                });
     }
 
     // Get downloaded songs - tự động lấy user từ authentication
