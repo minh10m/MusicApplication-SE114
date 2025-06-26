@@ -6,7 +6,6 @@ data class FavoriteSongResponse(
     val song: SongResponse,
     val addedAt: String
 )
-
 data class FavoriteSongPageResponse(val content : List<FavoriteSongResponse>)
 
 data class AddFavoriteSongRequest(

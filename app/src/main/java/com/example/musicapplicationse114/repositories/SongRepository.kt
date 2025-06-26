@@ -28,7 +28,7 @@ class SongRepository @Inject constructor(
         get() = MutableStateFlow(_favoriteSongs.value.map { it.song.id }.toSet()).asStateFlow()
 
     val downloadedSongIds: StateFlow<Set<Long>>
-        get() = MutableStateFlow(_downloadedSongs.value.map { it.songId }.toSet()).asStateFlow()
+        get() = MutableStateFlow(_downloadedSongs.value.map { it.song.id }.toSet()).asStateFlow()
 
     suspend fun refreshLikedSongs() {
         // Gọi getToken() và getUserId() trong cùng coroutine scope
@@ -135,14 +135,14 @@ class SongRepository @Inject constructor(
         }
 
         val currentDownloads = _downloadedSongs.value
-        val isDownloaded = currentDownloads.any { it.songId == songId }
+        val isDownloaded = currentDownloads.any { it.song.id == songId }
 
         if (isDownloaded) {
-            val download = currentDownloads.firstOrNull { it.songId == songId }
+            val download = currentDownloads.firstOrNull { it.song.id == songId }
             if (download != null) {
                 try {
                     api.removeDownloadedSong(token, download.id)
-                    _downloadedSongs.value = currentDownloads.filter { it.songId != songId }
+                    _downloadedSongs.value = currentDownloads.filter { it.song.id != songId }
                     Log.d("SongRepository", "Removed downloaded song: $songId")
                 } catch (e: Exception) {
                     Log.e("SongRepository", "Failed to remove downloaded song: ${e.message}")

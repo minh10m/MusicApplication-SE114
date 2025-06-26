@@ -111,7 +111,7 @@ interface Api {
     suspend fun addFavoriteSong(
         @Header("Authorization") token: String,
         @Body request: AddFavoriteSongRequest
-    ) : FavoriteSongResponse
+    ) : Response<FavoriteSongResponse>
 
     @GET("api/favorite-songs")
     suspend fun getFavoriteSongs(

@@ -2,6 +2,7 @@ package com.example.musicapplicationse114.ui.screen.player
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,7 +28,6 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.common.enum.LoadStatus
-import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.model.getCurrentLyric
 import com.example.musicapplicationse114.model.parseLyrics
@@ -47,10 +47,14 @@ fun PlayerScreen(
     val context = LocalContext.current
     val globalPlayerController = sharedViewModel.player
     val playerState by globalPlayerController.state.collectAsState()
+    val state by viewModel.uiState.collectAsState()
     var isSongEnded by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadSongById(songId)
+    // Hiển thị thông báo lỗi nếu có
+    LaunchedEffect(state.status) {
+        if (state.status is LoadStatus.Error) {
+            Toast.makeText(context, (state.status as LoadStatus.Error).description, Toast.LENGTH_SHORT).show()
+        }
     }
 
     LaunchedEffect(songId) {
@@ -58,11 +62,10 @@ fun PlayerScreen(
     }
 
     LaunchedEffect(playerState.position, playerState.duration, playerState.isPlaying) {
-        if (playerState.duration > 0 && playerState.position >= playerState.duration - 100) { // Kiểm tra khi gần kết thúc (dung sai 100ms)
+        if (playerState.duration > 0 && playerState.position >= playerState.duration - 100) {
             isSongEnded = true
-            // Đợi một chút để đảm bảo UI nhận ra trước khi chuyển bài
             delay(200)
-            isSongEnded = false // Reset sau khi chuyển bài
+            isSongEnded = false
         }
     }
 
@@ -80,12 +83,16 @@ fun PlayerScreen(
             onTogglePlay = { globalPlayerController.toggle() },
             onSeek = { globalPlayerController.seekTo(it) },
             onToggleLoop = { globalPlayerController.setLooping(!playerState.isLooping) },
-            onNext = { globalPlayerController.nextSong(context)
-                        sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())
-                        sharedViewModel.addRecentlyPlayed(song.id)},
-            onPrevious = { globalPlayerController.previousSong(context)
+            onNext = {
+                globalPlayerController.nextSong(context)
                 sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())
-                         sharedViewModel.addRecentlyPlayed(song.id)},
+                sharedViewModel.addRecentlyPlayed(song.id)
+            },
+            onPrevious = {
+                globalPlayerController.previousSong(context)
+                sharedViewModel.setSongList(globalPlayerController.getSongList(), globalPlayerController.getCurrentIndex())
+                sharedViewModel.addRecentlyPlayed(song.id)
+            },
             upNextSong = sharedViewModel.getUpNext(),
             isSongEnded = isSongEnded
         )
@@ -96,7 +103,7 @@ fun PlayerScreen(
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            when (val status = viewModel.uiState.collectAsState().value.status) {
+            when (val status = state.status) {
                 is LoadStatus.Loading -> CircularProgressIndicator(color = Color.White)
                 is LoadStatus.Error -> Text("Lỗi: ${status.description}", color = Color.Red)
                 else -> Text("Không tìm thấy bài hát", color = Color.White)
@@ -122,7 +129,7 @@ fun PlayerContent(
     onNext: () -> Unit,
     onPrevious: () -> Unit,
     upNextSong: SongResponse?,
-    isSongEnded : Boolean
+    isSongEnded: Boolean
 ) {
     val state by viewModel.uiState.collectAsState()
     val isLiked = state.likedSongIds.contains(song.id)
@@ -167,10 +174,8 @@ fun PlayerContent(
 
             Spacer(modifier = Modifier.width(290.dp))
 
-            IconButton(onClick = {/*DO STH */})
-            {
+            IconButton(onClick = { /*DO STH */ }) {
                 Icon(Icons.Default.MoreVert, contentDescription = "MoreVert", tint = Color.White, modifier = Modifier.size(32.dp))
-
             }
         }
         Spacer(modifier = Modifier.height(20.dp))
@@ -239,11 +244,13 @@ fun PlayerContent(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(song.artistName,
+            Text(
+                song.artistName,
                 color = Color.LightGray,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 20.sp),
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis)
+                overflow = TextOverflow.Ellipsis
+            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -308,9 +315,7 @@ fun PlayerContent(
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
-//        Divider(color = Color.Gray.copy(alpha = 0.3f))
 
-        // Đây là hàng chứa "Up Next" bên trái và "Queue >" bên phải
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -322,23 +327,23 @@ fun PlayerContent(
             Spacer(modifier = Modifier.width(170.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { navController.navigate("queue")
-                    println("Navigating to Queue, current queue size: ${sharedViewModel.queue.size}")}
+                modifier = Modifier.clickable {
+                    navController.navigate("queue")
+                    println("Navigating to Queue, current queue size: ${sharedViewModel.queue.size}")
+                }
             ) {
                 Text("Queue", color = Color.White, fontSize = 20.sp)
                 Spacer(modifier = Modifier.width(4.dp))
                 Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Queue", tint = Color.White, modifier = Modifier.size(32.dp))
             }
-
         }
         upNextSong?.let { song ->
-            // Bài hát kế tiếp với nền vuông xám
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
-                    .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp)) // Nền vuông xám
-                    .padding(8.dp), // Padding bên trong để không sát mép
+                    .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AsyncImage(
@@ -355,14 +360,13 @@ fun PlayerContent(
                         text = song.title,
                         color = Color.White,
                         fontSize = 16.sp,
-                        maxLines = Int.MAX_VALUE, // Không giới hạn dòng, loại bỏ dấu ba chấm
-                        overflow = TextOverflow.Clip // Không hiển thị dấu ba chấm
+                        maxLines = Int.MAX_VALUE,
+                        overflow = TextOverflow.Clip
                     )
                     Text(song.artistName, color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
-
     }
 }
 
