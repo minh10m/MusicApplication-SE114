@@ -1,7 +1,6 @@
 package com.music.application.be.modules.downloaded_song;
 
 import com.music.application.be.modules.downloaded_song.dto.DownloadedSongDTO;
-import com.music.application.be.modules.downloaded_song.dto.DownloadedSongInfoDTO;
 import com.music.application.be.modules.song.Song;
 import com.music.application.be.modules.song.SongRepository;
 import com.music.application.be.modules.song.dto.SongDTO;
@@ -58,7 +57,7 @@ public class DownloadedSongService {
         return mapToDTO(savedDownload);
     }
 
-    // New method: Get downloaded song by songId - tự động lấy user từ authentication
+    // Get downloaded song by songId - tự động lấy user từ authentication
     public DownloadedSongDTO getDownloadedSongBySongId(Long songId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
@@ -149,25 +148,43 @@ public class DownloadedSongService {
         downloadedSongRepository.delete(downloadedSong);
     }
 
-    // Map entity to DTO - cập nhật để include thông tin song bảo mật hơn
+    // Map entity to DTO
     private DownloadedSongDTO mapToDTO(DownloadedSong downloadedSong) {
         DownloadedSongDTO dto = new DownloadedSongDTO();
         dto.setId(downloadedSong.getId());
-        dto.setSong(mapSongToInfoDTO(downloadedSong.getSong())); // Map song entity thành DownloadedSongInfoDTO
+        dto.setSong(mapSongToSongDTO(downloadedSong.getSong())); // Map song entity to SongDTO
         dto.setDownloadedAt(downloadedSong.getDownloadedAt());
         return dto;
     }
 
-    // Helper method để map Song entity thành DownloadedSongInfoDTO (chỉ thông tin cần thiết)
-    private DownloadedSongInfoDTO mapSongToInfoDTO(Song song) {
-        DownloadedSongInfoDTO songInfoDTO = new DownloadedSongInfoDTO();
-        songInfoDTO.setId(song.getId());
-        songInfoDTO.setTitle(song.getTitle());
-        songInfoDTO.setDuration(song.getDuration());
-        songInfoDTO.setThumbnail(song.getThumbnail());
-        songInfoDTO.setReleaseDate(song.getReleaseDate());
-        songInfoDTO.setArtistName(song.getArtist() != null ? song.getArtist().getName() : null);
-        songInfoDTO.setAlbumName(song.getAlbum() != null ? song.getAlbum().getName() : null);
-        return songInfoDTO;
+    // Helper method to map Song entity to SongDTO
+    private SongDTO mapSongToSongDTO(Song song) {
+        SongDTO dto = new SongDTO();
+        dto.setId(song.getId());
+        dto.setTitle(song.getTitle());
+        dto.setDuration(song.getDuration());
+        dto.setAudioUrl(song.getAudioUrl());
+        dto.setThumbnail(song.getThumbnail());
+        dto.setLyrics(song.getLyrics());
+        dto.setReleaseDate(song.getReleaseDate());
+        dto.setViewCount(song.getViewCount());
+
+        if (song.getArtist() != null) {
+            dto.setArtistId(song.getArtist().getId());
+            dto.setArtistName(song.getArtist().getName());
+        }
+
+        if (song.getAlbum() != null) {
+            dto.setAlbumId(song.getAlbum().getId());
+            dto.setAlbumName(song.getAlbum().getName());
+        }
+
+        if (song.getGenres() != null) {
+            dto.setGenreIds(song.getGenres().stream()
+                    .map(genre -> genre.getId())
+                    .collect(Collectors.toList()));
+        }
+
+        return dto;
     }
 }
