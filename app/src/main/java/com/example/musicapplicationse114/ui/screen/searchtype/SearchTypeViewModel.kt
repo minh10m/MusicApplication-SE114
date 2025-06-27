@@ -62,7 +62,7 @@ class SearchTypeViewModel @Inject constructor(
         if(query.isBlank()) return
         viewModelScope.launch {
             try {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+               // _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
                 val token = tokenManager?.getToken()
                 if(api != null && !token.isNullOrBlank())
                 {
