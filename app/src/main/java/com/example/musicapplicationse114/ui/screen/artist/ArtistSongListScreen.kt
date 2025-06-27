@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIos
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
@@ -47,23 +46,24 @@ import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.Screen
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
-import com.example.musicapplicationse114.ui.screen.album.AlbumSongListViewModel
 
 @Composable
 fun ArtistSongListScreen(
     navController: NavController,
     artistId: Long,
     viewModel: ArtistViewModel = hiltViewModel(),
-    mainViewModel : MainViewModel,
+    mainViewModel: MainViewModel,
     sharedViewModel: PlayerSharedViewModel = hiltViewModel()
 ) {
     Log.d("ArtistSongListScreen", "PlayerSharedViewModel instance: ${sharedViewModel.hashCode()}")
     val state = viewModel.uiState.collectAsState().value
     val globalPlayerController = sharedViewModel.player
+    val isFollowed = state.followedArtistIds.contains(artistId)
 
     LaunchedEffect(artistId) {
         viewModel.loadArtistById(artistId)
         viewModel.loadSongByArtistId(artistId)
+        viewModel.loadFollowedArtists() // Kiểm tra trạng thái theo dõi
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.Black).padding(bottom = 129.dp)) {
@@ -132,17 +132,17 @@ fun ArtistSongListScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Button(
-                        onClick = {},
+                        onClick = { viewModel.toggleFollowArtist(artistId) },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White,
-                            contentColor = Color.Black
+                            containerColor = if (isFollowed) Color.Gray else Color.White,
+                            contentColor = if (isFollowed) Color.White else Color.Black
                         ),
                         shape = RoundedCornerShape(20.dp),
                         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
                     ) {
                         Text(
-                            text = "Follow",
+                            text = if (isFollowed) "Following" else "Follow",
                             fontWeight = FontWeight.SemiBold
                         )
                     }

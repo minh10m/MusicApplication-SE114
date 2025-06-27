@@ -36,6 +36,7 @@ import com.example.musicapplicationse114.ui.queue.QueueScreen
 import com.example.musicapplicationse114.ui.screen.album.AlbumSongListScreen
 import com.example.musicapplicationse114.ui.screen.artist.ArtistSongListScreen
 import com.example.musicapplicationse114.ui.screen.artist.ArtistViewModel
+import com.example.musicapplicationse114.ui.screen.artists.ArtistsFollowingScreen
 import com.example.musicapplicationse114.ui.screen.detail.DetailScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeScreen
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
@@ -72,6 +73,7 @@ sealed class Screen(val route: String, val title: String) {
     }
     object Queue: Screen("queue", "Queue")
     object LikedSong : Screen("LikeSong", "Liked Song")
+    object ArtistFollow : Screen("ArtistFollow", "Artist Follow")
 
 }
 
@@ -175,12 +177,23 @@ fun Navigation() {
                             sharedViewModel
                         )
                     }
+                    composable(Screen.ArtistFollow.route)
+                    {
+                        ArtistsFollowingScreen(
+                            navController = navController,
+                            homeViewModel,
+                            viewModel = hiltViewModel(),
+                            mainViewModel,
+                            sharedViewModel
+                        )
+                    }
                     composable(Screen.Library.route) {
                         LibraryScreen(
                             navController = navController,
                             viewModel = hiltViewModel(),
                             mainViewModel,
                             homeViewModel,
+                            artistsFollowingViewModel = hiltViewModel(),
                             sharedViewModel
                         )
                     }
@@ -258,7 +271,14 @@ fun Navigation() {
         bottomBar = {
             val currentRoute = currentRoute(navController)
             // Chỉ hiển thị bottomBar ở các màn hình Home, Search, Library
-            if (currentRoute in listOf(Screen.Home.route, Screen.Album.route, Screen.Artist.route, Screen.Search.route, Screen.Library.route, "home?username={username}&timeOfDay={timeOfDay}")) {
+            if (currentRoute in listOf(Screen.Home.route,
+                                        Screen.Album.route,
+                                        Screen.ArtistFollow.route,
+                                        Screen.LikedSong.route,
+                                        Screen.Artist.route,
+                                        Screen.Search.route,
+                                        Screen.Library.route,
+                                        "home?username={username}&timeOfDay={timeOfDay}")) {
                 Column {
                     if (playerState.currentSong != null && !mainViewModel.isFullScreenPlayer.value) {
                         MiniPlayer(

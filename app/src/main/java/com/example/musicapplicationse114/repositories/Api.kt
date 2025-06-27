@@ -10,6 +10,9 @@ import com.example.musicapplicationse114.model.DownloadedSongPageResponse
 import com.example.musicapplicationse114.model.DownloadedSongResponse
 import com.example.musicapplicationse114.model.FavoriteSongPageResponse
 import com.example.musicapplicationse114.model.FavoriteSongResponse
+import com.example.musicapplicationse114.model.FollowArtistPageResponse
+import com.example.musicapplicationse114.model.FollowArtistRequest
+import com.example.musicapplicationse114.model.FollowArtistResponse
 import com.example.musicapplicationse114.model.GenrePageResponse
 import com.example.musicapplicationse114.model.GenreResponse
 import com.example.musicapplicationse114.model.GlobalSearchResultDTO
@@ -218,4 +221,36 @@ interface Api {
         @Header("Authorization") token: String,
         @Path("userId") userId: Long
     ): Response<List<SongResponse>>
+
+    //Follow artist
+    @POST("api/follow-artists")
+    suspend fun followArtist(
+        @Header("Authorization") token: String,
+        @Body request: FollowArtistRequest
+    ): Response<FollowArtistResponse>
+
+    @DELETE("api/follow-artists")
+    suspend fun unfollowArtist(
+        @Header("Authorization") token: String,
+        @Query("artistId") artistId: Long
+    ): Response<Void>
+
+    @GET("api/follow-artists")
+    suspend fun getFollowedArtists(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20,
+        @Query("sortBy") sortBy: String = "followedAt",
+        @Query("sortDir") sortDir: String = "desc"
+    ): Response<FollowArtistPageResponse>
+
+    @GET("api/follow-artists/search")
+    suspend fun searchFollowedArtists(
+        @Header("Authorization") token: String,
+        @Query("query") query: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20,
+        @Query("sortBy") sortBy: String = "followedAt",
+        @Query("sortDir") sortDir: String = "desc"
+    ): Response<FollowArtistPageResponse>
 }

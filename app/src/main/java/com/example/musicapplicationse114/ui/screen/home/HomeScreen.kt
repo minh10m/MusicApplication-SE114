@@ -373,6 +373,7 @@ fun GenreItemWithSongs(
 ) {
     val state by viewModel.uiState.collectAsState()
     val songs = state.songsByGenre[genre.id] ?: emptyList() // Lấy danh sách bài hát theo genreId
+    val genreThumbnail = songs.getOrNull(2)?.thumbnail
 
     LaunchedEffect(genre.id) {
         if (songs.isEmpty()) {
@@ -397,6 +398,14 @@ fun GenreItemWithSongs(
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color.DarkGray)
             )
+            {
+                AsyncImage(
+                    model = genreThumbnail,
+                    contentDescription = genre.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
             Spacer(modifier = Modifier.width(8.dp))
             Column(
                 modifier = Modifier

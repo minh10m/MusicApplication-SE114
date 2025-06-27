@@ -37,6 +37,7 @@ import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.Screen
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
+import com.example.musicapplicationse114.ui.screen.artists.ArtistsFollowingViewModel
 import com.example.musicapplicationse114.ui.screen.home.HomeUiState
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
 import com.example.musicapplicationse114.ui.screen.search.SearchBottomNavigationBar
@@ -48,6 +49,7 @@ fun LibraryScreen(navController: NavController,
                   viewModel: LibraryViewModel = viewModel(),
                   mainViewModel: MainViewModel,
                   homeViewModel: HomeViewModel,
+                  artistsFollowingViewModel: ArtistsFollowingViewModel,
                   sharedViewModel: PlayerSharedViewModel) {
     val state by viewModel.uiState.collectAsState()
     var showLoading by remember { mutableStateOf(false) }
@@ -57,6 +59,7 @@ fun LibraryScreen(navController: NavController,
         viewModel.loadRecentlyPlayed()
         homeViewModel.loadFavoriteSong()
         homeViewModel.loadDownloadedSong()
+        artistsFollowingViewModel.loadFollowedArtists()
     }
     // Khi showLoading = true, hiển thị loading indicator
     if (showLoading) {
@@ -86,11 +89,16 @@ fun LibraryScreen(navController: NavController,
             Text("Your Library", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(modifier = Modifier.height(24.dp))
 
-            LibraryGrid(state, homeViewModel,
+            LibraryGrid(state, homeViewModel,artistsFollowingViewModel,
                 onItemClick = { tile->
                     when (tile.title) {
                         "Liked Songs" -> {
                             navController.navigate(Screen.LikedSong.route)
+                            Log.d("LibraryScreen", "Navigated to Liked Songs")
+                        }
+                        "Artists" -> {
+                            navController.navigate(Screen.ArtistFollow.route)
+                            Log.d("LibraryScreen", "Navigated to Artists")
                         }
                     }
                 })
@@ -155,13 +163,14 @@ fun LibraryScreen(navController: NavController,
 }
 
 @Composable
-fun LibraryGrid(state: LibraryUiState, homeViewModel: HomeViewModel, onItemClick: (LibraryTile) -> Unit) {
+fun LibraryGrid(state: LibraryUiState, homeViewModel: HomeViewModel,artistsFollowingViewModel: ArtistsFollowingViewModel, onItemClick: (LibraryTile) -> Unit) {
     val homeState = homeViewModel.uiState.collectAsState().value
+    val artistFollowingState = artistsFollowingViewModel.uiState.collectAsState().value
     val items = listOf(
         LibraryTile("Liked Songs", "${homeState.likeCount} songs", Icons.Default.Favorite),
         LibraryTile("Downloads", "${homeState.downloadCount} songs", Icons.Default.Download),
         LibraryTile("Playlists", "12 playlists", Icons.Default.List),
-        LibraryTile("Artists", "5 artists", Icons.Default.Person)
+        LibraryTile("Artists", "${artistFollowingState.followCount} artists", Icons.Default.Person)
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
