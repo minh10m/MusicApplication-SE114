@@ -14,15 +14,14 @@ import com.example.musicapplicationse114.model.FollowArtistPageResponse
 import com.example.musicapplicationse114.model.FollowArtistRequest
 import com.example.musicapplicationse114.model.FollowArtistResponse
 import com.example.musicapplicationse114.model.GenrePageResponse
-import com.example.musicapplicationse114.model.GenreResponse
 import com.example.musicapplicationse114.model.GlobalSearchResultDTO
 import com.example.musicapplicationse114.model.PlaylistPageResponse
 import com.example.musicapplicationse114.model.PlaylistResponse
-import com.example.musicapplicationse114.model.PlaylistResquest
-import com.example.musicapplicationse114.model.RecentlyPlayed
-import com.example.musicapplicationse114.model.RecentlyPlayedPageResponse
+import com.example.musicapplicationse114.model.PlaylistRequest
 import com.example.musicapplicationse114.model.RecentlyPlayedRequest
 import com.example.musicapplicationse114.model.SongPageResponse
+import com.example.musicapplicationse114.model.SongPlaylist
+import com.example.musicapplicationse114.model.SongPlaylistRequest
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.model.UserLoginRequest
 import com.example.musicapplicationse114.model.UserSignUpRequest
@@ -261,7 +260,7 @@ interface Api {
     @POST("/api/playlists")
     suspend fun createPlaylist(
         @Header("Authorization") token: String,
-        @Body request: PlaylistResquest
+        @Body request: PlaylistRequest
     ): Response<PlaylistResponse>
 
     // Lấy tất cả playlists (phân trang + sắp xếp)
@@ -291,4 +290,9 @@ interface Api {
         @Path("playlistId") playlistId: Long
     ): Response<PlaylistResponse>
 
+    @POST("/api/song-playlists")
+    suspend fun addSongToPlaylist(
+        @Header("Authorization") token: String,
+        @Body request: SongPlaylistRequest
+    ): Response<SongPlaylist>
 }

@@ -163,6 +163,9 @@ fun PlaylistScreen(
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(40.dp)
+                        .clickable {
+                            navController.navigate(Screen.CreatePlaylist.route)
+                        },
                 )
             }
 

@@ -23,8 +23,8 @@ data class PlayListSongsUiState(
 
 @HiltViewModel
 class PlayListSongsViewModel @Inject constructor(
-    private val api : Api?,
-    private val tokenManager: TokenManager?
+     val api : Api?,
+     val tokenManager: TokenManager?
 ) : ViewModel()
 {
     private val _uiState = MutableStateFlow(PlayListSongsUiState())

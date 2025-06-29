@@ -12,7 +12,7 @@ data class PlaylistResponse(
     val songPlaylists: List<SongPlaylist> = emptyList()
 )
 
-data class PlaylistResquest(
+data class PlaylistRequest(
     val name: String,
     val description: String? = null,
     val isPublic: Boolean = false,
@@ -25,6 +25,11 @@ data class SongPlaylist(
     val playlistId: Long,
     val addedAt: String,
     val song: SongResponse
+)
+
+data class SongPlaylistRequest(
+    val songId : Long,
+    val playlistId : Long
 )
 
 data class PlaylistPageResponse<T>(
