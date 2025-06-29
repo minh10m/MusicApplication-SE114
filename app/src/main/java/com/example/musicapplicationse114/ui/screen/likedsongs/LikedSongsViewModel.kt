@@ -1,45 +1,88 @@
 package com.example.musicapplicationse114.ui.screen.likedsongs
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.musicapplicationse114.auth.TokenManager
+import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.model.AlbumResponse
 import com.example.musicapplicationse114.model.ArtistResponse
-import com.example.musicapplicationse114.model.Genre
+import com.example.musicapplicationse114.model.FavoriteSongResponse
+import com.example.musicapplicationse114.model.GenreResponse
 import com.example.musicapplicationse114.model.SongResponse
+import com.example.musicapplicationse114.repositories.Api
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-open class LikedSongsViewModel : ViewModel() {
-    private val dummyArtist = ArtistResponse(
-        id = 1,
-        name = "The Chainsmokers",
-        avatar = "",
-        description = "",
-        followerCount = 0
-    )
+data class LikeSongUiState(
+    val likedSongs: List<FavoriteSongResponse> = emptyList(),
+    val likedSongsSearch: List<FavoriteSongResponse> = emptyList(),
+    val status: LoadStatus = LoadStatus.Init(),
+    val query: String = "",
+)
 
-    private val dummyAlbum = AlbumResponse(
-        id = 1,
-        name = "Test Album",
-        releaseDate = "2020-01-01",
-        coverImage = "",
-        description = "",
-        artistId = 46546,
-    )
+@HiltViewModel
+class LikedSongsViewModel @Inject constructor(
+    private val api: Api?,
+    private val tokenManager: TokenManager?
+): ViewModel()
+{
+    private val _uiState = MutableStateFlow(LikeSongUiState())
+    val uiState: StateFlow<LikeSongUiState> = _uiState
 
-    private val dummyGenre = Genre(
-        id = 1,
-        name = "EDM",
-        description = "",
-        Song = arrayListOf()
-    )
+    private var searchJob: Job? = null
 
-    private val dummySongs = listOf(
-        SongResponse(1, "Inside Out", 220, "", "", "", "2020-01-01", 0, 435345, 4567465, emptyList()),
-        SongResponse(2, "Young", 210, "", "", "", "2020-01-01", 0, 354346, 456456, emptyList()),
-        SongResponse(3, "Beach House", 250, "", "", "", "2020-01-01", 0, 345345, 456456, emptyList()),
-        SongResponse(4, "Kills You Slowly", 200, "", "", "", "2020-01-01", 0, 34534, 456456, emptyList())
-    )
+    fun searchAllDebounced(query: String, limit: Int = 10) {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(100)
+            searchLikeSongs(query)
+        }
+    }
 
-    private val _likedSongs = MutableStateFlow(dummySongs)
-    open val likedSongs: StateFlow<List<SongResponse>> = _likedSongs
+    fun updateQuery(query: String) {
+        _uiState.value = _uiState.value.copy(query = query)
+    }
+
+    fun searchLikeSongs(query: String) {
+        viewModelScope.launch {
+            try {
+                if (query.isBlank()) {
+                    _uiState.value = _uiState.value.copy(
+                        likedSongsSearch = emptyList(),
+                        status = LoadStatus.Success()
+                    )
+                    return@launch
+                }
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+                val token = tokenManager?.getToken()
+                Log.d("LikedSongsViewModel", "Token: $token")
+                if (api != null && !token.isNullOrBlank()) {
+                    val result = api.searchFavoriteSongs(token, query)
+                    Log.d("LikedSongsViewModel", "API Response: ${result.body()}")
+                    if (result.isSuccessful) {
+                        _uiState.value = result.body()?.let {
+                            _uiState.value.copy(
+                                likedSongsSearch = it.content,
+                                status = LoadStatus.Success()
+                            )
+                        } ?: _uiState.value.copy(status = LoadStatus.Error("Empty response"))
+                    } else {
+                        _uiState.value = _uiState.value.copy(status = LoadStatus.Error("API error: ${result.code()}"))
+                    }
+                } else {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có API hoặc token"))
+                }
+            } catch (e: Exception) {
+                Log.e("LikedSongsViewModel", "Error: ${e.message}")
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
+            }
+        }
+    }
+    
 }

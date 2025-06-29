@@ -1,29 +1,109 @@
 package com.example.musicapplicationse114.ui.screen.artists
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.example.musicapplicationse114.model.AlbumResponse
-import com.example.musicapplicationse114.model.ArtistResponse
-import com.example.musicapplicationse114.model.FollowArtist
-import com.example.musicapplicationse114.model.SongResponse
+import androidx.lifecycle.viewModelScope
+import com.example.musicapplicationse114.auth.TokenManager
+import com.example.musicapplicationse114.common.enum.LoadStatus
+import com.example.musicapplicationse114.model.FollowArtistResponse
+import com.example.musicapplicationse114.repositories.Api
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ArtistsFollowingViewModel : ViewModel() {
-    private val dummySongs = arrayListOf<SongResponse>()
-    private val dummyAlbums = arrayListOf<AlbumResponse>()
-    private val dummyFollows = arrayListOf<FollowArtist>()
+data class ArtistsFollowingUiState(
+    val followedArtists: List<FollowArtistResponse> = emptyList(),
+    val searchedArtists: List<FollowArtistResponse> = emptyList(),
+    val followCount: Int = 0,
+    val status: LoadStatus = LoadStatus.Init(),
+    val query: String = ""
+)
 
-    private val dummyArtists = listOf(
-        ArtistResponse(1, "One Republic", "", "", 1000),
-        ArtistResponse(2, "Coldplay", "", "", 1200),
-        ArtistResponse(3, "Chainsmokers", "", "", 1500),
-        ArtistResponse(4, "Linkin Park", "", "", 900),
-        ArtistResponse(5, "Sia", "", "", 800),
-        ArtistResponse(6, "Ellie Goulding", "", "", 950),
-        ArtistResponse(7, "Katy Perry", "", "", 1100),
-        ArtistResponse(8, "Maroon 5", "", "", 1300)
-    )
+@HiltViewModel
+class ArtistsFollowingViewModel @Inject constructor(
+    private val api: Api?,
+    private val tokenManager: TokenManager?
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(ArtistsFollowingUiState())
+    val uiState: StateFlow<ArtistsFollowingUiState> = _uiState
 
-    private val _followingArtists = MutableStateFlow(dummyArtists)
-    val followingArtists: StateFlow<List<ArtistResponse>> = _followingArtists
+    private var searchJob: Job? = null
+
+    fun loadFollowedArtists() {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+                val token = tokenManager?.getToken()
+                if (api != null && !token.isNullOrBlank()) {
+                    val result = api.getFollowedArtists(token)
+                    Log.d("ArtistsFollowingViewModel", "API Response: ${result.body()}")
+                    if (result.isSuccessful) {
+                        _uiState.value = _uiState.value.copy(
+                            followedArtists = result.body()?.content ?: emptyList(),
+                            followCount = (result.body()?.content ?: emptyList()).size,
+                            status = LoadStatus.Success()
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(status = LoadStatus.Error("API error: ${result.code()}"))
+                    }
+                } else {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có API hoặc token"))
+                }
+            } catch (e: Exception) {
+                Log.e("ArtistsFollowingViewModel", "Error: ${e.message}")
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
+            }
+        }
+    }
+
+    fun searchAllDebounced(query: String, page: Int = 0, size: Int = 20) {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(100)
+            searchFollowedArtists(query, page, size)
+        }
+    }
+
+    fun updateQuery(query: String) {
+        _uiState.value = _uiState.value.copy(query = query)
+    }
+
+    fun searchFollowedArtists(query: String, page: Int = 0, size: Int = 20) {
+        viewModelScope.launch {
+            try {
+                if (query.isBlank()) {
+                    _uiState.value = _uiState.value.copy(
+                        searchedArtists = emptyList(),
+                        status = LoadStatus.Success()
+                    )
+                    return@launch
+                }
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+                val token = tokenManager?.getToken()
+                if (api != null && !token.isNullOrBlank()) {
+                    val result = api.searchFollowedArtists(token, query, page, size)
+                    Log.d("ArtistsFollowingViewModel", "API Search Response: ${result.body()}")
+                    if (result.isSuccessful) {
+                        _uiState.value = result.body()?.let {
+                            _uiState.value.copy(
+                                searchedArtists = it.content,
+                                status = LoadStatus.Success()
+                            )
+                        } ?: _uiState.value.copy(status = LoadStatus.Error("Empty response"))
+                    } else {
+                        _uiState.value = _uiState.value.copy(status = LoadStatus.Error("API error: ${result.code()}"))
+                    }
+                } else {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có API hoặc token"))
+                }
+            } catch (e: Exception) {
+                Log.e("ArtistsFollowingViewModel", "Error: ${e.message}")
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
+            }
+        }
+    }
 }

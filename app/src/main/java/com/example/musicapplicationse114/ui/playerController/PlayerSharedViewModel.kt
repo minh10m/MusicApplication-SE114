@@ -1,19 +1,28 @@
 package com.example.musicapplicationse114.ui.playerController
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musicapplicationse114.auth.TokenManager
+import com.example.musicapplicationse114.common.enum.LoadStatus
+import com.example.musicapplicationse114.model.RecentlyPlayedRequest
 import com.example.musicapplicationse114.model.SongResponse
+import com.example.musicapplicationse114.repositories.Api
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class PlayerSharedViewModel @Inject constructor(
-    val player: GlobalPlayerController
+    val player: GlobalPlayerController,
+    val api: Api?,
+    val tokenManager: TokenManager?
 ) : ViewModel() {
     private val _queue = mutableStateListOf<SongResponse>()
     val queue: List<SongResponse> get() = _queue
@@ -29,6 +38,39 @@ class PlayerSharedViewModel @Inject constructor(
         _queue.addAll(songs)
         _currentIndex.value = startIndex
         player.setSongList(songs, startIndex)
+    }
+
+    fun addRecentlyPlayed(songId: Long) {
+        viewModelScope.launch(NonCancellable) {
+            repeat(3) { attempt ->
+                try {
+                    val token = tokenManager?.getToken()?.takeIf { it.isNotBlank() }
+                    val userId = tokenManager?.getUserId()?.takeIf { it != -1L }
+                    Log.d("RecentPlayed", "Attempt $attempt: token=$token, userId=$userId, api=${api != null}, songId=$songId")
+
+                    if (!token.isNullOrBlank() && api != null && userId != null) {
+                        val response = api.addRecentlyPlayed(token, RecentlyPlayedRequest(userId, songId))
+
+                        if (response.isSuccessful) {
+                            Log.e("RecentPlayed", "Success on attempt $attempt")
+                            return@launch
+                        } else {
+                            val errorBody = response.errorBody()?.string()
+                            Log.e(
+                                "RecentPlayed",
+                                "Failed on attempt $attempt: HTTP ${response.code()} - $errorBody"
+                            )
+                        }
+                    } else {
+                        Log.e("RecentPlayed", "Missing token or userId or api is null")
+                    }
+                    delay(1000) // Chờ trước khi thử lại
+                } catch (e: Exception) {
+                    Log.e("RecentPlayed", "Exception on attempt $attempt: ${e.message}", e)
+                }
+            }
+            Log.e("RecentPlayed", "Failed to add songId $songId after 3 attempts")
+        }
     }
 
     init {

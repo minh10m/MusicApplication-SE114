@@ -1,4 +1,4 @@
-package com.example.musicapplicationse114.ui.screen.artist
+package com.example.musicapplicationse114.ui.screen.playListSongs
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,12 +19,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIos
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -46,32 +45,43 @@ import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.Screen
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
+import com.example.musicapplicationse114.ui.screen.album.AlbumSongListViewModel
 
 @Composable
-fun ArtistSongListScreen(
+fun PlayListSongsScreen(
     navController: NavController,
-    artistId: Long,
-    viewModel: ArtistViewModel = hiltViewModel(),
+    playlistId: Long,
+    viewModel: PlayListSongsViewModel = hiltViewModel(),
+    sharedViewModel: PlayerSharedViewModel = hiltViewModel(),
     mainViewModel: MainViewModel,
-    sharedViewModel: PlayerSharedViewModel = hiltViewModel()
 ) {
-    Log.d("ArtistSongListScreen", "PlayerSharedViewModel instance: ${sharedViewModel.hashCode()}")
     val state = viewModel.uiState.collectAsState().value
     val globalPlayerController = sharedViewModel.player
-    val isFollowed = state.followedArtistIds.contains(artistId)
 
-    LaunchedEffect(artistId) {
-        viewModel.loadArtistById(artistId)
-        viewModel.loadSongByArtistId(artistId)
-        viewModel.loadFollowedArtists() // Kiểm tra trạng thái theo dõi
+    val currentBackStackEntry = navController.currentBackStackEntry
+    val reloadTrigger = currentBackStackEntry?.savedStateHandle?.get<Boolean>("reload") ?: false
+
+    LaunchedEffect(reloadTrigger) {
+        if (reloadTrigger) {
+            viewModel.loadPlaylistById(playlistId)
+            viewModel.loadPlaylistWithSong(playlistId)
+            currentBackStackEntry?.savedStateHandle?.set("reload", false) // reset lại
+        }
     }
+
+    LaunchedEffect(playlistId) {
+        viewModel.loadPlaylistById(playlistId)
+        viewModel.loadPlaylistWithSong(playlistId)
+    }
+
+
 
     Column(modifier = Modifier.fillMaxSize().background(Color.Black).padding(bottom = 129.dp)) {
         // Fixed album cover with overlay
         Box(modifier = Modifier.height(300.dp)) {
             AsyncImage(
-                model = state.artist?.body()?.avatar,
-                contentDescription = state.artist?.body()?.name,
+                model = state.playlist?.thumbnail,
+                contentDescription = state.playlist?.name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
@@ -97,13 +107,13 @@ fun ArtistSongListScreen(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = state.artist?.body()?.name ?: "",
+                        text = state.playlist?.name ?: "",
                         color = Color.White,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Artist",
+                        text = "Playlist",
                         color = Color.LightGray,
                         fontSize = 14.sp,
                         modifier = Modifier.padding(top = 2.dp)
@@ -120,7 +130,7 @@ fun ArtistSongListScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Text(
-                text = "${state.artist?.body()?.followerCount} likes • ${state.songArtist.size} songs",
+                text = "1.2K likes • ${state.songs.size} songs",
                 color = Color.LightGray,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -131,38 +141,34 @@ fun ArtistSongListScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Button(
-                        onClick = { viewModel.toggleFollowArtist(artistId) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isFollowed) Color.Gray else Color.White,
-                            contentColor = if (isFollowed) Color.White else Color.Black
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                    ) {
-                        Text(
-                            text = if (isFollowed) "Following" else "Follow",
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(18.dp))
                     Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = "Share",
+                        imageVector = Icons.Default.FavoriteBorder,
+                        contentDescription = "Like",
                         tint = Color.White,
                         modifier = Modifier.size(30.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add",
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
+                            .clickable {
+                                navController.currentBackStackEntry?.savedStateHandle?.set("playlistId", state.playlist?.id)
+                                navController.currentBackStackEntry?.savedStateHandle?.set("addedSongIds", state.songs.map { it.id })
+                                navController.navigate(Screen.SearchSongAddIntoPlaylist.route)
+                            }
                     )
                 }
                 IconButton(
                     onClick = {
-                        if (state.songArtist.isNotEmpty()) {
-                            sharedViewModel.setSongList(state.songArtist, 0)
-                            sharedViewModel.addRecentlyPlayed(state.songArtist[0].id)
-                            Log.d("ArtistSongListScreen", "Called addRecentlyPlayed for songId: ${state.songArtist[0].id}")
+                        if (state.songs.isNotEmpty()) {
+                            sharedViewModel.setSongList(state.songs, 0)
+                            sharedViewModel.addRecentlyPlayed(state.songs[0].id)
+                            Log.d("PlayListSongsScreen", "Called addRecentlyPlayed for songId: ${state.songs[0].id}")
+                            globalPlayerController.play(state.songs[0])
                             mainViewModel.setFullScreenPlayer(true)
-                            globalPlayerController.play(state.songArtist[0])
-                            navController.navigate(Screen.Player.createRoute(state.songArtist[0].id))
+                            navController.navigate(Screen.Player.createRoute(state.songs[0].id))
                         }
                     },
                     modifier = Modifier
@@ -181,16 +187,16 @@ fun ArtistSongListScreen(
 
         // Song list
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(state.songArtist) { song ->
+            items(state.songs) { song ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            sharedViewModel.setSongList(state.songArtist, state.songArtist.indexOf(song))
+                            sharedViewModel.setSongList(state.songs, state.songs.indexOf(song))
                             sharedViewModel.addRecentlyPlayed(song.id)
-                            Log.d("ArtistSongListScreen", "Called addRecentlyPlayed for songId: ${song.id}")
-                            mainViewModel.setFullScreenPlayer(true)
+                            Log.d("PlayListSongsScreen", "Called addRecentlyPlayed for songId: ${song.id}")
                             globalPlayerController.play(song)
+                            mainViewModel.setFullScreenPlayer(true)
                             navController.navigate(Screen.Player.createRoute(song.id))
                         }
                         .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -214,7 +220,7 @@ fun ArtistSongListScreen(
                             maxLines = 1
                         )
                         Text(
-                            text = state.artist?.body()?.name ?: "Unknown Artist",
+                            text = song.artistName,
                             color = Color.LightGray,
                             fontSize = 14.sp,
                             maxLines = 1

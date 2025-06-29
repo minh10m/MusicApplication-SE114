@@ -10,7 +10,9 @@ data class SongResponse(
     val releaseDate: String, // <-- Đổi từ LocalDate
     val viewCount: Int = 0,
     val artistId: Long,
+    val artistName: String,
     val albumId: Long,
+    val albumName: String,
     val genreIds: List<Long>
 )
 

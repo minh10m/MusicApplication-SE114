@@ -1,10 +1,12 @@
 package com.example.musicapplicationse114.ui.screen.likedsongs
 
+import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -21,36 +23,58 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.filled.ArrowBackIos
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
+import com.example.musicapplicationse114.Screen
 import com.example.musicapplicationse114.model.SongResponse
-import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
+import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
+import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
 import kotlinx.coroutines.delay
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun LikedSongsScreen(
     navController: NavController,
+    homeViewModel: HomeViewModel,
     viewModel: LikedSongsViewModel = viewModel(),
-    mainViewModel: MainViewModel
+    mainViewModel: MainViewModel,
+    sharedViewModel: PlayerSharedViewModel
 ) {
-    val songs by viewModel.likedSongs.collectAsState()
+    val favoriteSongs = homeViewModel.uiState.value.favoriteSongs // Sử dụng collectAsState để tránh StateFlowValueCalledInComposition
+    val globalPlayerController = sharedViewModel.player
+    val uiState = viewModel.uiState.collectAsState()
     var showLoading by remember { mutableStateOf(false) }
+
+    val songs: List<SongResponse> = remember(favoriteSongs) {
+        favoriteSongs.map { it.song }
+    }
+
+    val likedSongsSearch : List<SongResponse> = remember(uiState.value.likedSongsSearch) {
+        uiState.value.likedSongsSearch.map { it.song }
+    }
 
     if (showLoading) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = Color.White)
         }
     }
 
@@ -65,52 +89,137 @@ fun LikedSongsScreen(
         contentWindowInsets = WindowInsets
             .safeDrawing
             .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
-//        bottomBar = { NavigationBar(navController = navController) { showLoading = true } }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
                 .padding(innerPadding)
-                .padding(start = 24.dp, end = 24.dp, top = 48.dp, bottom = 80.dp)
+                .padding(horizontal = 16.dp, vertical = 14.dp) // Điều chỉnh padding tổng thể
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clickable {
-                            if (!navController.popBackStack()) {
-                                navController.navigate("library")
-                            }
-                        }
-                )
-                Spacer(modifier = Modifier.width(12.dp))
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Column {
-                    Text(
-                        text = "Liked Songs",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBackIos,
+                            contentDescription = "Back",
+                            tint = Color.White,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable {
+                                    if (!navController.popBackStack()) {
+                                        navController.navigate("library")
+                                    }
+                                }
+                        )
+
+                        Spacer(modifier = Modifier.width(26.dp))
+
+                        Text(
+                            text = "Liked Songs",
+                            fontSize = 28.sp, // Tăng kích thước tiêu đề
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+
+                    }
+                    Spacer(modifier = Modifier.height(30.dp))
                     Text(
                         text = "${songs.size} liked songs",
                         fontSize = 14.sp,
-                        color = Color.Gray
+                        color = Color.LightGray,
+                        textAlign = TextAlign.Start
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
 
-            SearchBar()
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(15.dp))
+
+            Row {
+                // Search Bar
+                SearchBar(
+                    query = uiState.value.query,
+                    onQueryChange = {
+                        viewModel.updateQuery(it)
+                        viewModel.searchAllDebounced(it)
+                    }
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Icon(
+                    imageVector = Icons.Default.SwapVert,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(40.dp)
+                )
+
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            val displayedSongs = if (uiState.value.query.isNotBlank()) {
+                likedSongsSearch
+            } else {
+                songs
+            }
 
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(songs) { song ->
-                    SongItem(song)
+                itemsIndexed(displayedSongs) { index, song ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                sharedViewModel.setSongList(songs, index)
+                                sharedViewModel.addRecentlyPlayed(song.id)
+                                Log.d("LikedSongsScreen", "Called addRecentlyPlayed for songId: ${song.id}")
+                                globalPlayerController.play(song)
+                                mainViewModel.setFullScreenPlayer(true)
+                                navController.navigate(Screen.Player.createRoute(song.id))
+                            }
+                            .padding(vertical = 12.dp), // Tăng padding giữa các mục
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = song.thumbnail,
+                            contentDescription = song.title,
+                            modifier = Modifier
+                                .size(50.dp) // Tăng kích thước hình ảnh
+                                .clip(RoundedCornerShape(8.dp)), // Bo góc lớn hơn
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = song.title,
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = song.artistName,
+                                color = Color.Gray,
+                                fontSize = 14.sp,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "More",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -118,55 +227,64 @@ fun LikedSongsScreen(
 }
 
 @Composable
-fun SearchBar() {
-    var text by remember { mutableStateOf("") }
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit = {}
+) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF2C2C2C), RoundedCornerShape(12.dp))
-            .padding(12.dp),
+            .width(330.dp)
+            .background(Color.White, RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Default.Search, contentDescription = null, tint = Color.White.copy(alpha = 0.8f))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = "Search", color = Color.White.copy(alpha = 0.6f), fontSize = 14.sp)
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(Icons.Default.SwapVert, contentDescription = null, tint = Color.White.copy(alpha = 0.8f))
-    }
-}
+        Icon(
+            imageVector = Icons.Default.Search,
+            contentDescription = null,
+            tint = Color.Black,
+            modifier = Modifier
+                .size(20.dp)
+                .align(Alignment.CenterVertically) // Đảm bảo Icon căn giữa
+        )
+        Spacer(modifier = Modifier.width(10.dp))
 
-@Composable
-fun SongItem(song: SongResponse) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
         Box(
             modifier = Modifier
-                .size(45.dp)
-                .background(Color.Gray, RoundedCornerShape(5.dp))
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(song.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-            //Text(song.artist.name, color = Color.Gray, fontSize = 13.sp)
+                .weight(1f)
+                .height(24.dp), // Tăng nhẹ chiều cao để chứa con trỏ và text
+            contentAlignment = Alignment.CenterStart
+        ) {
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                textStyle = TextStyle(
+                    color = Color.Black,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Start,
+                    lineHeight = 14.sp // Đảm bảo line height khớp với fontSize
+                ),
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.Center), // Căn giữa BasicTextField trong Box
+                decorationBox = { innerTextField ->
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (query.isEmpty()) {
+                            Text(
+                                text = "Search",
+                                color = Color.Black.copy(alpha = 0.6f),
+                                fontSize = 14.sp,
+                                lineHeight = 14.sp, // Đồng bộ với BasicTextField
+                                modifier = Modifier.align(Alignment.CenterStart)
+                            )
+                        }
+                        innerTextField()
+                    }
+                }
+            )
         }
-        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.LightGray)
-        Spacer(modifier = Modifier.width(10.dp))
-        Icon(Icons.Default.MoreVert, contentDescription = null, tint = Color.LightGray)
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewLikedSongsScreen() {
-    MusicApplicationSE114Theme(darkTheme = true) {
-        LikedSongsScreen(
-            navController = rememberNavController(),
-            viewModel = LikedSongsViewModel(),
-            mainViewModel = MainViewModel()
-        )
     }
 }

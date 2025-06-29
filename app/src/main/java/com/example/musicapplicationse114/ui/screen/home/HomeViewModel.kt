@@ -10,7 +10,8 @@ import com.example.musicapplicationse114.model.AlbumResponse
 import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.DownloadedSongResponse
 import com.example.musicapplicationse114.model.FavoriteSongResponse
-import com.example.musicapplicationse114.model.RecentlyPlayed
+import com.example.musicapplicationse114.model.GenreResponse
+import com.example.musicapplicationse114.model.RecentlyPlayedResponse
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
 import com.example.musicapplicationse114.repositories.MainLog
@@ -24,8 +25,12 @@ import javax.inject.Inject
 data class HomeUiState(
     val albums: List<AlbumResponse> = emptyList(),
     val songs: List<SongResponse> = emptyList(),
+    val songsByGenre: Map<Long, List<SongResponse>> = emptyMap(),
+    val likeCount : Int = 0,
+    val downloadCount : Int = 0,
     val artists : List<ArtistResponse> = emptyList(),
-    val recentPlayed: List<RecentlyPlayed> = emptyList(),
+    val genres : List<GenreResponse> = emptyList(),
+    val recentPlayed: List<RecentlyPlayedResponse> = emptyList(),
     val favoriteSongs: List<FavoriteSongResponse> = emptyList(),
     val downloadSongs: List<DownloadedSongResponse> = emptyList(),
     val status : LoadStatus = LoadStatus.Init(),
@@ -71,6 +76,62 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun loadGenre() {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+                val token = tokenManager?.getToken()
+                if(api != null && !token.isNullOrBlank()){
+                    Log.d("GenreRequest", "Token: $token")
+                    val genres = api.getGenres(token)
+                    Log.d("HomeViewModel", "Genres loaded: ${genres.body()?.content?.size} items")
+                    _uiState.value = _uiState.value.copy(
+                        genres = genres.body()?.content.orEmpty(),
+                        status = LoadStatus.Success()
+                    )
+                }
+                else
+                {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
+                }
+            }
+            catch (e:Exception)
+            {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
+            }
+        }
+
+    }
+
+    fun loadSongByGenre(genreId : Long)
+    {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+                val token = tokenManager?.getToken()
+                if(api != null && !token.isNullOrBlank()){
+                    Log.d("SongRequest", "Token: $token")
+                    val songs = api.getSongByGenreId(token, genreId)
+                    Log.d("HomeViewModel", "Songs loaded: ${songs.content.size} items")
+                    _uiState.value = _uiState.value.copy(
+                        songsByGenre = _uiState.value.songsByGenre + (genreId to songs.content),
+                        status = LoadStatus.Success()
+                    )
+                }
+                else
+                {
+                    Log.e("HomeViewModel", "API hoặc token null")
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
+                }
+            }
+            catch (e : Exception)
+            {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
+                Log.d("HomeViewModel", "Failed to load songs: ${e.message}")
+            }
+
+        }
+    }
     fun loadAlbum() {
         viewModelScope.launch {
             try {
@@ -135,12 +196,13 @@ class HomeViewModel @Inject constructor(
             try {
                 Log.d("FavoriteSong", "Token: $token - UserId: $userId")
 
-                val response = api.getFavoriteSongs(token, userId)
+                val response = api.getFavoriteSongs(token)
                 if (response.isSuccessful) {
                     val songs = response.body()?.content.orEmpty()
 
                     _uiState.value = _uiState.value.copy(
                         favoriteSongs = songs,
+                        likeCount = songs.size,
                         status = LoadStatus.Success()
                     )
 
@@ -172,12 +234,13 @@ class HomeViewModel @Inject constructor(
             try {
                 Log.d("DownloadedSongs", "Token: $token - UserId: $userId")
 
-                val response = api.getDownloadedSongs(token, userId)
+                val response = api.getDownloadedSongs(token)
                 if (response.isSuccessful) {
                     val downloadedSongs = response.body()?.content.orEmpty()
 
                     _uiState.value = _uiState.value.copy(
                         downloadSongs = downloadedSongs,
+                        downloadCount = downloadedSongs.size,
                         status = LoadStatus.Success()
                     )
 

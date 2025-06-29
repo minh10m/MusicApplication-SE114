@@ -36,86 +36,86 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.ui.tooling.preview.Preview
 
-@Composable
-fun DownloadSongsScreen(
-    navController: NavController,
-    viewModel: DownloadSongsViewModel = viewModel(),
-    mainViewModel: MainViewModel
-) {
-    val songs by viewModel.downloadedSongs.collectAsState()
-    var showLoading by remember { mutableStateOf(false) }
-
-    if (showLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-    }
-
-    LaunchedEffect(showLoading) {
-        if (showLoading) {
-            delay(1000)
-            showLoading = false
-        }
-    }
-
-    Scaffold(
-        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
-//        bottomBar = { NavigationBar(navController = navController) { showLoading = true } }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .padding(innerPadding)
-                .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 80.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clickable {
-                            if (!navController.popBackStack()) {
-                                navController.navigate("library")
-                            }
-                        }
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        "Downloaded Songs",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        "${songs.size} downloaded songs",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            SearchBar()
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(songs) { song ->
-                    SongItem(song)
-                }
-            }
-        }
-    }
-}
+//@Composable
+//fun DownloadSongsScreen(
+//    navController: NavController,
+//    viewModel: DownloadSongsViewModel = viewModel(),
+//    mainViewModel: MainViewModel
+//) {
+//    val songs by viewModel.downloadedSongs.collectAsState()
+//    var showLoading by remember { mutableStateOf(false) }
+//
+//    if (showLoading) {
+//        Box(
+//            modifier = Modifier.fillMaxSize(),
+//            contentAlignment = Alignment.Center
+//        ) {
+//            CircularProgressIndicator()
+//        }
+//    }
+//
+//    LaunchedEffect(showLoading) {
+//        if (showLoading) {
+//            delay(1000)
+//            showLoading = false
+//        }
+//    }
+//
+//    Scaffold(
+//        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
+////        bottomBar = { NavigationBar(navController = navController) { showLoading = true } }
+//    ) { innerPadding ->
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .background(Color.Black)
+//                .padding(innerPadding)
+//                .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 80.dp)
+//        ) {
+//            Row(verticalAlignment = Alignment.CenterVertically) {
+//                Icon(
+//                    imageVector = Icons.Default.ArrowBack,
+//                    contentDescription = "Back",
+//                    tint = Color.White,
+//                    modifier = Modifier
+//                        .size(28.dp)
+//                        .clickable {
+//                            if (!navController.popBackStack()) {
+//                                navController.navigate("library")
+//                            }
+//                        }
+//                )
+//                Spacer(modifier = Modifier.width(12.dp))
+//                Column {
+//                    Text(
+//                        "Downloaded Songs",
+//                        fontSize = 24.sp,
+//                        fontWeight = FontWeight.Bold,
+//                        color = Color.White
+//                    )
+//                    Spacer(modifier = Modifier.height(4.dp))
+//                    Text(
+//                        "${songs.size} downloaded songs",
+//                        fontSize = 14.sp,
+//                        color = Color.Gray
+//                    )
+//                }
+//            }
+//
+//            Spacer(modifier = Modifier.height(24.dp))
+//
+//            SearchBar()
+//
+//            Spacer(modifier = Modifier.height(12.dp))
+//
+//            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+//                items(songs) { song ->
+//                    SongItem(song)
+//                }
+//            }
+//        }
+//    }
+//}
 
 @Composable
 fun SearchBar() {
@@ -159,14 +159,14 @@ fun SongItem(song: SongResponse) {
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewDownloadSongsScreen() {
-    MusicApplicationSE114Theme(darkTheme = true) {
-        DownloadSongsScreen(
-            navController = rememberNavController(),
-            viewModel = DownloadSongsViewModel(),
-            mainViewModel = MainViewModel()
-        )
-    }
-}
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun PreviewDownloadSongsScreen() {
+//    MusicApplicationSE114Theme(darkTheme = true) {
+//        DownloadSongsScreen(
+//            navController = rememberNavController(),
+//            viewModel = DownloadSongsViewModel(),
+//            mainViewModel = MainViewModel()
+//        )
+//    }
+//}
