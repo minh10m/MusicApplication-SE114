@@ -44,8 +44,10 @@ import com.example.musicapplicationse114.ui.screen.library.LibraryScreen
 import com.example.musicapplicationse114.ui.screen.likedsongs.LikedSongsScreen
 import com.example.musicapplicationse114.ui.screen.login.LoginScreen
 import com.example.musicapplicationse114.ui.screen.login.LoginViewModel
+import com.example.musicapplicationse114.ui.screen.playListSongs.PlayListSongsScreen
 import com.example.musicapplicationse114.ui.screen.player.MiniPlayer
 import com.example.musicapplicationse114.ui.screen.player.PlayerScreen
+import com.example.musicapplicationse114.ui.screen.playlists.PlaylistScreen
 import com.example.musicapplicationse114.ui.screen.searchtype.SearchTypeScreen
 import com.example.musicapplicationse114.ui.screen.signUp.SignUpScreen
 import com.example.musicapplicationse114.ui.screen.start.StartScreen
@@ -71,9 +73,14 @@ sealed class Screen(val route: String, val title: String) {
     {
         fun createRoute(artistId: Long) = "artist/$artistId"
     }
+    object PlaylistSongs : Screen("playlistSongs/{playlistId}", "Playlist Songs")
+    {
+        fun createRoute(playlistId: Long) = "playlistSongs/$playlistId"
+    }
     object Queue: Screen("queue", "Queue")
     object LikedSong : Screen("LikeSong", "Liked Song")
     object ArtistFollow : Screen("ArtistFollow", "Artist Follow")
+    object Playlist : Screen("Playlist", "Playlist")
 
 }
 
@@ -87,7 +94,6 @@ fun Navigation() {
     val mainState = mainViewModel.uiState.collectAsState()
     val homeViewModel: HomeViewModel = hiltViewModel()
     val artistViewModel: ArtistViewModel = hiltViewModel()
-
     val sharedViewModel: PlayerSharedViewModel = hiltViewModel()
     val globalPlayerController = sharedViewModel.player
     val playerState by globalPlayerController.state.collectAsState()
@@ -136,6 +142,16 @@ fun Navigation() {
                             navController = navController,
                             viewModel = hiltViewModel(),
                             mainViewModel
+                        )
+                    }
+                    composable(Screen.Playlist.route)
+                    {
+                        PlaylistScreen(
+                            navController = navController,
+                            homeViewModel,
+                            viewModel = hiltViewModel(),
+                            mainViewModel,
+                            sharedViewModel
                         )
                     }
                     composable(
@@ -194,6 +210,7 @@ fun Navigation() {
                             mainViewModel,
                             homeViewModel,
                             artistsFollowingViewModel = hiltViewModel(),
+                            playListViewModel = hiltViewModel(),
                             sharedViewModel
                         )
                     }
@@ -223,6 +240,27 @@ fun Navigation() {
                         else
                         {
                             Log.e("Navigation", "Artist ID is null for ArtistSongList screen")
+                            navController.popBackStack()
+                        }
+                    }
+                    composable(
+                        route = Screen.PlaylistSongs.route,
+                        arguments = listOf(navArgument("playlistId") { type = NavType.LongType })
+                    ) { backStackEntry ->
+                        val playlistId = backStackEntry.arguments?.getLong("playlistId")
+                        if(playlistId != null)
+                        {
+                            PlayListSongsScreen(
+                                navController = navController,
+                                playlistId = playlistId,
+                                viewModel = hiltViewModel(),
+                                sharedViewModel,
+                                mainViewModel = hiltViewModel()
+                            )
+                        }
+                        else
+                        {
+                            Log.e("Navigation", "Playlist ID is null for PlaylistSongs screen")
                             navController.popBackStack()
                         }
                     }

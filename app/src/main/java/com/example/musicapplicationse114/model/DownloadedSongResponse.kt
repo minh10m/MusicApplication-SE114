@@ -2,7 +2,7 @@ package com.example.musicapplicationse114.model
 
 data class DownloadedSongResponse(
     val id: Long,
-    val song: DownloadSongDetail,
+    val song: SongResponse,
     val downloadedAt: String
 )
 

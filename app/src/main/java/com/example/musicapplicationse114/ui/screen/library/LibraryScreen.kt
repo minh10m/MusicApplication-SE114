@@ -40,6 +40,7 @@ import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewMod
 import com.example.musicapplicationse114.ui.screen.artists.ArtistsFollowingViewModel
 import com.example.musicapplicationse114.ui.screen.home.HomeUiState
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
+import com.example.musicapplicationse114.ui.screen.playlists.PlayListViewModel
 import com.example.musicapplicationse114.ui.screen.search.SearchBottomNavigationBar
 import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
 import kotlinx.coroutines.delay
@@ -50,6 +51,7 @@ fun LibraryScreen(navController: NavController,
                   mainViewModel: MainViewModel,
                   homeViewModel: HomeViewModel,
                   artistsFollowingViewModel: ArtistsFollowingViewModel,
+                  playListViewModel: PlayListViewModel,
                   sharedViewModel: PlayerSharedViewModel) {
     val state by viewModel.uiState.collectAsState()
     var showLoading by remember { mutableStateOf(false) }
@@ -60,6 +62,7 @@ fun LibraryScreen(navController: NavController,
         homeViewModel.loadFavoriteSong()
         homeViewModel.loadDownloadedSong()
         artistsFollowingViewModel.loadFollowedArtists()
+        playListViewModel.loadPlaylist()
     }
     // Khi showLoading = true, hiển thị loading indicator
     if (showLoading) {
@@ -89,7 +92,7 @@ fun LibraryScreen(navController: NavController,
             Text("Your Library", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(modifier = Modifier.height(24.dp))
 
-            LibraryGrid(state, homeViewModel,artistsFollowingViewModel,
+            LibraryGrid(state, homeViewModel,artistsFollowingViewModel, playListViewModel,
                 onItemClick = { tile->
                     when (tile.title) {
                         "Liked Songs" -> {
@@ -99,6 +102,10 @@ fun LibraryScreen(navController: NavController,
                         "Artists" -> {
                             navController.navigate(Screen.ArtistFollow.route)
                             Log.d("LibraryScreen", "Navigated to Artists")
+                        }
+                        "Playlists" -> {
+                            navController.navigate(Screen.Playlist.route)
+                            Log.d("LibraryScreen", "Navigated to Playlists")
                         }
                     }
                 })
@@ -163,13 +170,14 @@ fun LibraryScreen(navController: NavController,
 }
 
 @Composable
-fun LibraryGrid(state: LibraryUiState, homeViewModel: HomeViewModel,artistsFollowingViewModel: ArtistsFollowingViewModel, onItemClick: (LibraryTile) -> Unit) {
+fun LibraryGrid(state: LibraryUiState, homeViewModel: HomeViewModel,artistsFollowingViewModel: ArtistsFollowingViewModel,playListViewModel: PlayListViewModel, onItemClick: (LibraryTile) -> Unit) {
     val homeState = homeViewModel.uiState.collectAsState().value
+    val playListState = playListViewModel.uiState.collectAsState().value
     val artistFollowingState = artistsFollowingViewModel.uiState.collectAsState().value
     val items = listOf(
         LibraryTile("Liked Songs", "${homeState.likeCount} songs", Icons.Default.Favorite),
         LibraryTile("Downloads", "${homeState.downloadCount} songs", Icons.Default.Download),
-        LibraryTile("Playlists", "12 playlists", Icons.Default.List),
+        LibraryTile("Playlists", "${playListState.playlistCount} playlists", Icons.Default.List),
         LibraryTile("Artists", "${artistFollowingState.followCount} artists", Icons.Default.Person)
     )
 

@@ -9,5 +9,24 @@ data class PlaylistResponse(
     val createdAt: String, // hoặc LocalDateTime nếu bạn parse
     val isPublic: Boolean,
     val genreIds: List<Long> = emptyList(),
-    val songPlaylists: List<SongResponse> = emptyList()
+    val songPlaylists: List<SongPlaylist> = emptyList()
+)
+
+data class PlaylistResquest(
+    val name: String,
+    val description: String? = null,
+    val isPublic: Boolean = false,
+    val genreIds: List<Long>? = null
+)
+
+data class SongPlaylist(
+    val id: Long,
+    val songId: Long,
+    val playlistId: Long,
+    val addedAt: String,
+    val song: SongResponse
+)
+
+data class PlaylistPageResponse<T>(
+    val content : List<T>
 )

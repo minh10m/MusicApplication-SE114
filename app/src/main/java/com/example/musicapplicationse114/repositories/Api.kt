@@ -16,6 +16,9 @@ import com.example.musicapplicationse114.model.FollowArtistResponse
 import com.example.musicapplicationse114.model.GenrePageResponse
 import com.example.musicapplicationse114.model.GenreResponse
 import com.example.musicapplicationse114.model.GlobalSearchResultDTO
+import com.example.musicapplicationse114.model.PlaylistPageResponse
+import com.example.musicapplicationse114.model.PlaylistResponse
+import com.example.musicapplicationse114.model.PlaylistResquest
 import com.example.musicapplicationse114.model.RecentlyPlayed
 import com.example.musicapplicationse114.model.RecentlyPlayedPageResponse
 import com.example.musicapplicationse114.model.RecentlyPlayedRequest
@@ -253,4 +256,39 @@ interface Api {
         @Query("sortBy") sortBy: String = "followedAt",
         @Query("sortDir") sortDir: String = "desc"
     ): Response<FollowArtistPageResponse>
+
+    //Playlist
+    @POST("/api/playlists")
+    suspend fun createPlaylist(
+        @Header("Authorization") token: String,
+        @Body request: PlaylistResquest
+    ): Response<PlaylistResponse>
+
+    // Lấy tất cả playlists (phân trang + sắp xếp)
+    @GET("/api/playlists")
+    suspend fun getAllPlaylists(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20,
+        @Query("sortBy") sortBy: String = "createdAt",
+        @Query("sortDir") sortDir: String = "desc"
+    ): Response<PlaylistPageResponse<PlaylistResponse>>
+
+    // Tìm kiếm playlist
+    @GET("/api/playlists/search")
+    suspend fun searchPlaylists(
+        @Header("Authorization") token: String,
+        @Query("query") query: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20,
+        @Query("sortBy") sortBy: String = "createdAt",
+        @Query("sortDir") sortDir: String = "desc"
+    ): Response<PlaylistPageResponse<PlaylistResponse>>
+
+    @GET("/api/playlists/{playlistId}")
+    suspend fun getPlaylistById(
+        @Header("Authorization") token: String,
+        @Path("playlistId") playlistId: Long
+    ): Response<PlaylistResponse>
+
 }
