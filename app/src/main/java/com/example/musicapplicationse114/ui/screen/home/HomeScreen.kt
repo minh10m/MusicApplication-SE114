@@ -277,12 +277,12 @@ fun SongItem(song: SongResponse, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .padding(8.dp)
-            .width(320.dp)
+            .width(170.dp)
             .clickable { onClick() }
     ) {
         Box(
             modifier = Modifier
-                .height(200.dp)
+                .height(170.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
         ) {

@@ -1,5 +1,6 @@
 package com.example.musicapplicationse114.ui.screen.searchtype
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -26,6 +27,7 @@ data class SearchTypeUiState(
     val recentSearches: List<RecentSearch> = emptyList(),
     val query: String = "",
     val songs: List<SongResponse> = emptyList(),
+    val songs1 : List<SongResponse> = emptyList(),
     val albums : List<AlbumResponse> = emptyList(),
     val artists: List<ArtistResponse> = emptyList(),
     val playlists: List<PlaylistResponse> = emptyList(),
@@ -62,7 +64,7 @@ class SearchTypeViewModel @Inject constructor(
         if(query.isBlank()) return
         viewModelScope.launch {
             try {
-               // _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+//                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
                 val token = tokenManager?.getToken()
                 if(api != null && !token.isNullOrBlank())
                 {
@@ -86,5 +88,33 @@ class SearchTypeViewModel @Inject constructor(
             }
         }
 
+    }
+
+    fun loadSong()
+    {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+                val token = tokenManager?.getToken()
+                if(api != null && !token.isNullOrBlank()){
+                    Log.d("SongRequest", "Token: $token")
+                    val songs = api.getSongs(token)
+                    Log.d("SearchSongAddIntoPlaylistViewModel", "Songs loaded: ${songs.content.size} items")
+                    _uiState.value = _uiState.value.copy(
+                        songs1 = songs.content,
+                        status = LoadStatus.Success()
+                    )
+                }
+                else
+                {
+                    Log.e("SearchSongAddIntoPlaylistViewModel", "API hoặc token null")
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
+                }
+            }catch(ex : Exception)
+            {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(ex.message.toString()))
+                Log.d("SearchSongAddIntoPlaylistViewModel", "Failed to load songs: ${ex.message}")
+            }
+        }
     }
 }

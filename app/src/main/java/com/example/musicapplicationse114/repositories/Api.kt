@@ -108,7 +108,7 @@ interface Api {
         @Query("query") query: String,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
-    ): SongPageResponse
+    ): Response<SongPageResponse>
 
 
     //favorite song
@@ -273,6 +273,16 @@ interface Api {
         @Query("sortDir") sortDir: String = "desc"
     ): Response<PlaylistPageResponse<PlaylistResponse>>
 
+    @GET("/api/playlists/my-playlists")
+    suspend fun getMyPlaylists(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20,
+        @Query("sortBy") sortBy: String = "createdAt",
+        @Query("sortDir") sortDir: String = "desc"
+    ): Response<PlaylistPageResponse<PlaylistResponse>>
+
+
     // Tìm kiếm playlist
     @GET("/api/playlists/search")
     suspend fun searchPlaylists(
@@ -295,4 +305,11 @@ interface Api {
         @Header("Authorization") token: String,
         @Body request: SongPlaylistRequest
     ): Response<SongPlaylist>
+
+    @GET("/api/playlists/{playlistId}/with-songs")
+    suspend fun getPlaylistWithSongs(
+        @Header("Authorization") token: String,
+        @Path("playlistId") playlistId: Long
+    ): Response<PlaylistResponse>
+
 }

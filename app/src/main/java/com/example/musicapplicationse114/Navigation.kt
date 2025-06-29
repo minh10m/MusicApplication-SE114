@@ -52,6 +52,7 @@ import com.example.musicapplicationse114.ui.screen.playlists.PlaylistScreen
 import com.example.musicapplicationse114.ui.screen.searchtype.SearchTypeScreen
 import com.example.musicapplicationse114.ui.screen.signUp.SignUpScreen
 import com.example.musicapplicationse114.ui.screen.start.StartScreen
+import com.example.musicapplicationse114.ui.searchSongAddInToPlaylist.SearchSongAddIntoPlaylistScreen
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 
@@ -83,6 +84,7 @@ sealed class Screen(val route: String, val title: String) {
     object ArtistFollow : Screen("artistFollow", "Artist Follow")
     object Playlist : Screen("playlist", "Playlist")
     object CreatePlaylist : Screen("createPlaylist", "Create Playlist")
+    object SearchSongAddIntoPlaylist : Screen("searchSongAddIntoPlaylist", "Search Song Add Into Playlist")
 
 }
 
@@ -144,6 +146,17 @@ fun Navigation() {
                             navController = navController,
                             viewModel = hiltViewModel(),
                             mainViewModel
+                        )
+                    }
+                    composable(Screen.SearchSongAddIntoPlaylist.route)
+                    {
+                        SearchSongAddIntoPlaylistScreen(
+                            navController = navController,
+                            viewModel = hiltViewModel(),
+                            mainViewModel,
+                            sharedViewModel,
+                            homeViewModel = hiltViewModel(),
+                            playListSongsViewModel = hiltViewModel()
                         )
                     }
                     composable(Screen.Playlist.route)
@@ -327,6 +340,8 @@ fun Navigation() {
                                         Screen.Artist.route,
                                         Screen.Search.route,
                                         Screen.Library.route,
+                                        Screen.Playlist.route,
+                                        Screen.PlaylistSongs.route,
                                         "home?username={username}&timeOfDay={timeOfDay}")) {
                 Column {
                     if (playerState.currentSong != null && !mainViewModel.isFullScreenPlayer.value) {

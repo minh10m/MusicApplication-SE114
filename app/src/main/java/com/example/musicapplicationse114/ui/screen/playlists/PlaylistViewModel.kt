@@ -40,7 +40,7 @@ class PlayListViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
                 val token = tokenManager?.getToken()
                 if (api != null && !token.isNullOrBlank()) {
-                    val result = api.getAllPlaylists(token)
+                    val result = api.getMyPlaylists(token)
                     Log.d("PlaylistViewModel", "API Response: ${result.body()}")
                     if (result.isSuccessful) {
                         _uiState.value = _uiState.value.copy(

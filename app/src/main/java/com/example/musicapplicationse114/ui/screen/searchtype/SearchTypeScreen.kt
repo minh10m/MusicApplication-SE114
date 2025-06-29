@@ -1,5 +1,6 @@
 package com.example.musicapplicationse114.ui.screen.searchtype
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,6 +27,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.musicapplicationse114.ui.theme.MusicApplicationSE114Theme
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -59,6 +61,10 @@ fun SearchTypeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val status = uiState.status
     val globalPlayerController = sharedViewModel.player
+
+    LaunchedEffect(Unit) {
+        viewModel.loadSong()
+    }
 
     Scaffold { innerPadding ->
         Column(
@@ -95,47 +101,73 @@ fun SearchTypeScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Recent Searches
-            if (uiState.recentSearches.isNotEmpty() && uiState.query.isBlank()) {
+            if (uiState.songs1.isNotEmpty() && uiState.query.isBlank()) {
                 Text(
-                    text = "Recent searches",
+                    text = "Gợi ý bài hát",
                     color = Color.Gray,
-                    fontSize = 14.sp,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                LazyColumn {
-                    items(uiState.recentSearches) { item ->
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    itemsIndexed(uiState.songs1) { index, song ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-//                                .clickable { viewModel.updateQuery(item.name) }
-                                .padding(vertical = 8.dp),
+                                .clickable {
+                                    sharedViewModel.setSongList(uiState.songs1, index)
+                                    sharedViewModel.addRecentlyPlayed(song.id)
+                                    Log.d("SearchSongAddIntoPlaylistScreen", "Called addRecentlyPlayed for songId: ${song.id}")
+                                    globalPlayerController.play(song)
+                                    mainViewModel.setFullScreenPlayer(true)
+                                    navController.navigate(Screen.Player.createRoute(song.id))
+                                }
+                                .padding(vertical = 12.dp), // Tăng padding giữa các mục
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-//                            Text(text = item.name, color = Color.White, fontSize = 14.sp)
-                            Spacer(modifier = Modifier.weight(1f))
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Clear",
-                                tint = Color.Gray,
+                            AsyncImage(
+                                model = song.thumbnail,
+                                contentDescription = song.title,
                                 modifier = Modifier
-                                    .size(20.dp)
-                                    .clickable { /* Xóa recent search */ }
+                                    .size(50.dp) // Tăng kích thước hình ảnh
+                                    .clip(RoundedCornerShape(8.dp)), // Bo góc lớn hơn
+                                contentScale = ContentScale.Crop
                             )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = song.title,
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = song.artistName,
+                                    color = Color.Gray,
+                                    fontSize = 14.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector =  Icons.Default.MoreVert,
+                                    contentDescription =  "MoreVert",
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable {
+                                        }
+                                )
+                            }
                         }
                     }
                 }
-                Text(
-                    text = "Clear history",
-                    color = Color(0xFF1DA1F2), // Màu xanh tương tự Twitter
-                    fontSize = 14.sp,
-                    modifier = Modifier
-//                        .clickable { viewModel.clearRecentSearches() }
-                        .padding(top = 8.dp, bottom = 16.dp)
-                )
-//                Divider(color = Color.Gray, thickness = 1.dp)
             }
 
             // Search Results
@@ -157,14 +189,14 @@ fun SearchTypeScreen(
                                 model = artist.avatar,
                                 contentDescription = artist.name,
                                 modifier = Modifier
-                                    .size(48.dp)
+                                    .size(50.dp)
                                     .clip(CircleShape),
                                 contentScale = ContentScale.Crop
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = artist.name, color = Color.White, fontSize = 14.sp)
-                                Text(text = "Artist", color = Color.Gray, fontSize = 12.sp)
+                                Text(text = artist.name, color = Color.White, fontSize = 16.sp)
+                                Text(text = "Artist", color = Color.Gray, fontSize = 14.sp)
                             }
                         }
                     }
@@ -183,14 +215,20 @@ fun SearchTypeScreen(
                                 model = song.thumbnail,
                                 contentDescription = song.title,
                                 modifier = Modifier
-                                    .size(48.dp)
+                                    .size(50.dp)
                                     .clip(RoundedCornerShape(6.dp)),
                                 contentScale = ContentScale.Crop
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = song.title, color = Color.White, fontSize = 14.sp)
-                                Text(text = "Song", color = Color.Gray, fontSize = 12.sp)
+                                Text(text = song.title, color = Color.White, fontSize = 16.sp)
+                                Row()
+                                {
+                                    Text(text = "Song •", color = Color.Gray, fontSize = 14.sp)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(text = song.artistName, color = Color.Gray, fontSize = 14.sp)
+
+                                }
                             }
                         }
                     }
@@ -206,14 +244,20 @@ fun SearchTypeScreen(
                                 model = album.coverImage,
                                 contentDescription = album.name,
                                 modifier = Modifier
-                                    .size(48.dp)
+                                    .size(50.dp)
                                     .clip(RoundedCornerShape(6.dp)),
                                 contentScale = ContentScale.Crop
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = album.name, color = Color.White, fontSize = 14.sp)
-                                Text(text = "Album", color = Color.Gray, fontSize = 12.sp)
+                                Text(text = album.name, color = Color.White, fontSize = 16.sp)
+                                Row()
+                                {
+                                    Text(text = "Album •", color = Color.Gray, fontSize = 14.sp)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(text = album.artistName, color = Color.Gray, fontSize = 14.sp)
+                                }
+
                             }
                         }
                     }

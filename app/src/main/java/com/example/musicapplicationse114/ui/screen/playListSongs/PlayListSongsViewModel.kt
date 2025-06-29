@@ -36,25 +36,79 @@ class PlayListSongsViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
                 val token = tokenManager?.getToken()
                 if (!token.isNullOrBlank() && api != null) {
-                    val playlist = api.getPlaylistById(token, playlistId)
+                    val response = api.getPlaylistById(token, playlistId)
 
-                    _uiState.value = _uiState.value.copy(
-                        playlist = playlist.body(),
-                        songs = playlist.body()?.songPlaylists?.map {it.song} ?: emptyList(),
-                        status = LoadStatus.Success()
-                    )
-                    if(playlist.isSuccessful)
-                    {
-                        Log.d("PlayListSongsViewModel", "Playlist and songs loaded successfully")
+                    if (response.isSuccessful) {
+                        val playlist = response.body()
+
+                        _uiState.value = _uiState.value.copy(
+                            playlist = playlist,
+                            status = LoadStatus.Success()
+                        )
+                    } else {
+                        val errorMessage = response.errorBody()?.string()
+                        Log.e("PlayListSongsViewModel", "API error ${response.code()}: $errorMessage")
+                        _uiState.value = _uiState.value.copy(
+                            status = LoadStatus.Error("API error: ${response.code()}")
+                        )
                     }
-                }
-                else {
+                } else {
+                    Log.e("PlayListSongsViewModel", "Token hoặc API null")
                     _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Token hoặc API null"))
                 }
             } catch (e: Exception) {
+                Log.e("PlayListSongsViewModel", "Exception: ${e.message}")
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message ?: "Unknown error"))
-                Log.e("PlayerViewModel", "Failed to load song: ${e.message}")
             }
         }
     }
+
+    fun loadPlaylistWithSong(playlistId: Long)
+    {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+                val token = tokenManager?.getToken()
+                if (!token.isNullOrBlank() && api != null) {
+                    val response = api.getPlaylistWithSongs(token, playlistId)
+                    if(response.isSuccessful)
+                    {
+                        val playlist = response.body()
+
+                        val songs = playlist?.songPlaylists?.mapNotNull {
+                            it.song
+                        } ?: emptyList()
+
+                        Log.d("PlayListSongsViewModel", "Playlist and songs loaded successfully")
+                        Log.d("PlayListSongsViewModel", "Playlist name: ${playlist?.name}")
+                        Log.d("PlayListSongsViewModel", "Total songs: ${songs.size}")
+                        playlist?.songPlaylists?.forEachIndexed { index, sp ->
+                            Log.d("PlayListSongsViewModel", "[$index] Song: ${sp.song.title}")
+                        }
+
+                        _uiState.value = _uiState.value.copy(
+                            songs = songs,
+                            status = LoadStatus.Success()
+                        )
+                    }
+                    else
+                    {
+                        val errorMessage = response.errorBody()?.string()
+                        Log.e("PlayListSongsViewModel", "API error ${response.code()}: $errorMessage")
+                    }
+                }
+                else
+                {
+                    Log.e("PlayListSongsViewModel", "Token hoặc API null")
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Token hoặc API null"))
+                }
+            }
+            catch (e : Exception) {
+                Log.e("PlayListSongsViewModel", "Exception: ${e.message}")
+                _uiState.value =
+                    _uiState.value.copy(status = LoadStatus.Error(e.message ?: "Unknown error"))
+            }
+        }
+    }
+
 }

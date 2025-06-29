@@ -58,9 +58,23 @@ fun PlayListSongsScreen(
     val state = viewModel.uiState.collectAsState().value
     val globalPlayerController = sharedViewModel.player
 
+    val currentBackStackEntry = navController.currentBackStackEntry
+    val reloadTrigger = currentBackStackEntry?.savedStateHandle?.get<Boolean>("reload") ?: false
+
+    LaunchedEffect(reloadTrigger) {
+        if (reloadTrigger) {
+            viewModel.loadPlaylistById(playlistId)
+            viewModel.loadPlaylistWithSong(playlistId)
+            currentBackStackEntry?.savedStateHandle?.set("reload", false) // reset lại
+        }
+    }
+
     LaunchedEffect(playlistId) {
         viewModel.loadPlaylistById(playlistId)
+        viewModel.loadPlaylistWithSong(playlistId)
     }
+
+
 
     Column(modifier = Modifier.fillMaxSize().background(Color.Black).padding(bottom = 129.dp)) {
         // Fixed album cover with overlay
@@ -139,6 +153,11 @@ fun PlayListSongsScreen(
                         contentDescription = "Add",
                         tint = Color.White,
                         modifier = Modifier.size(30.dp)
+                            .clickable {
+                                navController.currentBackStackEntry?.savedStateHandle?.set("playlistId", state.playlist?.id)
+                                navController.currentBackStackEntry?.savedStateHandle?.set("addedSongIds", state.songs.map { it.id })
+                                navController.navigate(Screen.SearchSongAddIntoPlaylist.route)
+                            }
                     )
                 }
                 IconButton(

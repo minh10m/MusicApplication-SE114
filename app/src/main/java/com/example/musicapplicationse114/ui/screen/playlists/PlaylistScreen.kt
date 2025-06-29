@@ -187,7 +187,7 @@ fun PlaylistScreen(
                         rowPlaylists.forEach { playlist ->
                             Column(
                                 modifier = Modifier
-                                    .width(200.dp)
+                                    .width(180.dp)
                                     .clickable {
                                         navController.navigate(Screen.PlaylistSongs.createRoute(playlist.id))
                                     },
@@ -197,7 +197,7 @@ fun PlaylistScreen(
                                     model = playlist.thumbnail,
                                     contentDescription = playlist.name,
                                     modifier = Modifier
-                                        .size(200.dp)
+                                        .size(180.dp)
                                         .clip(RectangleShape),
                                     contentScale = ContentScale.Crop
                                 )
