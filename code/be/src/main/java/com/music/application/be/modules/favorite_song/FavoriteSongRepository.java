@@ -13,4 +13,6 @@ public interface FavoriteSongRepository extends JpaRepository<FavoriteSong, Long
     Page<FavoriteSong> findByUserId(Long userId, Pageable pageable);
     Page<FavoriteSong> findByUserIdAndSongTitleContainingIgnoreCase(Long userId, String title, Pageable pageable);
     Optional<FavoriteSong> findByUserIdAndSongId(Long userId, Long songId);
+
+    boolean existsByUser_IdAndSong_Id(Long userId, Long songId);
 }

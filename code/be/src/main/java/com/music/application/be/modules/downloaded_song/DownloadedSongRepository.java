@@ -15,4 +15,5 @@ public interface DownloadedSongRepository extends JpaRepository<DownloadedSong, 
     
     // Thêm method để tìm downloaded song theo userId và songId
     Optional<DownloadedSong> findByUserIdAndSongId(Long userId, Long songId);
+    boolean existsByUser_IdAndSong_Id(Long userId, Long songId);
 }

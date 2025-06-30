@@ -69,7 +69,8 @@ public class SongController {
     )
     @GetMapping("/{id}")
     public ResponseEntity<SongDTO> getSongById(@PathVariable Long id) {
-        return ResponseEntity.ok(songService.getSongById(id));
+        SongDTO songDTO = songService.getSongById(id);
+        return ResponseEntity.ok(songDTO);
     }
 
     @Operation(
