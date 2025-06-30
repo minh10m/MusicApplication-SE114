@@ -68,7 +68,8 @@ fun CreatePlaylistScreen(
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color.White)
+            CircularProgressIndicator(strokeWidth = 2.dp,
+                color = Color.White)
         }
     }
 
@@ -102,7 +103,7 @@ fun CreatePlaylistScreen(
                 Icon(
                     imageVector = Icons.Default.ArrowBackIos,
                     contentDescription = "Back",
-                    tint = Color.White,
+                    tint = Color(0xFFAAAAAA), // Màu icon nhẹ hơn
                     modifier = Modifier
                         .size(24.dp)
                         .clickable {
@@ -115,10 +116,10 @@ fun CreatePlaylistScreen(
                 Spacer(modifier = Modifier.width(26.dp))
 
                 Text(
-                    text = "Create Playlist",
+                    text = "Tạo playlist",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = Color.White // Màu tiêu đề nhẹ hơn
                 )
             }
 
@@ -128,17 +129,17 @@ fun CreatePlaylistScreen(
             OutlinedTextField(
                 value = uiState.name,
                 onValueChange = { viewModel.updateName(it) },
-                label = { Text("Playlist Name", color = Color.White) },
+                label = { Text("Tên playlist", color = Color.White) }, // Màu nhãn nhẹ hơn
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color.White,
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.Gray,
-                    focusedLabelColor = Color.White,
-                    unfocusedLabelColor = Color.Gray
+                    focusedTextColor = Color(0xFFAAAAAA), // Màu văn bản khi focus
+                    unfocusedTextColor = Color(0xFF888888), // Màu văn bản khi không focus
+                    cursorColor = Color(0xFFAAAAAA), // Màu con trỏ nhẹ hơn
+                    focusedBorderColor = Color(0xFF555555), // Viền khi focus tối hơn
+                    unfocusedBorderColor = Color(0xFF333333), // Viền khi không focus tối hơn
+                    focusedLabelColor = Color(0xFFAAAAAA), // Màu nhãn khi focus
+                    unfocusedLabelColor = Color(0xFF888888) // Màu nhãn khi không focus
                 )
             )
 
@@ -148,16 +149,16 @@ fun CreatePlaylistScreen(
             OutlinedTextField(
                 value = uiState.description,
                 onValueChange = { viewModel.updateDescription(it) },
-                label = { Text("Description", color = Color.White) },
+                label = { Text("Mô tả", color = Color.White) }, // Màu nhãn nhẹ hơn
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color.White,
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.Gray,
-                    focusedLabelColor = Color.White,
-                    unfocusedLabelColor = Color.Gray
+                    focusedTextColor = Color(0xFFAAAAAA), // Màu văn bản khi focus
+                    unfocusedTextColor = Color(0xFF888888), // Màu văn bản khi không focus
+                    cursorColor = Color(0xFFAAAAAA), // Màu con trỏ nhẹ hơn
+                    focusedBorderColor = Color(0xFF555555), // Viền khi focus tối hơn
+                    unfocusedBorderColor = Color(0xFF333333), // Viền khi không focus tối hơn
+                    focusedLabelColor = Color(0xFFAAAAAA), // Màu nhãn khi focus
+                    unfocusedLabelColor = Color(0xFF888888) // Màu nhãn khi không focus
                 )
             )
 
@@ -169,32 +170,36 @@ fun CreatePlaylistScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Public Playlist", color = Color.White)
+                Text("Công khai", color = Color.White) // Màu text nhẹ hơn
                 Switch(
                     checked = uiState.isPublic,
                     onCheckedChange = { viewModel.updateIsPublic(it) },
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = Color(0xFF1DB954),
-                        uncheckedThumbColor = Color.Gray,
-                        uncheckedTrackColor = Color.DarkGray
+                        checkedThumbColor = Color.White, // Màu thumb khi bật
+                        checkedTrackColor = Color(0xFF4169E1), // Giữ màu xanh đậm
+                        uncheckedThumbColor = Color.White, // Màu thumb khi tắt
+                        uncheckedTrackColor = Color(0xFF333333) // Màu track khi tắt
                     )
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            val name = uiState.name
+            val description = uiState.description
+            val bool = if(name.isNotBlank() && description.isNotBlank()) true else false
             Button(
                 onClick = {
                     showLoading = true
-                    viewModel.createPlaylist()
+                    if(bool) viewModel.createPlaylist()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954))
+                colors = if(bool) ButtonDefaults.buttonColors(containerColor = Color(0xFF4169E1)) else
+                    ButtonDefaults.buttonColors(containerColor = Color(0xFF333333))
             ) {
-                Text("Create Playlist", color = Color.White)
+                Text("Tạo playlist mới", color = Color.White, fontSize = 19.sp) // Màu text nút nhẹ hơn
             }
         }
     }

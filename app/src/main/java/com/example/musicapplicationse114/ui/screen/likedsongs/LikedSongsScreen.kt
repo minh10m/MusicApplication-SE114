@@ -74,7 +74,8 @@ fun LikedSongsScreen(
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color.White)
+            CircularProgressIndicator(color = Color.White,
+                strokeWidth = 2.dp)
         }
     }
 
@@ -121,7 +122,7 @@ fun LikedSongsScreen(
                         Spacer(modifier = Modifier.width(26.dp))
 
                         Text(
-                            text = "Liked Songs",
+                            text = "Yêu thích",
                             fontSize = 28.sp, // Tăng kích thước tiêu đề
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -130,7 +131,7 @@ fun LikedSongsScreen(
                     }
                     Spacer(modifier = Modifier.height(30.dp))
                     Text(
-                        text = "${songs.size} liked songs",
+                        text = "${songs.size} bài hát yêu thích",
                         fontSize = 14.sp,
                         color = Color.LightGray,
                         textAlign = TextAlign.Start
@@ -274,7 +275,7 @@ fun SearchBar(
                     ) {
                         if (query.isEmpty()) {
                             Text(
-                                text = "Search",
+                                text = "Tìm kiếm",
                                 color = Color.Black.copy(alpha = 0.6f),
                                 fontSize = 14.sp,
                                 lineHeight = 14.sp, // Đồng bộ với BasicTextField

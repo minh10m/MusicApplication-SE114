@@ -123,7 +123,7 @@ fun SearchSongAddIntoPlaylistScreen(
             {
                 Text(
                     text = "Gợi ý bài hát",
-                    color = Color.Gray,
+                    color = Color.White,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)

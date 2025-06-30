@@ -28,7 +28,11 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.RemoveRedEye
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -82,26 +86,20 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
     LaunchedEffect(state.value.status) {
         when (val status = state.value.status) {
             is LoadStatus.Success -> {
-                homeViewModel.setTimeOfDay()
-//                homeViewModel.loadAlbum()
-//                homeViewModel.loadSong()
-//                homeViewModel.loadRecentPlayed()
-                homeViewModel.updateUserName(viewModel.getUserName())
-                val username = viewModel.getUserName()
-                val timeOfDay = homeViewModel.getTimeOfDay().name
-                navController.navigate("home?username=$username&timeOfDay=$timeOfDay"){
-                    popUpTo(Screen.Login.route){inclusive = true}
+                if (status != LoadStatus.Init()) { // Kiểm tra để tránh chạy lại
+                    homeViewModel.setTimeOfDay()
+                    val username = viewModel.getUserName()
+                    val timeOfDay = homeViewModel.getTimeOfDay().name
+                    navController.navigate("home?username=$username&timeOfDay=$timeOfDay") {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                    Toast.makeText(context, state.value.successMessage, Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(context, state.value.successMessage, Toast.LENGTH_SHORT).show()
-                Log.i("username11", homeViewModel.getUserName())
-                viewModel.reset()
             }
-
             is LoadStatus.Error -> {
                 mainViewModel.setError(status.description)
                 viewModel.reset()
             }
-
             else -> {
                 // do nothing
             }
@@ -125,7 +123,10 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                         contentAlignment = Alignment.Center
                     )
                     {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
                     }
                 }
 
@@ -205,7 +206,7 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                                 viewModel.changeIsShowPassword()
                             }) {
                                 Icon(
-                                    imageVector = if (state.value.isShowPassword) Icons.Filled.CheckCircle else Icons.Filled.Check,
+                                    imageVector = if (state.value.isShowPassword) Icons.Default.Visibility else Icons.Filled.VisibilityOff,
                                     contentDescription = null
                                 )
                             }
@@ -215,7 +216,8 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
 
                     Spacer(modifier = Modifier.height(28.dp))
 
-                    Button(onClick = { viewModel.login() }) {
+                    Button(onClick = { viewModel.login() },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B5998)),) {
                         Row {
                             Text(
                                 "Sign In",
@@ -240,7 +242,8 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                         TextButton(onClick = { navController.navigate(Screen.SignUp.route) }) {
                             Text(
                                 "Sign Up",
-                                fontSize = 22.sp
+                                fontSize = 22.sp,
+                                color = Color(0xFF3B5998)
                             )
                         }
                     }

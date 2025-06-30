@@ -70,7 +70,8 @@ fun LibraryScreen(navController: NavController,
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(strokeWidth = 2.dp,
+                color = Color.White)
         }
     }
 
@@ -89,17 +90,17 @@ fun LibraryScreen(navController: NavController,
                 .background(Color.Black)
                 .padding(start = 24.dp, end = 24.dp, top = 48.dp, bottom = 129.dp)
         ) {
-            Text("Your Library", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Thư viện", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(modifier = Modifier.height(24.dp))
 
             LibraryGrid(state, homeViewModel,artistsFollowingViewModel, playListViewModel,
                 onItemClick = { tile->
                     when (tile.title) {
-                        "Liked Songs" -> {
+                        "Yêu thích" -> {
                             navController.navigate(Screen.LikedSong.route)
                             Log.d("LibraryScreen", "Navigated to Liked Songs")
                         }
-                        "Artists" -> {
+                        "Nghệ sĩ" -> {
                             navController.navigate(Screen.ArtistFollow.route)
                             Log.d("LibraryScreen", "Navigated to Artists")
                         }
@@ -117,8 +118,8 @@ fun LibraryScreen(navController: NavController,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Recently Played", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("See more", color = Color.White, fontSize = 14.sp)
+                Text("Nghe gần đây", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Xem thêm", color = Color.White, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -142,13 +143,13 @@ fun LibraryScreen(navController: NavController,
                         AsyncImage(
                             model = song.thumbnail,
                             contentDescription = song.title,
-                            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(4.dp)),
+                            modifier = Modifier.size(50.dp).clip(RoundedCornerShape(4.dp)),
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(song.title, color = Color.White, fontSize = 14.sp)
-                            Text(song.artistName, color = Color.Gray, fontSize = 12.sp)
+                            Text(song.title, color = Color.White, fontSize = 16.sp)
+                            Text(song.artistName, color = Color.Gray, fontSize = 14.sp)
                         }
                         Icon(
                             imageVector = Icons.Default.MoreVert,
@@ -175,10 +176,10 @@ fun LibraryGrid(state: LibraryUiState, homeViewModel: HomeViewModel,artistsFollo
     val playListState = playListViewModel.uiState.collectAsState().value
     val artistFollowingState = artistsFollowingViewModel.uiState.collectAsState().value
     val items = listOf(
-        LibraryTile("Liked Songs", "${homeState.likeCount} songs", Icons.Default.Favorite),
-        LibraryTile("Downloads", "${homeState.downloadCount} songs", Icons.Default.Download),
+        LibraryTile("Yêu thích", "${homeState.likeCount} songs", Icons.Default.Favorite),
+        LibraryTile("Tải về", "${homeState.downloadCount} songs", Icons.Default.Download),
         LibraryTile("Playlists", "${playListState.playlistCount} playlists", Icons.Default.List),
-        LibraryTile("Artists", "${artistFollowingState.followCount} artists", Icons.Default.Person)
+        LibraryTile("Nghệ sĩ", "${artistFollowingState.followCount} artists", Icons.Default.Person)
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

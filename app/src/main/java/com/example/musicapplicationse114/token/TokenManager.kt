@@ -22,6 +22,7 @@ class TokenManager @Inject constructor(
     companion object {
         val ACCESS_TOKEN = stringPreferencesKey("access_token")
         val USER_ID = longPreferencesKey("user_id")
+        val USER_NAME = stringPreferencesKey("user_name")
     }
 
     // Lưu token
@@ -60,6 +61,18 @@ class TokenManager @Inject constructor(
         }.first()
     }
 
+    suspend fun saveUserName(username: String) {
+        context.dataStore.edit { prefs ->
+            prefs[USER_NAME] = username
+        }
+    }
+
+    // Lấy username
+    suspend fun getUserName(): String? {
+        return context.dataStore.data.map { prefs ->
+            prefs[USER_NAME]
+        }.first()
+    }
     // Giải mã userId từ access token (dạng JWT)
     fun decodeUserIdFromToken(bearerToken: String): Long? {
         return try {

@@ -29,6 +29,8 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -176,7 +178,7 @@ fun SignUpScreen(navController: NavController, viewModel: SignUpViewModel, mainV
                     else PasswordVisualTransformation(),
                     leadingIcon = {Icon(Icons.Filled.Lock, contentDescription = null)},
                     trailingIcon = { IconButton(onClick = {viewModel.changIsShowPassword()}){
-                        Icon(imageVector = if(state.value.isShowPassword) Icons.Filled.CheckCircle else Icons.Filled.Check,
+                        Icon(imageVector = if(state.value.isShowPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = null)
                     } },
                     modifier = Modifier.shadow(25.dp, shape = RoundedCornerShape(20.dp))
@@ -191,7 +193,7 @@ fun SignUpScreen(navController: NavController, viewModel: SignUpViewModel, mainV
                     else PasswordVisualTransformation(),
                     leadingIcon = {Icon(Icons.Filled.Lock, contentDescription = null)},
                     trailingIcon = { IconButton(onClick = {viewModel.changIsShowConfirmPassword()}){
-                        Icon(imageVector = if(state.value.isShowConfirmPassword) Icons.Filled.CheckCircle else Icons.Filled.Check,
+                        Icon(imageVector = if(state.value.isShowConfirmPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = null)
                     } },
                     modifier = Modifier.shadow(25.dp, shape = RoundedCornerShape(20.dp))
@@ -200,7 +202,8 @@ fun SignUpScreen(navController: NavController, viewModel: SignUpViewModel, mainV
                 Spacer(modifier = Modifier.height(28.dp))
 
                 //Sign up button
-                Button(onClick = {viewModel.signUp()}) {
+                Button(onClick = {viewModel.signUp()},
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B5998))) {
                     Row {
                         Text(
                             "Sign Up",
@@ -225,7 +228,8 @@ fun SignUpScreen(navController: NavController, viewModel: SignUpViewModel, mainV
                     TextButton(onClick = {navController.navigate(Screen.Login.route)}) {
                         Text(
                             "Sign In",
-                            fontSize = 22.sp
+                            fontSize = 22.sp,
+                            color = Color(0xFF3B5998)
                         )
                     }
                 }

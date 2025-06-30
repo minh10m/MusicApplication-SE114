@@ -528,6 +528,13 @@ fun SongItemForGenre(song: SongResponse, onClick: () -> Unit) {
                 fontSize = 16.sp,
                 maxLines = 1
             )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = song.artistName,
+                color = Color.Gray,
+                fontSize = 14.sp,
+                maxLines = 1
+            )
         }
         Spacer(modifier = Modifier.width(50.dp))
         IconButton(onClick = { /* Play action */ }) {
@@ -593,7 +600,8 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color.White)
+            CircularProgressIndicator(strokeWidth = 2.dp,
+                color = Color.White)
         }
     }
 
@@ -605,9 +613,9 @@ fun HomeScreen(
     }
 
     val coroutineScope = rememberCoroutineScope()
-    LaunchedEffect(username) {
+    LaunchedEffect(Unit) {
         viewModel.setTimeOfDay()
-        viewModel.updateUserName(username)
+        viewModel.updateUserName()
         viewModel.loadAlbum()
         viewModel.loadSong()
         viewModel.loadDownloadedSong()

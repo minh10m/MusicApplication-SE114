@@ -63,7 +63,8 @@ fun ArtistsFollowingScreen(
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color.White)
+            CircularProgressIndicator(strokeWidth = 2.dp,
+                color = Color.White)
         }
     }
 
@@ -110,7 +111,7 @@ fun ArtistsFollowingScreen(
                         Spacer(modifier = Modifier.width(26.dp))
 
                         Text(
-                            text = "Artist Following",
+                            text = "Đang theo dõi",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -118,7 +119,7 @@ fun ArtistsFollowingScreen(
                     }
                     Spacer(modifier = Modifier.height(30.dp))
                     Text(
-                        text = "${uiState.value.followedArtists.size} followed artists",
+                        text = "${uiState.value.followedArtists.size} nghệ sĩ",
                         fontSize = 14.sp,
                         color = Color.LightGray,
                         textAlign = TextAlign.Start
@@ -247,7 +248,7 @@ fun SearchBar(
                     ) {
                         if (query.isEmpty()) {
                             Text(
-                                text = "Search",
+                                text = "Tìm kiếm",
                                 color = Color.Black.copy(alpha = 0.6f),
                                 fontSize = 14.sp,
                                 lineHeight = 14.sp,

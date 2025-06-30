@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
@@ -34,7 +35,8 @@ fun MiniPlayer(
     song: SongResponse,
     isPlaying: Boolean,
     onClick: () -> Unit,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    onClose: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -108,6 +110,18 @@ fun MiniPlayer(
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                     contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
+            IconButton(
+                onClick = { onClose() },
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Close MiniPlayer",
                     tint = Color.White,
                     modifier = Modifier.size(28.dp)
                 )
