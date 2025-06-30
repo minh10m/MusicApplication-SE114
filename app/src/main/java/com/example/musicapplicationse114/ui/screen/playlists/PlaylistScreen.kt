@@ -136,7 +136,7 @@ fun PlaylistScreen(
                     }
                     Spacer(modifier = Modifier.height(30.dp))
                     Text(
-                        text = "${uiState.value.playlist.size} followed artists",
+                        text = "${uiState.value.playlist.size} playlists",
                         fontSize = 14.sp,
                         color = Color.LightGray,
                         textAlign = TextAlign.Start
@@ -268,7 +268,7 @@ fun SearchBar(
                     ) {
                         if (query.isEmpty()) {
                             Text(
-                                text = "Search",
+                                text = "Tìm kiếm",
                                 color = Color.Black.copy(alpha = 0.6f),
                                 fontSize = 14.sp,
                                 lineHeight = 14.sp,

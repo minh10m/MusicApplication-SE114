@@ -284,8 +284,8 @@ class HomeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(timeOfDay = timeOfDay)
     }
 
-    fun updateUserName(username: String){
-        _uiState.value = _uiState.value.copy(username = username)
+    suspend fun updateUserName(){
+        _uiState.value = tokenManager?.getUserName()?.let { _uiState.value.copy(username = it) }!!
     }
 
     fun getUserName(): String{

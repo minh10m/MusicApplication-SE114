@@ -11,6 +11,7 @@ import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.model.RecentlyPlayedRequest
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
+import com.example.musicapplicationse114.ui.screen.player.PlayerUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
@@ -26,6 +27,7 @@ class PlayerSharedViewModel @Inject constructor(
 ) : ViewModel() {
     private val _queue = mutableStateListOf<SongResponse>()
     val queue: List<SongResponse> get() = _queue
+
 
     private val _currentIndex = mutableStateOf(0)
     val currentIndex: State<Int> get() = _currentIndex

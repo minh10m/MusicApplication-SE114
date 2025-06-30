@@ -72,7 +72,7 @@ fun SearchTypeScreen(
                 .fillMaxSize()
                 .background(Color.Black)
                 .padding(horizontal = 16.dp)
-                .padding(top = 40.dp, bottom = 130.dp)
+                .padding(top = 40.dp, bottom = 120.dp)
         ) {
             // Back + Search bar
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -101,7 +101,7 @@ fun SearchTypeScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
             if (uiState.songs1.isNotEmpty() && uiState.query.isBlank()) {
                 Text(
@@ -109,7 +109,7 @@ fun SearchTypeScreen(
                     color = Color.Gray,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 4.dp)
                 )
                 LazyColumn(modifier = Modifier.fillMaxWidth()) {
                     itemsIndexed(uiState.songs1) { index, song ->
@@ -279,9 +279,10 @@ fun SearchBar(
         onValueChange = onQueryChange,
         placeholder = {
             Text(
-                text = "Search songs, artist, album or playlist",
+                text = "Tìm kiếm bài hát, nghệ sĩ, album... playlist",
                 color = Color.Gray,
-                fontSize = 16.sp
+                fontSize = 16.sp,
+                maxLines = 1
             )
         },
         singleLine = true,

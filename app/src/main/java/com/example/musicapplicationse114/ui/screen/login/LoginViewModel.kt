@@ -80,7 +80,7 @@ class LoginViewModel @Inject constructor(
                     if(accessToken != null){
                         val bearer = "Bearer $accessToken"
                         tokenManager?.saveToken(bearer)
-
+                        tokenManager?.saveUserName(getUserName())
                         val userId = tokenManager?.decodeUserIdFromToken(bearer)
                         if (userId != null) {
                             tokenManager?.saveUserId(userId)
