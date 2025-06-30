@@ -5,6 +5,7 @@ import com.music.application.be.modules.comment.dto.CommentActionResponseDTO;
 import com.music.application.be.modules.comment.dto.CommentResponseDTO;
 import com.music.application.be.modules.comment.dto.CreateCommentDTO;
 import com.music.application.be.modules.song.dto.CreateSongDTO;
+import com.music.application.be.modules.song.dto.PagedResponse;
 import com.music.application.be.modules.song.dto.SongDTO;
 import com.music.application.be.modules.song.dto.UpdateSongDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -82,9 +83,9 @@ public class SongController {
             }
     )
     @GetMapping
-    public ResponseEntity<Page<SongDTO>> getAllSongs(
+    public ResponseEntity<PagedResponse<SongDTO>> getAllSongs(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(songService.getAllSongs(pageable));
     }
@@ -152,13 +153,13 @@ public class SongController {
             }
     )
     @GetMapping("/search")
-    public ResponseEntity<Page<SongDTO>> searchSongs(
+    public ResponseEntity<PagedResponse<SongDTO>> searchSongs(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(songService.searchSongs(query, pageable));
+        return ResponseEntity.ok(songService.searchSongs(query, page, size));
     }
+
 
     @Operation(
             summary = "Get songs by artist",
@@ -169,12 +170,11 @@ public class SongController {
             }
     )
     @GetMapping("/artist/{artistId}")
-    public ResponseEntity<Page<SongDTO>> getSongsByArtist(
+    public ResponseEntity<PagedResponse<SongDTO>> getSongsByArtist(
             @PathVariable Long artistId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(songService.getSongsByArtist(artistId, pageable));
+        return ResponseEntity.ok(songService.getSongsByArtist(artistId, page, size));
     }
 
     @Operation(
@@ -186,12 +186,11 @@ public class SongController {
             }
     )
     @GetMapping("/genre/{genreId}")
-    public ResponseEntity<Page<SongDTO>> getSongsByGenre(
+    public ResponseEntity<PagedResponse<SongDTO>> getSongsByGenre(
             @PathVariable Long genreId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(songService.getSongsByGenre(genreId, pageable));
+        return ResponseEntity.ok(songService.getSongsByGenre(genreId, page, size));
     }
 
     @Operation(
@@ -204,12 +203,11 @@ public class SongController {
             }
     )
     @GetMapping("/album/{albumId}")
-    public ResponseEntity<Page<SongDTO>> getSongsByAlbumId(
+    public ResponseEntity<PagedResponse<SongDTO>> getSongsByAlbumId(
             @PathVariable Long albumId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(songService.getSongsByAlbumId(albumId, pageable));
+        return ResponseEntity.ok(songService.getSongsByAlbumId(albumId, page, size));
     }
 
     @Operation(
@@ -297,7 +295,7 @@ public class SongController {
             }
     )
     @GetMapping("/top")
-    public ResponseEntity<Page<SongDTO>> getTopSongsByViewCount(
+    public ResponseEntity<PagedResponse<SongDTO>> getTopSongsByViewCount(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(songService.getTopSongsByViewCount(page, size));

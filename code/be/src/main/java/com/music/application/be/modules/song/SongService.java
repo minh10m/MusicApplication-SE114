@@ -12,6 +12,7 @@ import com.music.application.be.modules.genre.GenreRepository;
 import com.music.application.be.modules.playlist.Playlist;
 import com.music.application.be.modules.playlist.PlaylistRepository;
 import com.music.application.be.modules.song.dto.CreateSongDTO;
+import com.music.application.be.modules.song.dto.PagedResponse;
 import com.music.application.be.modules.song.dto.SongDTO;
 import com.music.application.be.modules.song.dto.UpdateSongDTO;
 import com.music.application.be.modules.song_playlist.SongPlaylist;
@@ -237,9 +238,21 @@ public class SongService {
     }
 
     // Read all with pagination
-    public Page<SongDTO> getAllSongs(Pageable pageable) {
-        return songRepository.findAll(pageable).map(this::mapToDTO);
+    @Cacheable(value = "allSongs", key = "'page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize")
+    public PagedResponse<SongDTO> getAllSongs(Pageable pageable) {
+        Page<Song> page = songRepository.findAll(pageable);
+        List<SongDTO> content = page.getContent().stream().map(this::mapToDTO).toList();
+
+        return new PagedResponse<>(
+                content,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isLast()
+        );
     }
+
 
     // Delete
     @CacheEvict(value = {"songs", "searchedSongs", "songsByGenre", "songsByArtist", "topSongs"}, allEntries = true)
@@ -250,30 +263,87 @@ public class SongService {
     }
 
     // Search songs
-    public Page<SongDTO> searchSongs(String query, Pageable pageable) {
-        return songRepository.findByTitleContainingIgnoreCase(query, pageable).map(this::mapToDTO);
+    @Cacheable(value = "searchedSongs", key = "'query-' + #query + '-page-' + #page + '-size-' + #size")
+    public PagedResponse<SongDTO> searchSongs(String query, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Song> songPage = songRepository.findByTitleContainingIgnoreCase(query, pageable);
+
+        return new PagedResponse<>(
+                mapToDTOList(songPage.getContent()),
+                songPage.getNumber(),
+                songPage.getSize(),
+                songPage.getTotalElements(),
+                songPage.getTotalPages(),
+                songPage.isLast()
+        );
     }
+
 
     // Get songs by genre
-    public Page<SongDTO> getSongsByGenre(Long genreId, Pageable pageable) {
-        return songRepository.findByGenresId(genreId, pageable).map(this::mapToDTO);
+    @Cacheable(value = "songsByGenre", key = "'genre-' + #genreId + '-page-' + #page + '-size-' + #size")
+    public PagedResponse<SongDTO> getSongsByGenre(Long genreId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Song> songPage = songRepository.findByGenresId(genreId, pageable);
+
+        return new PagedResponse<>(
+                mapToDTOList(songPage.getContent()),
+                songPage.getNumber(),
+                songPage.getSize(),
+                songPage.getTotalElements(),
+                songPage.getTotalPages(),
+                songPage.isLast()
+        );
+    }
+    // Get songs by artist
+    @Cacheable(value = "songsByArtist", key = "'artist-' + #artistId + '-page-' + #page + '-size-' + #size")
+    public PagedResponse<SongDTO> getSongsByArtist(Long artistId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Song> songPage = songRepository.findByArtistId(artistId, pageable);
+
+        return new PagedResponse<>(
+                mapToDTOList(songPage.getContent()),
+                songPage.getNumber(),
+                songPage.getSize(),
+                songPage.getTotalElements(),
+                songPage.getTotalPages(),
+                songPage.isLast()
+        );
     }
 
-    // Get songs by artist
-    public Page<SongDTO> getSongsByArtist(Long artistId, Pageable pageable) {
-        return songRepository.findByArtistId(artistId, pageable).map(this::mapToDTO);
-    }
 
     // Get songs by album
-    public Page<SongDTO> getSongsByAlbumId(Long albumId, Pageable pageable) {
-        return songRepository.findByAlbumId(albumId, pageable).map(this::mapToDTO);
+    @Cacheable(value = "songsByAlbum", key = "'album-' + #albumId + '-page-' + #page + '-size-' + #size")
+    public PagedResponse<SongDTO> getSongsByAlbumId(Long albumId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Song> songPage = songRepository.findByAlbumId(albumId, pageable);
+
+        return new PagedResponse<>(
+                mapToDTOList(songPage.getContent()),
+                songPage.getNumber(),
+                songPage.getSize(),
+                songPage.getTotalElements(),
+                songPage.getTotalPages(),
+                songPage.isLast()
+        );
     }
 
+
     // Get top songs by view count
-    public Page<SongDTO> getTopSongsByViewCount(int page, int size) {
+    @Cacheable(value = "topSongs", key = "'top-page-' + #page + '-size-' + #size")
+    public PagedResponse<SongDTO> getTopSongsByViewCount(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return songRepository.findAllByOrderByViewCountDesc(pageable).map(this::mapToDTO);
+        Page<Song> songPage = songRepository.findAllByOrderByViewCountDesc(pageable);
+
+        return new PagedResponse<>(
+                mapToDTOList(songPage.getContent()),
+                songPage.getNumber(),
+                songPage.getSize(),
+                songPage.getTotalElements(),
+                songPage.getTotalPages(),
+                songPage.isLast()
+        );
     }
+
 
     // Share song
     @Cacheable(value = "songs", key = "'share-' + #id")
@@ -281,6 +351,10 @@ public class SongService {
         Song song = songRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Song not found with id: " + id));
         return "http://localhost:8080/api/songs/" + id;
+    }
+
+    private List<SongDTO> mapToDTOList(List<Song> songs) {
+        return songs.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     private SongDTO mapToDTO(Song song) {
