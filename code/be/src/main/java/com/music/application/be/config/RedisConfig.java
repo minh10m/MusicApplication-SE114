@@ -44,19 +44,8 @@ public class RedisConfig {
                 )
                 .entryTtl(Duration.ofMinutes(30)); // TTL mặc định
 
-        // TTL riêng theo cache name
-        Map<String, RedisCacheConfiguration> cacheConfigs = new java.util.HashMap<>();
-        cacheConfigs.put("songs", defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        cacheConfigs.put("searchedSongs", defaultConfig.entryTtl(Duration.ofMinutes(5)));
-        cacheConfigs.put("songsByGenre", defaultConfig.entryTtl(Duration.ofMinutes(15)));
-        cacheConfigs.put("songsByArtist", defaultConfig.entryTtl(Duration.ofMinutes(15)));
-        cacheConfigs.put("songsByAlbum", defaultConfig.entryTtl(Duration.ofMinutes(15)));
-        cacheConfigs.put("topSongs", defaultConfig.entryTtl(Duration.ofMinutes(20)));
-        cacheConfigs.put("allSongs", defaultConfig.entryTtl(Duration.ofMinutes(10)));
-
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
-                .withInitialCacheConfigurations(cacheConfigs)
                 .build();
     }
 
