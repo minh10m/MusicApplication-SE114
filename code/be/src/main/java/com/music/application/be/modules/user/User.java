@@ -1,6 +1,7 @@
 package com.music.application.be.modules.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.music.application.be.modules.artist.Artist;
 import com.music.application.be.modules.forget_password.ForgetPassword;
 import com.music.application.be.modules.playlist.Playlist;
@@ -27,6 +28,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class User implements UserDetails {
 
     @Id

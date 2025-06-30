@@ -1,5 +1,6 @@
 package com.music.application.be.modules.search_history;
 
+import com.music.application.be.modules.search_history.dto.SearchHistoryDTO;
 import com.music.application.be.modules.user.User;
 import com.music.application.be.modules.user.UserRepository;
 import jakarta.transaction.Transactional;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,11 +32,16 @@ public class SearchHistoryService {
     }
 
     @Cacheable(value = "searchHistories", key = "'user-' + #userId")
-    public List<SearchHistory> getSearchHistoryByUserId(Long userId) {
+    public List<SearchHistoryDTO> getSearchHistoryByUserId(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
-        return searchHistoryRepository.findByUser(user);
+
+        return searchHistoryRepository.findByUser(user)
+                .stream()
+                .map(sh -> new SearchHistoryDTO(sh.getQuery(), sh.getSearchedAt()))
+                .collect(Collectors.toList());
     }
+
 
     @CacheEvict(value = "searchHistories", key = "'user-' + #userId")
     public void clearSearchHistoryByUserId(Long userId) {

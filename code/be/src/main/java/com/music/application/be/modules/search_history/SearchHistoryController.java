@@ -1,5 +1,6 @@
 package com.music.application.be.modules.search_history;
 
+import com.music.application.be.modules.search_history.dto.SearchHistoryDTO;
 import com.music.application.be.modules.search_history.dto.SearchHistoryRequest;
 import com.music.application.be.modules.user.User;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,7 @@ public class SearchHistoryController {
     @GetMapping("/{userId}")
     public ResponseEntity<?> getSearchHistory(@PathVariable Long userId) {
         try {
-            List<SearchHistory> searchHistoryList = searchHistoryService.getSearchHistoryByUserId(userId);
+            List<SearchHistoryDTO> searchHistoryList = searchHistoryService.getSearchHistoryByUserId(userId);
             return ResponseEntity.ok(searchHistoryList);
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(404).body("User not found.");
@@ -39,6 +40,7 @@ public class SearchHistoryController {
             return ResponseEntity.status(500).body("Error fetching search history: " + e.getMessage());
         }
     }
+
 
     @DeleteMapping("/clear/{userId}")
     public ResponseEntity<?> clearSearchHistory(@PathVariable Long userId) {
