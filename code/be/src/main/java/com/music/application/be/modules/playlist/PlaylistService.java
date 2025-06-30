@@ -1,5 +1,7 @@
 package com.music.application.be.modules.playlist;
 
+import com.music.application.be.common.PagedResponse;
+import com.music.application.be.common.PaginationUtils;
 import com.music.application.be.modules.genre.Genre;
 import com.music.application.be.modules.genre.GenreRepository;
 import com.music.application.be.modules.playlist.dto.PlaylistDTO;
@@ -15,6 +17,7 @@ import com.music.application.be.modules.user.User;
 import com.music.application.be.modules.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -111,6 +114,7 @@ public class PlaylistService {
         return mapToDTO(savedPlaylist);
     }    // Read by ID
 
+    @Cacheable(value = "playlists", key = "#id")
     public PlaylistDTO getPlaylistById(Long id) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
@@ -132,6 +136,8 @@ public class PlaylistService {
         
         return mapToDTO(playlist);
     }    // Read playlist with songs by ID
+
+    @Cacheable(value = "playlistWithSongs", key = "#id")
     public PlaylistDTO getPlaylistWithSongs(Long id) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
@@ -162,20 +168,27 @@ public class PlaylistService {
         return dto;
     }    // Read all with pagination
 
-    public Page<PlaylistDTO> getAllPlaylists(Pageable pageable) {
+    @Cacheable(
+            value = "allPlaylists",
+            key = "'page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize + '-sort-' + #pageable.sort.toString() + '-' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication()?.getPrincipal()?.getClass()?.getSimpleName()"
+    )
+    public PagedResponse<PlaylistDTO> getAllPlaylists(Pageable pageable) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User) {
-            User currentUser = (User) authentication.getPrincipal();
-            // Admin có thể xem tất cả playlist, user thường chỉ xem public playlist và playlist của mình
-            if (currentUser.getRole().equals(Role.ADMIN)) {
-                return playlistRepository.findAll(pageable).map(this::mapToDTO);
+
+        Page<PlaylistDTO> pageResult;
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User user) {
+            if (user.getRole().equals(Role.ADMIN)) {
+                pageResult = playlistRepository.findAll(pageable).map(this::mapToDTO);
             } else {
-                return playlistRepository.findByIsPublicTrueOrCreatedBy(currentUser, pageable).map(this::mapToDTO);
+                pageResult = playlistRepository.findByIsPublicTrueOrCreatedBy(user, pageable).map(this::mapToDTO);
             }
+        } else {
+            pageResult = playlistRepository.findByIsPublicTrue(pageable).map(this::mapToDTO);
         }
-        // Guest chỉ xem public playlist
-        return playlistRepository.findByIsPublicTrue(pageable).map(this::mapToDTO);
+
+        return PaginationUtils.buildPagedResponse(pageResult.getContent(), pageResult);
     }
+
 
     // Update playlist for user (no genre)
 
@@ -281,26 +294,49 @@ public class PlaylistService {
 
         playlistRepository.delete(playlist);
     }    // Search playlists
-    public Page<PlaylistDTO> searchPlaylists(String query, Pageable pageable) {
+    @Cacheable(
+            value = "searchedPlaylists",
+            key = "'search-' + #query + '-page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize"
+    )
+    public PagedResponse<PlaylistDTO> searchPlaylists(String query, Pageable pageable) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Page<Playlist> page;
+
         if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User) {
             User currentUser = (User) authentication.getPrincipal();
-            // Admin có thể tìm kiếm tất cả playlist, user thường chỉ tìm kiếm public playlist và playlist của mình
+
             if (currentUser.getRole().equals(Role.ADMIN)) {
-                return playlistRepository.findByNameContainingIgnoreCase(query, pageable).map(this::mapToDTO);
+                page = playlistRepository.findByNameContainingIgnoreCase(query, pageable);
             } else {
-                return playlistRepository.findByNameContainingIgnoreCaseAndIsPublicTrueOrCreatedBy(query, currentUser, pageable).map(this::mapToDTO);
+                page = playlistRepository.findByNameContainingIgnoreCaseAndIsPublicTrueOrCreatedBy(query, currentUser, pageable);
             }
+        } else {
+            page = playlistRepository.findByNameContainingIgnoreCaseAndIsPublicTrue(query, pageable);
         }
-        // Guest chỉ tìm kiếm public playlist
-        return playlistRepository.findByNameContainingIgnoreCaseAndIsPublicTrue(query, pageable).map(this::mapToDTO);
-    }    // Get playlists by genre (playlist có genre luôn là public)
-    public Page<PlaylistDTO> getPlaylistsByGenre(Long genreId, Pageable pageable) {
-        return playlistRepository.findByGenresId(genreId, pageable).map(this::mapToDTO);
+
+        List<PlaylistDTO> dtoList = page.getContent().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+
+        return PaginationUtils.buildPagedResponse(dtoList, page);
     }
 
-    // Share playlist
+    // Get playlists by genre (playlist có genre luôn là public)
 
+    @Cacheable(
+            value = "searchedPlaylists",
+            key = "'genre-' + #genreId + '-page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize"
+    )
+    public PagedResponse<PlaylistDTO> getPlaylistsByGenre(Long genreId, Pageable pageable) {
+        Page<Playlist> playlistPage = playlistRepository.findByGenresId(genreId, pageable);
+        List<PlaylistDTO> dtoList = playlistPage.stream()
+                .map(this::mapToDTO)
+                .toList();
+        return PaginationUtils.buildPagedResponse(dtoList, playlistPage);
+    }
+
+
+    // Share playlist
     public String sharePlaylist(Long id) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
@@ -324,15 +360,27 @@ public class PlaylistService {
     }
 
     // Get user's own playlists
-
-    public Page<PlaylistDTO> getMyPlaylists(Pageable pageable) {
+    @Cacheable(
+            value = "myPlaylists",
+            key = "'user-' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().id + '-page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize"
+    )
+    public PagedResponse<PlaylistDTO> getMyPlaylists(Pageable pageable) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
             throw new EntityNotFoundException("User not authenticated");
         }
+
         User currentUser = (User) authentication.getPrincipal();
-        return playlistRepository.findByCreatedBy(currentUser, pageable).map(this::mapToDTO);
-    }    // Map entity to DTO
+
+        Page<Playlist> page = playlistRepository.findByCreatedBy(currentUser, pageable);
+        List<PlaylistDTO> dtoList = page.stream()
+                .map(this::mapToDTO)
+                .toList();
+
+        return PaginationUtils.buildPagedResponse(dtoList, page);
+    }
+    // Map entity to DTO
+
     private PlaylistDTO mapToDTO(Playlist playlist) {
         PlaylistDTO dto = new PlaylistDTO();
         dto.setId(playlist.getId());

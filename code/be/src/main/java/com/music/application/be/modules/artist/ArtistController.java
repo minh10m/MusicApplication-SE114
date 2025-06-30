@@ -1,5 +1,6 @@
 package com.music.application.be.modules.artist;
 
+import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.artist.dto.ArtistResponseDTO;
 import com.music.application.be.modules.artist.dto.CreateArtistDTO;
 import com.music.application.be.modules.artist.dto.UpdateArtistDTO;
@@ -77,7 +78,7 @@ public class ArtistController {
     )
     @GetMapping
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('USER')") // Admin hoặc user đều xem được
-    public ResponseEntity<Page<ArtistResponseDTO>> getAllArtists(
+    public ResponseEntity<PagedResponse<ArtistResponseDTO>> getAllArtists(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);

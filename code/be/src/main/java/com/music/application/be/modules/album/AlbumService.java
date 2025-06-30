@@ -1,5 +1,6 @@
 package com.music.application.be.modules.album;
 
+import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.album.dto.AlbumResponseDTO;
 import com.music.application.be.modules.album.dto.CreateAlbumDTO;
 import com.music.application.be.modules.album.dto.UpdateAlbumDTO;
@@ -30,6 +31,7 @@ public class AlbumService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @CacheEvict(value = "allAlbums", allEntries = true)
     public AlbumResponseDTO createAlbum(CreateAlbumDTO createAlbumDTO, MultipartFile coverImageFile) throws IOException {
         if (coverImageFile == null || coverImageFile.isEmpty()) {
             throw new IllegalArgumentException("Cover image is required");
@@ -81,7 +83,7 @@ public class AlbumService {
         return mapToResponseDTO(updatedAlbum);
     }
 
-    @CachePut(value = "albums", key = "#id")
+    @CacheEvict(value = "allAlbums", allEntries = true)
     public AlbumResponseDTO updateAlbumCover(Long id, MultipartFile coverImageFile) throws IOException {
         Album album = albumRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Album not found with id: " + id));
@@ -103,11 +105,25 @@ public class AlbumService {
         return mapToResponseDTO(album);
     }
 
-    public Page<AlbumResponseDTO> getAllAlbums(Pageable pageable) {
-        return albumRepository.findAll(pageable).map(this::mapToResponseDTO);
+    @Cacheable(
+            value = "allAlbums",
+            key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()"
+    )
+    public PagedResponse<AlbumResponseDTO> getAllAlbums(Pageable pageable) {
+        Page<AlbumResponseDTO> pageResult = albumRepository.findAll(pageable)
+                .map(this::mapToResponseDTO);
+
+        return new PagedResponse<>(
+                pageResult.getContent(),
+                pageResult.getNumber(),
+                pageResult.getSize(),
+                pageResult.getTotalElements(),
+                pageResult.getTotalPages(),
+                pageResult.isLast()
+        );
     }
 
-    @CacheEvict(value = "albums", key = "#id")
+    @CacheEvict(value = "allAlbums", allEntries = true)
     public void deleteAlbum(Long id) {
         Album album = albumRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Album not found"));

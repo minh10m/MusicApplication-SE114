@@ -1,6 +1,8 @@
 package com.music.application.be.modules.downloaded_song;
 
+import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.downloaded_song.dto.DownloadedSongDTO;
+import com.music.application.be.modules.genre.Genre;
 import com.music.application.be.modules.song.Song;
 import com.music.application.be.modules.song.SongRepository;
 import com.music.application.be.modules.song.dto.SongDTO;
@@ -10,6 +12,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -58,6 +61,7 @@ public class DownloadedSongService {
     }
 
     // Get downloaded song by songId - tự động lấy user từ authentication
+    @Cacheable(value = "downloadedSongByUserAndSong", key = "#root.authentication.principal.id + '-' + #songId")
     public DownloadedSongDTO getDownloadedSongBySongId(Long songId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
@@ -71,7 +75,11 @@ public class DownloadedSongService {
         return mapToDTO(downloadedSong);
     }
 
-    public Page<SongDTO> getDownloadedSongsAsSongDTOs(Pageable pageable) {
+    @Cacheable(
+            value = "downloadedSongs",
+            key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString() + '-' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()"
+    )
+    public PagedResponse<SongDTO> getDownloadedSongsAsSongDTOs(Pageable pageable) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
             throw new EntityNotFoundException("User not authenticated");
@@ -79,7 +87,7 @@ public class DownloadedSongService {
 
         User user = (User) authentication.getPrincipal();
 
-        return downloadedSongRepository.findByUserId(user.getId(), pageable)
+        Page<SongDTO> pageResult = downloadedSongRepository.findByUserId(user.getId(), pageable)
                 .map(downloadedSong -> {
                     Song song = downloadedSong.getSong();
 
@@ -105,13 +113,23 @@ public class DownloadedSongService {
 
                     if (song.getGenres() != null) {
                         dto.setGenreIds(song.getGenres().stream()
-                                .map(genre -> genre.getId())
+                                .map(Genre::getId)
                                 .collect(Collectors.toList()));
                     }
 
                     return dto;
                 });
+
+        return new PagedResponse<>(
+                pageResult.getContent(),
+                pageResult.getNumber(),
+                pageResult.getSize(),
+                pageResult.getTotalElements(),
+                pageResult.getTotalPages(),
+                pageResult.isLast()
+        );
     }
+
 
     // Get downloaded songs - tự động lấy user từ authentication
     public Page<DownloadedSongDTO> getDownloadedSongs(Pageable pageable) {
@@ -124,15 +142,32 @@ public class DownloadedSongService {
     }
 
     // Search downloaded songs - tự động lấy user từ authentication
-    public Page<DownloadedSongDTO> searchDownloadedSongs(String query, Pageable pageable) {
+    @Cacheable(
+            value = "searchDownloadedSongs",
+            key = "#query + '-' + #pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString() + '-' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()"
+    )
+    public PagedResponse<DownloadedSongDTO> searchDownloadedSongs(String query, Pageable pageable) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
             throw new EntityNotFoundException("User not authenticated");
         }
+
         User user = (User) authentication.getPrincipal();
-        return downloadedSongRepository.findByUserIdAndSongTitleContainingIgnoreCase(user.getId(), query, pageable)
+
+        Page<DownloadedSongDTO> pageResult = downloadedSongRepository
+                .findByUserIdAndSongTitleContainingIgnoreCase(user.getId(), query, pageable)
                 .map(this::mapToDTO);
+
+        return new PagedResponse<>(
+                pageResult.getContent(),
+                pageResult.getNumber(),
+                pageResult.getSize(),
+                pageResult.getTotalElements(),
+                pageResult.getTotalPages(),
+                pageResult.isLast()
+        );
     }
+
 
     // Remove downloaded song - tự động lấy user từ authentication
     public void removeDownloadedSong(Long songId) {

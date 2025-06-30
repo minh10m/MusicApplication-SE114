@@ -1,5 +1,6 @@
 package com.music.application.be.modules.artist;
 
+import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.album.AlbumRepository;
 import com.music.application.be.modules.artist.dto.ArtistResponseDTO;
 import com.music.application.be.modules.artist.dto.CreateArtistDTO;
@@ -51,8 +52,22 @@ public class ArtistService {
         return mapToResponseDTO(artist);
     }
 
-    public Page<ArtistResponseDTO> getAllArtists(Pageable pageable) {
-        return artistRepository.findAll(pageable).map(this::mapToResponseDTO);
+    @Cacheable(
+            value = "allArtists",
+            key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()"
+    )
+    public PagedResponse<ArtistResponseDTO> getAllArtists(Pageable pageable) {
+        Page<ArtistResponseDTO> pageResult = artistRepository.findAll(pageable)
+                .map(this::mapToResponseDTO);
+
+        return new PagedResponse<>(
+                pageResult.getContent(),
+                pageResult.getNumber(),
+                pageResult.getSize(),
+                pageResult.getTotalElements(),
+                pageResult.getTotalPages(),
+                pageResult.isLast()
+        );
     }
 
     @CachePut(value = "artists", key = "#id")
