@@ -14,6 +14,7 @@ import com.music.application.be.modules.playlist.PlaylistRepository;
 import com.music.application.be.modules.song.dto.CreateSongDTO;
 import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.song.dto.SongDTO;
+import com.music.application.be.modules.song.dto.SongResponseDTO;
 import com.music.application.be.modules.song.dto.UpdateSongDTO;
 import com.music.application.be.modules.song_playlist.SongPlaylist;
 import com.music.application.be.modules.song_playlist.SongPlaylistRepository;
@@ -229,12 +230,12 @@ public class SongService {
 
     // Read by ID
     @Cacheable(value = "songs", key = "#id")
-    public SongDTO getSongById(Long id) {
+    public SongResponseDTO getSongById(Long id) {
         Song song = songRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Song not found with id: " + id));
         song.setViewCount(song.getViewCount() + 1);
         songRepository.save(song);
-        return mapToDTO(song);
+        return mapToResponseDTO(song);
     }
 
     // Read all with pagination
@@ -357,8 +358,8 @@ public class SongService {
         return songs.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    private SongDTO mapToDTO(Song song) {
-        SongDTO songDTO = new SongDTO();
+    public SongResponseDTO mapToResponseDTO(Song song) {
+        SongResponseDTO songDTO = new SongResponseDTO();
         songDTO.setId(song.getId());
         songDTO.setTitle(song.getTitle());
         songDTO.setDuration(song.getDuration());
@@ -384,16 +385,46 @@ public class SongService {
 
         // Lấy thông tin người dùng từ SecurityContext
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof UserDetails) {
+        if (authentication != null && authentication.isAuthenticated()
+                && authentication.getPrincipal() instanceof UserDetails) {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             Long userId = ((User) userDetails).getId();
 
-            songDTO.setFavorite(favoriteSongRepository.existsByUser_IdAndSong_Id(userId, song.getId()));
-            songDTO.setDownloaded(downloadedSongRepository.existsByUser_IdAndSong_Id(userId, song.getId()));
-        } else {
-            songDTO.setFavorite(false);
-            songDTO.setDownloaded(false);
+            boolean isFavorite = favoriteSongRepository.existsByUser_IdAndSong_Id(userId, song.getId());
+            boolean isDownloaded = downloadedSongRepository.existsByUser_IdAndSong_Id(userId, song.getId());
+
+            songDTO.setFavorite(isFavorite);
+            songDTO.setDownloaded(isDownloaded);
         }
+
+        return songDTO;
+    }
+
+
+    private SongDTO mapToDTO(Song song) {
+        SongDTO songDTO = new SongDTO();
+        songDTO.setId(song.getId());
+        songDTO.setTitle(song.getTitle());
+        songDTO.setDuration(song.getDuration());
+        songDTO.setAudioUrl(song.getAudioUrl());
+        songDTO.setThumbnail(song.getThumbnail());
+        songDTO.setLyrics(song.getLyrics());
+        songDTO.setReleaseDate(song.getReleaseDate());
+        songDTO.setViewCount(song.getViewCount());
+
+        if (song.getArtist() != null) {
+            songDTO.setArtistId(song.getArtist().getId());
+            songDTO.setArtistName(song.getArtist().getName());
+        }
+
+        if (song.getAlbum() != null) {
+            songDTO.setAlbumId(song.getAlbum().getId());
+            songDTO.setAlbumName(song.getAlbum().getName());
+        }
+
+        songDTO.setGenreIds(song.getGenres().stream()
+                .map(Genre::getId)
+                .collect(Collectors.toList()));
         return songDTO;
     }
 

@@ -7,6 +7,7 @@ import com.music.application.be.modules.comment.dto.CreateCommentDTO;
 import com.music.application.be.modules.song.dto.CreateSongDTO;
 import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.song.dto.SongDTO;
+import com.music.application.be.modules.song.dto.SongResponseDTO;
 import com.music.application.be.modules.song.dto.UpdateSongDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -69,8 +70,8 @@ public class SongController {
             }
     )
     @GetMapping("/{id}")
-    public ResponseEntity<SongDTO> getSongById(@PathVariable Long id) {
-        SongDTO songDTO = songService.getSongById(id);
+    public ResponseEntity<SongResponseDTO> getSongById(@PathVariable Long id) {
+        SongResponseDTO songDTO = songService.getSongById(id);
         return ResponseEntity.ok(songDTO);
     }
 
