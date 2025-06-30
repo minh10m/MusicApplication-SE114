@@ -42,6 +42,13 @@ class PlayerSharedViewModel @Inject constructor(
         player.setSongList(songs, startIndex)
     }
 
+    fun resetPlayer() {
+        _queue.clear()
+        _currentIndex.value = 0
+        player.stop() // Gọi hàm stop từ GlobalPlayerController
+        Log.d("PlayerSharedViewModel", "MiniPlayer reset")
+    }
+
     fun addRecentlyPlayed(songId: Long) {
         viewModelScope.launch(NonCancellable) {
             repeat(3) { attempt ->

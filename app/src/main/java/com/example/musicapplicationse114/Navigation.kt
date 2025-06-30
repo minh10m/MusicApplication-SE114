@@ -354,7 +354,12 @@ fun Navigation() {
                             },
                             onToggle = {
                                 globalPlayerController.toggle()
+                            },
+                            onClose = {
+                                sharedViewModel.resetPlayer() // Gọi hàm reset để xóa MiniPlayer
+                                Log.d("MiniPlayer", "Closed MiniPlayer")
                             }
+
                         )
                     }
                     Box(modifier = Modifier.padding(bottom = 30.dp))

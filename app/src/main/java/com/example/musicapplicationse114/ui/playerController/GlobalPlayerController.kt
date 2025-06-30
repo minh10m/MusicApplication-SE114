@@ -25,7 +25,7 @@ class GlobalPlayerController @Inject constructor(
     context: Context,
 ) {
     private val _state = MutableStateFlow(PlayerState())
-    val state: StateFlow<PlayerState> = _state
+    val state: MutableStateFlow<PlayerState> = _state
     private val player = ExoPlayer.Builder(context).build()
     private var songList: List<SongResponse> = emptyList()
     private var currentSongIndex: Int = -1
@@ -59,6 +59,20 @@ class GlobalPlayerController @Inject constructor(
         startUpdatingPlayerState()
     }
 
+    fun stop() {
+        player.stop()
+        player.clearMediaItems()
+        _state.value = _state.value.copy(
+            currentSong = null,
+            isPlaying = false,
+            position = 0L,
+            duration = 0L
+        )
+        songList = emptyList()
+        currentSongIndex = -1
+    }
+
+
     private fun startUpdatingPlayerState() {
         updateJob?.cancel()
         updateJob = coroutineScope.launch {
@@ -85,7 +99,7 @@ class GlobalPlayerController @Inject constructor(
 
     fun setSongList(songs: List<SongResponse>, startIndex: Int = 0) {
         songList = songs
-        currentSongIndex = startIndex.coerceIn(0, songs.size - 1)
+        currentSongIndex = if (songs.isEmpty()) -1 else startIndex.coerceIn(0, songs.size - 1)
     }
 
     fun play(song: SongResponse) {
