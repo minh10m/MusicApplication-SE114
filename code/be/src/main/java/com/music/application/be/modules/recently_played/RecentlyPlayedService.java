@@ -1,21 +1,26 @@
 package com.music.application.be.modules.recently_played;
 
+import com.music.application.be.common.PagedResponse;
+import com.music.application.be.common.PaginationUtils;
 import com.music.application.be.modules.genre.Genre;
-import com.music.application.be.modules.recently_played.dto.SongSummaryDto;
 import com.music.application.be.modules.song.Song;
 import com.music.application.be.modules.song.SongRepository;
 import com.music.application.be.modules.song.dto.SongDTO;
 import com.music.application.be.modules.user.User;
-import com.music.application.be.modules.user.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,7 +29,6 @@ import java.util.stream.Collectors;
 public class RecentlyPlayedService {
 
     private final RecentlyPlayedRepository recentlyPlayedRepository;
-    private final UserRepository userRepository;
     private final SongRepository songRepository;
 
     /**
@@ -32,10 +36,16 @@ public class RecentlyPlayedService {
      * If already exists, it will be refreshed to the top (re-added).
      * Also evicts user's cache.
      */
-    @CacheEvict(value = "recentlyPlayed", key = "'user-' + #userId")
-    public RecentlyPlayed addRecentlyPlayed(Long userId, Long songId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException("User not found"));
+    @CacheEvict(
+            value = "recentlyPlayedByUser",
+            key = "T(java.util.Objects).hash('user-' + #root.target.getCurrentUserId(), 0, 10)",
+            allEntries = true
+    )
+    public RecentlyPlayed addRecentlyPlayedForCurrentUser(Long songId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new NoSuchElementException("Song not found"));
 
@@ -51,39 +61,49 @@ public class RecentlyPlayedService {
         return recentlyPlayedRepository.save(recentlyPlayed);
     }
 
+
     /**
      * Get recently played songs for a specific user.
      * This method is cached per user.
      */
-    @Cacheable(value = "recentlyPlayed", key = "'user-' + #userId")
-    public List<SongDTO> getRecentlyPlayedSongsByUserId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException("User not found"));
+    @Cacheable(
+            value = "recentlyPlayedByUser",
+            key = "T(java.util.Objects).hash(#userId, #pageable.pageNumber, #pageable.pageSize)"
+    )
+    public PagedResponse<SongDTO> getRecentlyPlayedByUser(Pageable pageable) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
 
-        return recentlyPlayedRepository.findByUserOrderByPlayedAtDesc(user)
+        Page<RecentlyPlayed> page = recentlyPlayedRepository.findByUserOrderByPlayedAtDesc(user, pageable);
+
+        List<SongDTO> songDTOs = page.getContent()
                 .stream()
                 .map(this::mapToSongDTO)
                 .toList();
-    }
 
-    /**
-     * Get all recently played songs from all users (for admin).
-     */
-    public List<SongDTO> getAllRecentlyPlayed() {
-        return recentlyPlayedRepository.findAllByOrderByPlayedAtDesc()
-                .stream()
-                .map(this::mapToSongDTO)
-                .toList();
+        return PaginationUtils.buildPagedResponse(songDTOs, page);
     }
 
     /**
      * Clear recently played history for a user.
      * Also evicts that user's cache.
      */
-    @CacheEvict(value = "recentlyPlayed", key = "'user-' + #user.id")
-    public void clearRecentlyPlayed(User user) {
-        List<RecentlyPlayed> userHistory = recentlyPlayedRepository.findByUserOrderByPlayedAtDesc(user);
-        recentlyPlayedRepository.deleteAll(userHistory);
+    @CacheEvict(value = "recentlyPlayedByUser", allEntries = true)
+    public void clearRecentlyPlayedOfCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+
+        Pageable pageable = PageRequest.of(0, 50); // chọn pageSize phù hợp
+        Page<RecentlyPlayed> page;
+
+        do {
+            page = recentlyPlayedRepository.findByUserOrderByPlayedAtDesc(user, pageable);
+            recentlyPlayedRepository.deleteAll(page.getContent());
+        } while (!page.isLast());
     }
 
     /**
