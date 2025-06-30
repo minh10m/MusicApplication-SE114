@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data
-public class SongDTO {
+public class SongResponseDTO {
     private Long id;
 
     @NotBlank(message = "Title is mandatory")
@@ -28,4 +28,12 @@ public class SongDTO {
     private Long albumId;
     private String albumName; // Thêm tên album
     private List<Long> genreIds;
+
+    @JsonProperty("isFavorite")
+    @JsonAlias("favorite")
+    private boolean isFavorite;
+
+    @JsonProperty("isDownloaded")
+    @JsonAlias("downloaded")
+    private boolean isDownloaded;
 }
