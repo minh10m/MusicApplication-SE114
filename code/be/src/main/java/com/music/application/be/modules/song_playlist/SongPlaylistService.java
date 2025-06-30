@@ -5,17 +5,22 @@ import com.music.application.be.modules.playlist.PlaylistRepository;
 import com.music.application.be.modules.playlist.PlaylistService;
 import com.music.application.be.modules.song.Song;
 import com.music.application.be.modules.song.SongRepository;
+import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.song_playlist.dto.SongPlaylistDTO;
 import com.music.application.be.modules.song_playlist.dto.SongPlaylistRequestDTO;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
+import static com.music.application.be.common.PaginationUtils.buildPagedResponse;
 
 @Service
 public class SongPlaylistService {
@@ -125,11 +130,17 @@ public class SongPlaylistService {
     }
 
     // Get all song playlists với pagination để admin theo dõi dữ liệu
-    public Page<SongPlaylistDTO> getAllSongPlaylists(Pageable pageable) {
-        return songPlaylistRepository.findAll(pageable).map(this::mapToDTO);
+    @Cacheable(value = "allSongPlaylists", key = "'page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize")
+    public PagedResponse<SongPlaylistDTO> getAllSongPlaylists(Pageable pageable) {
+        Page<SongPlaylist> page = songPlaylistRepository.findAll(pageable);
+        List<SongPlaylistDTO> content = page.getContent()
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+
+        return buildPagedResponse(content, page);
     }
 
-    // Map entity to DTO
     private SongPlaylistDTO mapToDTO(SongPlaylist songPlaylist) {
         SongPlaylistDTO dto = new SongPlaylistDTO();
         dto.setId(songPlaylist.getId());
@@ -138,4 +149,5 @@ public class SongPlaylistService {
         dto.setAddedAt(songPlaylist.getAddedAt());
         return dto;
     }
+
 }

@@ -1,6 +1,6 @@
 package com.music.application.be.modules.playlist;
 
-import com.music.application.be.modules.playlist.dto.PagedResponseDTO;
+import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.playlist.dto.PlaylistDTO;
 import com.music.application.be.modules.playlist.dto.PlaylistRequestDTO;
 import jakarta.validation.Valid;
@@ -47,23 +47,19 @@ public class PlaylistController {
 
     // Get all playlists
     @GetMapping
-    public ResponseEntity<PagedResponseDTO<PlaylistDTO>> getAllPlaylists(
+    public ResponseEntity<PagedResponse<PlaylistDTO>> getAllPlaylists(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
+
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<PlaylistDTO> pageResult = playlistService.getAllPlaylists(pageable);
-        PagedResponseDTO<PlaylistDTO> response = new PagedResponseDTO<>(
-                pageResult.getContent(),
-                pageResult.getNumber(),
-                pageResult.getSize(),
-                pageResult.getTotalElements(),
-                pageResult.getTotalPages()
-        );
+
+        PagedResponse<PlaylistDTO> response = playlistService.getAllPlaylists(pageable);
         return ResponseEntity.ok(response);
     }
+
 
     // Update playlist for user (no genre)
     @PutMapping("/{playlistId}")
@@ -87,45 +83,46 @@ public class PlaylistController {
 
     // Search playlists
     @GetMapping("/search")
-    public ResponseEntity<PagedResponseDTO<PlaylistDTO>> searchPlaylists(
+    public ResponseEntity<PagedResponse<PlaylistDTO>> searchPlaylists(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
+
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<PlaylistDTO> pageResult = playlistService.searchPlaylists(query, pageable);
-        PagedResponseDTO<PlaylistDTO> response = new PagedResponseDTO<>(
-                pageResult.getContent(),
-                pageResult.getNumber(),
-                pageResult.getSize(),
-                pageResult.getTotalElements(),
-                pageResult.getTotalPages()
-        );
+
+        PagedResponse<PlaylistDTO> response = playlistService.searchPlaylists(query, pageable);
         return ResponseEntity.ok(response);
     }
 
     // Get playlists by genre
     @GetMapping("/genre/{genreId}")
-    public ResponseEntity<PagedResponseDTO<PlaylistDTO>> getPlaylistsByGenre(
+    public ResponseEntity<PagedResponse<PlaylistDTO>> getPlaylistsByGenre(
             @PathVariable Long genreId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
+
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<PlaylistDTO> pageResult = playlistService.getPlaylistsByGenre(genreId, pageable);
-        PagedResponseDTO<PlaylistDTO> response = new PagedResponseDTO<>(
-                pageResult.getContent(),
-                pageResult.getNumber(),
-                pageResult.getSize(),
-                pageResult.getTotalElements(),
-                pageResult.getTotalPages()
+
+        PagedResponse<PlaylistDTO> pagedResponse = playlistService.getPlaylistsByGenre(genreId, pageable);
+
+        PagedResponse<PlaylistDTO> responseDTO = new PagedResponse<>(
+                pagedResponse.getContent(),
+                pagedResponse.getPage(),
+                pagedResponse.getSize(),
+                pagedResponse.getTotalElements(),
+                pagedResponse.getTotalPages(),
+                pagedResponse.isLast()
         );
-        return ResponseEntity.ok(response);
+
+        return ResponseEntity.ok(responseDTO);
     }
+
 
     // Share playlist
     @GetMapping("/{playlistId}/share")
@@ -135,21 +132,28 @@ public class PlaylistController {
 
     // Get user's own playlists
     @GetMapping("/my-playlists")
-    public ResponseEntity<PagedResponseDTO<PlaylistDTO>> getMyPlaylists(
+    public ResponseEntity<PagedResponse<PlaylistDTO>> getMyPlaylists(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
+
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<PlaylistDTO> pageResult = playlistService.getMyPlaylists(pageable);
-        PagedResponseDTO<PlaylistDTO> response = new PagedResponseDTO<>(
-                pageResult.getContent(),
-                pageResult.getNumber(),
-                pageResult.getSize(),
-                pageResult.getTotalElements(),
-                pageResult.getTotalPages()
+
+        PagedResponse<PlaylistDTO> pagedResponse = playlistService.getMyPlaylists(pageable);
+
+        // Chuyển từ PagedResponse → PagedResponseDTO nếu hai class khác nhau
+        PagedResponse<PlaylistDTO> responseDTO = new PagedResponse<>(
+                pagedResponse.getContent(),
+                pagedResponse.getPage(),
+                pagedResponse.getSize(),
+                pagedResponse.getTotalElements(),
+                pagedResponse.getTotalPages(),
+                pagedResponse.isLast()
         );
-        return ResponseEntity.ok(response);
+
+        return ResponseEntity.ok(responseDTO);
     }
+
 }

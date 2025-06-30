@@ -1,5 +1,6 @@
 package com.music.application.be.modules.album;
 
+import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.album.dto.AlbumResponseDTO;
 import com.music.application.be.modules.album.dto.CreateAlbumDTO;
 import com.music.application.be.modules.album.dto.UpdateAlbumDTO;
@@ -8,6 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -74,7 +76,7 @@ public class AlbumController {
             }
     )
     @GetMapping
-    public ResponseEntity<Page<AlbumResponseDTO>> getAllAlbums(
+    public ResponseEntity<PagedResponse<AlbumResponseDTO>> getAllAlbums(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -118,15 +120,23 @@ public class AlbumController {
             summary = "Delete an album",
             description = "Deletes an album by its ID.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Successfully deleted album"),
-                    @ApiResponse(responseCode = "404", description = "Album not found")
+                    @ApiResponse(responseCode = "200", description = "Album deleted successfully"),
+                    @ApiResponse(responseCode = "404", description = "Album not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAlbum(@PathVariable Long id) {
-        albumService.deleteAlbum(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> deleteAlbum(@PathVariable Long id) {
+        try {
+            albumService.deleteAlbum(id);
+            return ResponseEntity.ok().build();
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(404).body("Album not found");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error deleting album: " + e.getMessage());
+        }
     }
+
 
     @Operation(
             summary = "Search albums",

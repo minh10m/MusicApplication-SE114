@@ -5,7 +5,7 @@ import com.music.application.be.modules.comment.dto.CommentActionResponseDTO;
 import com.music.application.be.modules.comment.dto.CommentResponseDTO;
 import com.music.application.be.modules.comment.dto.CreateCommentDTO;
 import com.music.application.be.modules.song.dto.CreateSongDTO;
-import com.music.application.be.modules.song.dto.PagedResponse;
+import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.song.dto.SongDTO;
 import com.music.application.be.modules.song.dto.UpdateSongDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;

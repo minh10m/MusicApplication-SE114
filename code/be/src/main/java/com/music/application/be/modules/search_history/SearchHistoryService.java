@@ -18,6 +18,8 @@ public class SearchHistoryService {
 
     private final SearchHistoryRepository searchHistoryRepository;
     private final UserRepository userRepository;
+
+    @CacheEvict(value = "searchHistories", key = "'user-' + #userId")
     public SearchHistory addSearchHistory(Long userId, String query) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
@@ -27,13 +29,14 @@ public class SearchHistoryService {
         return searchHistoryRepository.save(history);
     }
 
-
+    @Cacheable(value = "searchHistories", key = "'user-' + #userId")
     public List<SearchHistory> getSearchHistoryByUserId(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
         return searchHistoryRepository.findByUser(user);
     }
 
+    @CacheEvict(value = "searchHistories", key = "'user-' + #userId")
     public void clearSearchHistoryByUserId(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
