@@ -1,5 +1,7 @@
 package com.music.application.be.modules.song.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -26,4 +28,12 @@ public class SongDTO {
     private Long albumId;
     private String albumName; // Thêm tên album
     private List<Long> genreIds;
+
+    @JsonProperty("isFavorite")
+    @JsonAlias("favorite")
+    private boolean isFavorite;
+
+    @JsonProperty("isDownloaded")
+    @JsonAlias("downloaded")
+    private boolean isDownloaded;
 }

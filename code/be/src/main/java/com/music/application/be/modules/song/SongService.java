@@ -5,6 +5,8 @@ import com.music.application.be.modules.album.AlbumRepository;
 import com.music.application.be.modules.artist.Artist;
 import com.music.application.be.modules.artist.ArtistRepository;
 import com.music.application.be.modules.cloudinary.CloudinaryService;
+import com.music.application.be.modules.downloaded_song.DownloadedSongRepository;
+import com.music.application.be.modules.favorite_song.FavoriteSongRepository;
 import com.music.application.be.modules.genre.Genre;
 import com.music.application.be.modules.genre.GenreRepository;
 import com.music.application.be.modules.playlist.Playlist;
@@ -14,6 +16,7 @@ import com.music.application.be.modules.song.dto.SongDTO;
 import com.music.application.be.modules.song.dto.UpdateSongDTO;
 import com.music.application.be.modules.song_playlist.SongPlaylist;
 import com.music.application.be.modules.song_playlist.SongPlaylistRepository;
+import com.music.application.be.modules.user.User;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -22,6 +25,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -56,6 +62,11 @@ public class SongService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private FavoriteSongRepository favoriteSongRepository;
+
+    @Autowired
+    private DownloadedSongRepository downloadedSongRepository;
     // Create
     @CacheEvict(value = {"songs", "searchedSongs", "songsByGenre", "songsByArtist", "topSongs"}, allEntries = true)
     public SongDTO createSong(CreateSongDTO createSongDTO, MultipartFile audioFile, MultipartFile thumbnailFile) throws IOException {
@@ -273,21 +284,43 @@ public class SongService {
     }
 
     private SongDTO mapToDTO(Song song) {
-        SongDTO dto = new SongDTO();
-        dto.setId(song.getId());
-        dto.setTitle(song.getTitle());
-        dto.setDuration(song.getDuration());
-        dto.setAudioUrl(song.getAudioUrl());
-        dto.setThumbnail(song.getThumbnail());
-        dto.setLyrics(song.getLyrics());
-        dto.setReleaseDate(song.getReleaseDate());
-        dto.setViewCount(song.getViewCount());
-        dto.setArtistId(song.getArtist() != null ? song.getArtist().getId() : null);
-        dto.setArtistName(song.getArtist() != null ? song.getArtist().getName() : null); // Thêm tên artist
-        dto.setAlbumId(song.getAlbum() != null ? song.getAlbum().getId() : null);
-        dto.setAlbumName(song.getAlbum() != null ? song.getAlbum().getName() : null); // Thêm tên album
-        dto.setGenreIds(song.getGenres() != null ? song.getGenres().stream().map(Genre::getId).collect(Collectors.toList()) : null);
-        return dto;
+        SongDTO songDTO = new SongDTO();
+        songDTO.setId(song.getId());
+        songDTO.setTitle(song.getTitle());
+        songDTO.setDuration(song.getDuration());
+        songDTO.setAudioUrl(song.getAudioUrl());
+        songDTO.setThumbnail(song.getThumbnail());
+        songDTO.setLyrics(song.getLyrics());
+        songDTO.setReleaseDate(song.getReleaseDate());
+        songDTO.setViewCount(song.getViewCount());
+
+        if (song.getArtist() != null) {
+            songDTO.setArtistId(song.getArtist().getId());
+            songDTO.setArtistName(song.getArtist().getName());
+        }
+
+        if (song.getAlbum() != null) {
+            songDTO.setAlbumId(song.getAlbum().getId());
+            songDTO.setAlbumName(song.getAlbum().getName());
+        }
+
+        songDTO.setGenreIds(song.getGenres().stream()
+                .map(Genre::getId)
+                .collect(Collectors.toList()));
+
+        // Lấy thông tin người dùng từ SecurityContext
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            Long userId = ((User) userDetails).getId();
+
+            songDTO.setFavorite(favoriteSongRepository.existsByUser_IdAndSong_Id(userId, song.getId()));
+            songDTO.setDownloaded(downloadedSongRepository.existsByUser_IdAndSong_Id(userId, song.getId()));
+        } else {
+            songDTO.setFavorite(false);
+            songDTO.setDownloaded(false);
+        }
+        return songDTO;
     }
 
     private File createTempFile(MultipartFile file) throws IOException {
