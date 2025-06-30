@@ -68,7 +68,8 @@ fun CreatePlaylistScreen(
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color(0xFFAAAAAA)) // Màu loading nhẹ hơn
+            CircularProgressIndicator(strokeWidth = 2.dp,
+                color = Color.White)
         }
     }
 

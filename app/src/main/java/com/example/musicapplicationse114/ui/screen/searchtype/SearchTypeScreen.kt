@@ -106,7 +106,7 @@ fun SearchTypeScreen(
             if (uiState.songs1.isNotEmpty() && uiState.query.isBlank()) {
                 Text(
                     text = "Gợi ý bài hát",
-                    color = Color.Gray,
+                    color = Color.White,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 4.dp)
@@ -173,7 +173,10 @@ fun SearchTypeScreen(
             // Search Results
             if (status is LoadStatus.Loading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
                 }
             } else if ((status is LoadStatus.Success || status is LoadStatus.Error) && !uiState.query.isBlank()) {
                 LazyColumn(modifier = Modifier.weight(1f)) {

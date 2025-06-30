@@ -74,7 +74,8 @@ fun LikedSongsScreen(
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color.White)
+            CircularProgressIndicator(color = Color.White,
+                strokeWidth = 2.dp)
         }
     }
 

@@ -94,7 +94,6 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                     Toast.makeText(context, state.value.successMessage, Toast.LENGTH_SHORT).show()
-                    viewModel.reset()
                 }
             }
             is LoadStatus.Error -> {
@@ -124,7 +123,10 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                         contentAlignment = Alignment.Center
                     )
                     {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
                     }
                 }
 

@@ -107,7 +107,8 @@ fun PlayerScreen(
             contentAlignment = Alignment.Center
         ) {
             when (val status = state.status) {
-                is LoadStatus.Loading -> CircularProgressIndicator(color = Color.White)
+                is LoadStatus.Loading -> CircularProgressIndicator(strokeWidth = 2.dp,
+                    color = Color.White)
                 is LoadStatus.Error -> Text("Lỗi: ${status.description}", color = Color.Red)
                 else -> Text("Không tìm thấy bài hát", color = Color.White)
             }
