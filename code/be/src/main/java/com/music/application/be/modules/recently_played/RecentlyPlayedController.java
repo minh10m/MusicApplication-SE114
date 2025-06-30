@@ -1,15 +1,16 @@
 package com.music.application.be.modules.recently_played;
 
-import com.music.application.be.modules.recently_played.dto.RecentlyPlayedRequest;
-import com.music.application.be.modules.recently_played.dto.SongSummaryDto;
-import com.music.application.be.modules.song.Song;
+import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.song.dto.SongDTO;
-import com.music.application.be.modules.user.User;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -19,44 +20,38 @@ public class RecentlyPlayedController {
 
     private final RecentlyPlayedService recentlyPlayedService;
 
-    @PostMapping
-    public ResponseEntity<?> addRecentlyPlayed(@RequestBody RecentlyPlayedRequest request) {
+    @PostMapping("/me")
+    public ResponseEntity<?> addRecentlyPlayed(@RequestParam Long songId) {
         try {
-            RecentlyPlayed recentlyPlayed = recentlyPlayedService.addRecentlyPlayed(request.getUserId(), request.getSongId());
+            RecentlyPlayed recentlyPlayed = recentlyPlayedService.addRecentlyPlayedForCurrentUser(songId);
             return ResponseEntity.ok(recentlyPlayed);
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(404).body("User or Song not found.");
+        } catch (EntityNotFoundException | NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error adding to recently played: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error adding recently played: " + e.getMessage());
         }
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<?> getRecentlyPlayed(@PathVariable Long userId) {
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getRecentlyPlayedByCurrentUser(
+            @PageableDefault(size = 20, sort = "playedAt", direction = Sort.Direction.DESC) Pageable pageable) {
         try {
-            List<SongDTO> recentlyPlayedSongs = recentlyPlayedService.getRecentlyPlayedSongsByUserId(userId);
-            return ResponseEntity.ok(recentlyPlayedSongs);
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(404).body("User not found.");
+            PagedResponse<SongDTO> response = recentlyPlayedService.getRecentlyPlayedByUser(pageable);
+            return ResponseEntity.ok(response);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error fetching recently played: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching recently played songs: " + e.getMessage());
         }
     }
 
-    @GetMapping
-    public ResponseEntity<?> getAllRecentlyPlayed() {
+    @DeleteMapping("/clear")
+    public ResponseEntity<?> clearRecentlyPlayed() {
         try {
-            List<SongDTO> allRecent = recentlyPlayedService.getAllRecentlyPlayed();
-            return ResponseEntity.ok(allRecent);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error fetching all recently played: " + e.getMessage());
-        }
-    }
-
-    @DeleteMapping("/clear/{userId}")
-    public ResponseEntity<?> clearRecentlyPlayed(@PathVariable User user) {
-        try {
-            recentlyPlayedService.clearRecentlyPlayed(user);
+            recentlyPlayedService.clearRecentlyPlayedOfCurrentUser();
             return ResponseEntity.noContent().build();
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(404).body("User not found.");
