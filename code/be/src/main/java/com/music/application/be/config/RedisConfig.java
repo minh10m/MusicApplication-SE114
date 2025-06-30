@@ -16,6 +16,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.*;
 
 import java.time.Duration;
+import java.util.Map;
 
 @Configuration
 @EnableCaching
@@ -28,7 +29,6 @@ public class RedisConfig {
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
 
-        // ✅ Add type metadata support
         objectMapper.activateDefaultTyping(
                 BasicPolymorphicTypeValidator.builder().allowIfSubType(Object.class).build(),
                 ObjectMapper.DefaultTyping.NON_FINAL,
@@ -38,17 +38,27 @@ public class RedisConfig {
         GenericJackson2JsonRedisSerializer serializer =
                 new GenericJackson2JsonRedisSerializer(objectMapper);
 
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeValuesWith(
-                        RedisSerializationContext
-                                .SerializationPair
-                                .fromSerializer(serializer)
+                        RedisSerializationContext.SerializationPair.fromSerializer(serializer)
                 )
-                .entryTtl(Duration.ofMinutes(30)); // Cache TTL 30 phút
+                .entryTtl(Duration.ofMinutes(30)); // TTL mặc định
+
+        // TTL riêng theo cache name
+        Map<String, RedisCacheConfiguration> cacheConfigs = new java.util.HashMap<>();
+        cacheConfigs.put("songs", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        cacheConfigs.put("searchedSongs", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigs.put("songsByGenre", defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigs.put("songsByArtist", defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigs.put("songsByAlbum", defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigs.put("topSongs", defaultConfig.entryTtl(Duration.ofMinutes(20)));
+        cacheConfigs.put("allSongs", defaultConfig.entryTtl(Duration.ofMinutes(10)));
 
         return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
+                .cacheDefaults(defaultConfig)
+                .withInitialCacheConfigurations(cacheConfigs)
                 .build();
     }
+
 
 }
