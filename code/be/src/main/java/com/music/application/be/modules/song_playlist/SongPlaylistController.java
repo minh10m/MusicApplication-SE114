@@ -1,15 +1,14 @@
 package com.music.application.be.modules.song_playlist;
 
+import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.song_playlist.dto.SongPlaylistDTO;
 import com.music.application.be.modules.song_playlist.dto.SongPlaylistRequestDTO;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -42,7 +41,7 @@ public class SongPlaylistController {
 
     // Get all song playlists for admin monitoring
     @GetMapping
-    public ResponseEntity<Page<SongPlaylistDTO>> getAllSongPlaylists(
+    public ResponseEntity<PagedResponse<SongPlaylistDTO>> getAllSongPlaylists(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "addedAt") String sortBy,

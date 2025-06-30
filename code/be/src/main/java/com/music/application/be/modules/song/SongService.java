@@ -12,7 +12,7 @@ import com.music.application.be.modules.genre.GenreRepository;
 import com.music.application.be.modules.playlist.Playlist;
 import com.music.application.be.modules.playlist.PlaylistRepository;
 import com.music.application.be.modules.song.dto.CreateSongDTO;
-import com.music.application.be.modules.song.dto.PagedResponse;
+import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.song.dto.SongDTO;
 import com.music.application.be.modules.song.dto.UpdateSongDTO;
 import com.music.application.be.modules.song_playlist.SongPlaylist;

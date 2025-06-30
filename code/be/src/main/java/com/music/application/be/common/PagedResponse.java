@@ -1,4 +1,4 @@
-package com.music.application.be.modules.song.dto;
+package com.music.application.be.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
