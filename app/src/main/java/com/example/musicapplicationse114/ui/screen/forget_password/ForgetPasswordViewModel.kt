@@ -83,25 +83,53 @@ class ForgetPasswordViewModel @Inject constructor(
         }
     }
 
+    fun goBackToEmailStep() {
+        _uiState.value = _uiState.value.copy(
+            currentStep = ForgetPasswordStep.EMAIL_VERIFICATION,
+            status = LoadStatus.Init()
+        )
+    }
+
+    fun goBackToOtpStep() {
+        _uiState.value = _uiState.value.copy(
+            currentStep = ForgetPasswordStep.OTP_VERIFICATION,
+            status = LoadStatus.Init()
+        )
+    }
+
     fun verifyEmail() {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+                
+                // Real API call
                 val result = api?.verifyEmail(_uiState.value.email)
+                
+                android.util.Log.d("ForgetPassword", "API Response Code: ${result?.code()}")
+                android.util.Log.d("ForgetPassword", "API Response Success: ${result?.isSuccessful}")
+                android.util.Log.d("ForgetPassword", "API Response Body: ${result?.body()}")
+                android.util.Log.d("ForgetPassword", "API Response Error: ${result?.errorBody()?.string()}")
+                
                 if (result != null && result.isSuccessful) {
+                    val responseText = result.body()?.string() ?: "Email verification sent successfully"
                     _uiState.value = _uiState.value.copy(
                         status = LoadStatus.Success(),
-                        successMessage = result.body()?.message ?: "Email verification sent successfully",
+                        successMessage = responseText,
                         currentStep = ForgetPasswordStep.OTP_VERIFICATION
                     )
                 } else {
+                    // Log the error response for debugging
+                    val errorBody = result?.errorBody()?.string() ?: "Unknown error"
                     _uiState.value = _uiState.value.copy(
-                        status = LoadStatus.Error(result?.body()?.message ?: "Failed to send verification email")
+                        status = LoadStatus.Error("Failed to send verification email: $errorBody")
                     )
                 }
             } catch (ex: Exception) {
+                // Log the exception for debugging
+                android.util.Log.e("ForgetPassword", "Exception: ${ex.message}", ex)
+                val errorMessage = ex.message ?: "Unknown error occurred"
                 _uiState.value = _uiState.value.copy(
-                    status = LoadStatus.Error(ex.message ?: "Unknown error occurred")
+                    status = LoadStatus.Error("Network error: $errorMessage")
                 )
             }
         }
@@ -116,16 +144,17 @@ class ForgetPasswordViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Invalid OTP format"))
                     return@launch
                 }
+                
+                // Real API call
                 val result = api?.verifyOtp(otpInt, _uiState.value.email)
                 if (result != null && result.isSuccessful) {
                     _uiState.value = _uiState.value.copy(
                         status = LoadStatus.Success(),
-                        successMessage = result.body()?.message ?: "OTP verified successfully",
                         currentStep = ForgetPasswordStep.CHANGE_PASSWORD
                     )
                 } else {
                     _uiState.value = _uiState.value.copy(
-                        status = LoadStatus.Error(result?.body()?.message ?: "Invalid OTP")
+                        status = LoadStatus.Error(result?.errorBody()?.string() ?: "Invalid OTP")
                     )
                 }
             } catch (ex: Exception) {
@@ -151,18 +180,18 @@ class ForgetPasswordViewModel @Inject constructor(
                     return@launch
                 }
 
+                // Real API call
                 val request = ChangePasswordRequest(_uiState.value.password, _uiState.value.confirmPassword)
                 val result = api?.changePassword(_uiState.value.email, request)
                 
                 if (result != null && result.isSuccessful) {
                     _uiState.value = _uiState.value.copy(
                         status = LoadStatus.Success(),
-                        successMessage = result.body()?.message ?: "Password changed successfully",
                         currentStep = ForgetPasswordStep.SUCCESS
                     )
                 } else {
                     _uiState.value = _uiState.value.copy(
-                        status = LoadStatus.Error(result?.body()?.message ?: "Failed to change password")
+                        status = LoadStatus.Error(result?.errorBody()?.string() ?: "Failed to change password")
                     )
                 }
             } catch (ex: Exception) {

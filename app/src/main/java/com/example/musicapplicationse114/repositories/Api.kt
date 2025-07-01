@@ -8,7 +8,6 @@ import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.AuthenticationResponse
 import com.example.musicapplicationse114.model.ChangePasswordRequest
 import com.example.musicapplicationse114.model.DownloadedSongPageResponse
-import com.example.musicapplicationse114.model.ForgetPasswordResponse
 import com.example.musicapplicationse114.model.DownloadedSongResponse
 import com.example.musicapplicationse114.model.FavoriteSongPageResponse
 import com.example.musicapplicationse114.model.FavoriteSongResponse
@@ -27,11 +26,13 @@ import com.example.musicapplicationse114.model.SongPlaylistRequest
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.model.UserLoginRequest
 import com.example.musicapplicationse114.model.UserSignUpRequest
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -315,13 +316,16 @@ interface Api {
     ): Response<PlaylistResponse>
 
     // forget password APIs
-    @POST("forget-password/verify-email/{email}")
-    suspend fun verifyEmail(@Path("email") email: String): Response<ForgetPasswordResponse>
+    @POST("/forget-password/verify-email/{email}")
+    @Headers("Accept: text/plain")
+    suspend fun verifyEmail(@Path("email") email: String): Response<ResponseBody>
 
-    @POST("forget-password/verify-otp/{otp}/{email}")
-    suspend fun verifyOtp(@Path("otp") otp: Int, @Path("email") email: String): Response<ForgetPasswordResponse>
+    @POST("/forget-password/verify-otp/{otp}/{email}")
+    @Headers("Accept: text/plain")
+    suspend fun verifyOtp(@Path("otp") otp: Int, @Path("email") email: String): Response<ResponseBody>
 
-    @POST("forget-password/change-password/{email}")
-    suspend fun changePassword(@Path("email") email: String, @Body request: ChangePasswordRequest): Response<ForgetPasswordResponse>
+    @POST("/forget-password/change-password/{email}")
+    @Headers("Accept: text/plain", "Content-Type: application/json")
+    suspend fun changePassword(@Path("email") email: String, @Body request: ChangePasswordRequest): Response<ResponseBody>
 
 }

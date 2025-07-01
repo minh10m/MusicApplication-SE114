@@ -45,13 +45,17 @@ fun ForgetPasswordScreen(
             is LoadStatus.Success -> {
                 if (status != LoadStatus.Init()) {
                     Toast.makeText(context, state.value.successMessage, Toast.LENGTH_SHORT).show()
+                    
+                    // Only navigate to login when password change is successful
                     if (state.value.currentStep == ForgetPasswordStep.SUCCESS) {
-                        // Navigate back to login after successful password change
                         navController.navigate(Screen.Login.route) {
                             popUpTo(Screen.ForgetPassword.route) { inclusive = true }
                         }
+                    } else {
+                        // Wait a bit to ensure UI has time to update the step, then reset status
+                        kotlinx.coroutines.delay(100)
+                        viewModel.reset()
                     }
-                    viewModel.reset()
                 }
             }
             is LoadStatus.Error -> {
@@ -97,20 +101,20 @@ fun ForgetPasswordScreen(
                     ) {
                         IconButton(
                             onClick = { 
-                                if (state.value.currentStep == ForgetPasswordStep.EMAIL_VERIFICATION) {
-                                    navController.navigateUp()
-                                } else {
-                                    // Go back to previous step
-                                    when (state.value.currentStep) {
-                                        ForgetPasswordStep.OTP_VERIFICATION -> {
-                                            viewModel.updateEmail(state.value.email)
-                                            // Stay in email verification step
+                                when (state.value.currentStep) {
+                                    ForgetPasswordStep.EMAIL_VERIFICATION -> {
+                                        navController.navigateUp()
+                                    }
+                                    ForgetPasswordStep.OTP_VERIFICATION -> {
+                                        viewModel.goBackToEmailStep()
+                                    }
+                                    ForgetPasswordStep.CHANGE_PASSWORD -> {
+                                        viewModel.goBackToOtpStep()
+                                    }
+                                    ForgetPasswordStep.SUCCESS -> {
+                                        navController.navigate(Screen.Login.route) {
+                                            popUpTo(Screen.ForgetPassword.route) { inclusive = true }
                                         }
-                                        ForgetPasswordStep.CHANGE_PASSWORD -> {
-                                            viewModel.updateOtp(state.value.otp)
-                                            // Stay in OTP verification step
-                                        }
-                                        else -> {}
                                     }
                                 }
                             }
