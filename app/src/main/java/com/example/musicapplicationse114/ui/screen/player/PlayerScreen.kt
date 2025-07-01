@@ -231,7 +231,7 @@ fun PlayerContent(
                 }
 
                 Row {
-                    IconButton(onClick = { viewModel.toggleFavorite(song.id) }) {
+                    IconButton(onClick = { viewModel.toggleFavorite(song) }) {
                         Icon(
                             imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Like",
@@ -239,7 +239,7 @@ fun PlayerContent(
                         )
                     }
 
-                    IconButton(onClick = { viewModel.toggleDownload(song.id)}) {
+                    IconButton(onClick = { viewModel.toggleDownload(song)}) {
                         Icon(
                             imageVector = Icons.Default.Download,
                             contentDescription = "Download",

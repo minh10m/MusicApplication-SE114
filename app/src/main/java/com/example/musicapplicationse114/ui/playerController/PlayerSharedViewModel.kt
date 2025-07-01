@@ -58,7 +58,7 @@ class PlayerSharedViewModel @Inject constructor(
                     Log.d("RecentPlayed", "Attempt $attempt: token=$token, userId=$userId, api=${api != null}, songId=$songId")
 
                     if (!token.isNullOrBlank() && api != null && userId != null) {
-                        val response = api.addRecentlyPlayed(token, RecentlyPlayedRequest(userId, songId))
+                        val response = api.addRecentlyPlayed(token, songId)
 
                         if (response.isSuccessful) {
                             Log.e("RecentPlayed", "Success on attempt $attempt")
