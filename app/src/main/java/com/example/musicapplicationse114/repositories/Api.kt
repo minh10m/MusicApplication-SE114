@@ -18,11 +18,14 @@ import com.example.musicapplicationse114.model.GlobalSearchResultDTO
 import com.example.musicapplicationse114.model.PlaylistPageResponse
 import com.example.musicapplicationse114.model.PlaylistResponse
 import com.example.musicapplicationse114.model.PlaylistRequest
+import com.example.musicapplicationse114.model.RecentlyPlayedPageResponse
 import com.example.musicapplicationse114.model.RecentlyPlayedRequest
 import com.example.musicapplicationse114.model.SongPageResponse
+import com.example.musicapplicationse114.model.SongPageResponseDTO
 import com.example.musicapplicationse114.model.SongPlaylist
 import com.example.musicapplicationse114.model.SongPlaylistRequest
 import com.example.musicapplicationse114.model.SongResponse
+import com.example.musicapplicationse114.model.SongResponseDTO
 import com.example.musicapplicationse114.model.UserLoginRequest
 import com.example.musicapplicationse114.model.UserSignUpRequest
 import retrofit2.Response
@@ -84,7 +87,7 @@ interface Api {
     suspend fun getSongById(
         @Header("Authorization") token: String,
         @Path("id") id: Long
-        ) : SongResponse
+        ) : SongResponseDTO
 
     @GET("api/songs/album/{albumId}")
     suspend fun getSongsByAlbumId(
@@ -212,17 +215,19 @@ interface Api {
     ): GlobalSearchResultDTO
 
     //recently-played
-    @POST("/recently-played")
+    @POST("/recently-played/me")
     suspend fun addRecentlyPlayed(
         @Header("Authorization") token: String,
-        @Body request: RecentlyPlayedRequest
+        @Query("songId") songId: Long
     ): Response<Unit>
 
-    @GET("/recently-played/{userId}")
+    @GET("/recently-played/me")
     suspend fun getRecentlyPlayed(
         @Header("Authorization") token: String,
-        @Path("userId") userId: Long
-    ): Response<List<SongResponse>>
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20,
+        @Query("sort") sort: String = "playedAt,desc"
+    ): Response<RecentlyPlayedPageResponse<SongResponse>>
 
     //Follow artist
     @POST("api/follow-artists")
@@ -311,5 +316,6 @@ interface Api {
         @Header("Authorization") token: String,
         @Path("playlistId") playlistId: Long
     ): Response<PlaylistResponse>
+
 
 }
