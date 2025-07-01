@@ -6,7 +6,9 @@ import com.example.musicapplicationse114.model.AlbumResponse
 import com.example.musicapplicationse114.model.ArtistPageResponse
 import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.AuthenticationResponse
+import com.example.musicapplicationse114.model.ChangePasswordRequest
 import com.example.musicapplicationse114.model.DownloadedSongPageResponse
+import com.example.musicapplicationse114.model.ForgetPasswordResponse
 import com.example.musicapplicationse114.model.DownloadedSongResponse
 import com.example.musicapplicationse114.model.FavoriteSongPageResponse
 import com.example.musicapplicationse114.model.FavoriteSongResponse
@@ -311,5 +313,15 @@ interface Api {
         @Header("Authorization") token: String,
         @Path("playlistId") playlistId: Long
     ): Response<PlaylistResponse>
+
+    // forget password APIs
+    @POST("forget-password/verify-email/{email}")
+    suspend fun verifyEmail(@Path("email") email: String): Response<ForgetPasswordResponse>
+
+    @POST("forget-password/verify-otp/{otp}/{email}")
+    suspend fun verifyOtp(@Path("otp") otp: Int, @Path("email") email: String): Response<ForgetPasswordResponse>
+
+    @POST("forget-password/change-password/{email}")
+    suspend fun changePassword(@Path("email") email: String, @Body request: ChangePasswordRequest): Response<ForgetPasswordResponse>
 
 }

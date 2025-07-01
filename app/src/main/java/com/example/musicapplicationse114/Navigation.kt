@@ -53,6 +53,8 @@ import com.example.musicapplicationse114.ui.screen.searchtype.SearchTypeScreen
 import com.example.musicapplicationse114.ui.screen.signUp.SignUpScreen
 import com.example.musicapplicationse114.ui.screen.start.StartScreen
 import com.example.musicapplicationse114.ui.searchSongAddInToPlaylist.SearchSongAddIntoPlaylistScreen
+import com.example.musicapplicationse114.ui.screen.forget_password.ForgetPasswordScreen
+import com.example.musicapplicationse114.ui.screen.forget_password.ForgetPasswordViewModel
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 
@@ -60,6 +62,7 @@ sealed class Screen(val route: String, val title: String) {
     object Home : Screen("home", "Home")
     object Login : Screen("login", "Login")
     object SignUp : Screen("signup", "Sign Up")
+    object ForgetPassword : Screen("forgetPassword", "Forget Password")
     object Detail : Screen("detail", "Detail")
     object Start : Screen("start", "Start")
     object Search : Screen("search", "Search")
@@ -95,6 +98,7 @@ fun Navigation() {
     val navController = rememberAnimatedNavController()
     val mainViewModel: MainViewModel = hiltViewModel()
     val loginViewModel: LoginViewModel = hiltViewModel()
+    val forgetPasswordViewModel: ForgetPasswordViewModel = hiltViewModel()
     val mainState = mainViewModel.uiState.collectAsState()
     val homeViewModel: HomeViewModel = hiltViewModel()
     val artistViewModel: ArtistViewModel = hiltViewModel()
@@ -146,6 +150,13 @@ fun Navigation() {
                             navController = navController,
                             viewModel = hiltViewModel(),
                             mainViewModel
+                        )
+                    }
+                    composable(Screen.ForgetPassword.route) {
+                        ForgetPasswordScreen(
+                            navController = navController,
+                            viewModel = forgetPasswordViewModel,
+                            mainViewModel = mainViewModel
                         )
                     }
                     composable(Screen.SearchSongAddIntoPlaylist.route)

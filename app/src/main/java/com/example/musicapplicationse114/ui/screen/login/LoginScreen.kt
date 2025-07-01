@@ -230,7 +230,18 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(120.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Forgot Password Button
+                    TextButton(onClick = { navController.navigate(Screen.ForgetPassword.route) }) {
+                        Text(
+                            "Forgot Password?",
+                            fontSize = 18.sp,
+                            color = Color(0xFF3B5998)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(80.dp))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
