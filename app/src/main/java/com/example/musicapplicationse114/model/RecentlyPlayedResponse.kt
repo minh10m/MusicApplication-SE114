@@ -10,7 +10,7 @@ data class RecentlyPlayedResponse(val title: String,
 data class RecentlyPlayedRequest(val userId : Long,
                                  val songId : Long )
 
-data class RecentlyPlayedPageResponse(val content : List<RecentlyPlayedResponse>)
+data class RecentlyPlayedPageResponse<T>(val content : List<T>)
 
 data class RecentlyPlayed(val id: Long,
                           val user : UserResponse,

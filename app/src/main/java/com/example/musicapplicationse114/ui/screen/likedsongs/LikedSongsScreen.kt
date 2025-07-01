@@ -54,13 +54,19 @@ fun LikedSongsScreen(
     mainViewModel: MainViewModel,
     sharedViewModel: PlayerSharedViewModel
 ) {
+    LaunchedEffect(Unit) {
+        viewModel.loadFavoriteSong()
+    }
+
     val favoriteSongs = homeViewModel.uiState.value.favoriteSongs // Sử dụng collectAsState để tránh StateFlowValueCalledInComposition
     val globalPlayerController = sharedViewModel.player
     val uiState = viewModel.uiState.collectAsState()
     var showLoading by remember { mutableStateOf(false) }
 
-    val songs: List<SongResponse> = remember(favoriteSongs) {
-        favoriteSongs.map { it.song }
+
+
+    val likedSongs : List<SongResponse> = remember(uiState.value.likedSongs) {
+        uiState.value.likedSongs.map { it.song }
     }
 
     val likedSongsSearch : List<SongResponse> = remember(uiState.value.likedSongsSearch) {
@@ -131,7 +137,7 @@ fun LikedSongsScreen(
                     }
                     Spacer(modifier = Modifier.height(30.dp))
                     Text(
-                        text = "${songs.size} bài hát yêu thích",
+                        text = "${uiState.value.likedSongs.size} bài hát yêu thích",
                         fontSize = 14.sp,
                         color = Color.LightGray,
                         textAlign = TextAlign.Start
@@ -166,7 +172,7 @@ fun LikedSongsScreen(
             val displayedSongs = if (uiState.value.query.isNotBlank()) {
                 likedSongsSearch
             } else {
-                songs
+                likedSongs
             }
 
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
@@ -175,7 +181,7 @@ fun LikedSongsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                sharedViewModel.setSongList(songs, index)
+                                sharedViewModel.setSongList(displayedSongs, index)
                                 sharedViewModel.addRecentlyPlayed(song.id)
                                 Log.d("LikedSongsScreen", "Called addRecentlyPlayed for songId: ${song.id}")
                                 globalPlayerController.play(song)

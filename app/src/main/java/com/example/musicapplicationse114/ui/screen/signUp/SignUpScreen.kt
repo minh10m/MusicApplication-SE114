@@ -184,6 +184,7 @@ fun SignUpScreen(navController: NavController, viewModel: SignUpViewModel, mainV
                     modifier = Modifier.shadow(25.dp, shape = RoundedCornerShape(20.dp))
                 )
 
+
                 Spacer(modifier = Modifier.height(20.dp))
 
                 TextField(

@@ -84,5 +84,43 @@ class LikedSongsViewModel @Inject constructor(
             }
         }
     }
+
+    fun loadFavoriteSong() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+
+            val token = tokenManager?.getToken()
+            val userId = tokenManager?.getUserId()
+
+            if (api == null || token.isNullOrBlank() || userId == null) {
+                Log.e("LikedSongsViewModel", "API, token, hoặc userId null")
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Thiếu thông tin xác thực"))
+                return@launch
+            }
+
+            try {
+                Log.d("FavoriteSong", "Token: $token - UserId: $userId")
+
+                val response = api.getFavoriteSongs(token)
+                if (response.isSuccessful) {
+                    val songs = response.body()?.content.orEmpty()
+
+                    _uiState.value = _uiState.value.copy(
+                        likedSongs = songs,
+                        status = LoadStatus.Success()
+                    )
+
+                    Log.d("LikedSongsViewModel", "Favorite songs loaded: ${songs.size}")
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: "Lỗi không xác định"
+                    Log.e("LikedSongsViewModel", "Lỗi response: $errorMsg")
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Lỗi tải danh sách yêu thích"))
+                }
+            } catch (ex: Exception) {
+                Log.e("LikedSongsViewModel", "Exception: ${ex.message}", ex)
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Lỗi mạng hoặc máy chủ"))
+            }
+        }
+    }
     
 }
