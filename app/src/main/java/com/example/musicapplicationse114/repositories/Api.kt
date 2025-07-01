@@ -15,10 +15,11 @@ import com.example.musicapplicationse114.model.FollowArtistRequest
 import com.example.musicapplicationse114.model.FollowArtistResponse
 import com.example.musicapplicationse114.model.GenrePageResponse
 import com.example.musicapplicationse114.model.GlobalSearchResultDTO
+import com.example.musicapplicationse114.model.NotificationDto
 import com.example.musicapplicationse114.model.PlaylistPageResponse
-import com.example.musicapplicationse114.model.PlaylistResponse
 import com.example.musicapplicationse114.model.PlaylistRequest
-import com.example.musicapplicationse114.model.RecentlyPlayedPageResponse
+import com.example.musicapplicationse114.model.PlaylistResponse
+import com.example.musicapplicationse114.model.RecentlyPlayedPageRespo
 import com.example.musicapplicationse114.model.RecentlyPlayedRequest
 import com.example.musicapplicationse114.model.SongPageResponse
 import com.example.musicapplicationse114.model.SongPageResponseDTO
@@ -317,5 +318,9 @@ interface Api {
         @Path("playlistId") playlistId: Long
     ): Response<PlaylistResponse>
 
+    @GET("/notifications/me")
+    suspend fun getMyNotifications(
+        @Header("Authorization") token: String
+    ): Response<List<NotificationDto>>
 
 }
