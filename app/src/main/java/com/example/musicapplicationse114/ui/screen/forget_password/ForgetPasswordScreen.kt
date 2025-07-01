@@ -1,12 +1,16 @@
 package com.example.musicapplicationse114.ui.screen.forget_password
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,18 +44,40 @@ fun ForgetPasswordScreen(
     val state = viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(state.value.status) {
-        when (val status = state.value.status) {
+    // Reset to initial state when entering the screen - use timestamp to ensure fresh start
+    LaunchedEffect(key1 = "enter_screen") {
+        viewModel.resetToInitialState()
+    }
+
+    // Handle back button behavior
+    BackHandler {
+        when (state.value.currentStep) {
+            ForgetPasswordStep.EMAIL_VERIFICATION -> {
+                navController.navigateUp()
+            }
+            ForgetPasswordStep.OTP_VERIFICATION -> {
+                viewModel.goBackToEmailStep()
+            }
+            ForgetPasswordStep.CHANGE_PASSWORD -> {
+                viewModel.goBackToOtpStep()
+            }
+            ForgetPasswordStep.SUCCESS -> {
+                navController.navigate(Screen.Login.route) {
+                    popUpTo(Screen.ForgetPassword.route) { inclusive = true }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(state.value.status, state.value.currentStep) {
+        when (state.value.status) {
             is LoadStatus.Success -> {
-                if (status != LoadStatus.Init()) {
+                if (state.value.status != LoadStatus.Init()) {
                     Toast.makeText(context, state.value.successMessage, Toast.LENGTH_SHORT).show()
                     
-                    // Only navigate to login when password change is successful
-                    if (state.value.currentStep == ForgetPasswordStep.SUCCESS) {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.ForgetPassword.route) { inclusive = true }
-                        }
-                    } else {
+                    // For success case, just reset status, don't auto-navigate
+                    // User will navigate manually by clicking "Back to Login" button
+                    if (state.value.currentStep != ForgetPasswordStep.SUCCESS) {
                         // Wait a bit to ensure UI has time to update the step, then reset status
                         kotlinx.coroutines.delay(100)
                         viewModel.reset()
@@ -59,7 +85,10 @@ fun ForgetPasswordScreen(
                 }
             }
             is LoadStatus.Error -> {
-                mainViewModel.setError(status.description)
+                // Only show errors that are not email or OTP specific through mainViewModel
+                if (state.value.emailError.isEmpty() && state.value.otpError.isEmpty()) {
+                    mainViewModel.setError((state.value.status as LoadStatus.Error).description)
+                }
                 viewModel.reset()
             }
             else -> {
@@ -79,7 +108,7 @@ fun ForgetPasswordScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            when (val status = state.value.status) {
+            when (state.value.status) {
                 is LoadStatus.Loading -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -120,7 +149,7 @@ fun ForgetPasswordScreen(
                             }
                         ) {
                             Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back",
                                 tint = Color.White,
                                 modifier = Modifier.size(28.dp)
@@ -143,6 +172,7 @@ fun ForgetPasswordScreen(
                         ForgetPasswordStep.EMAIL_VERIFICATION -> {
                             EmailVerificationContent(
                                 email = state.value.email,
+                                emailError = state.value.emailError,
                                 onEmailChange = viewModel::updateEmail,
                                 onVerifyClick = viewModel::verifyEmail
                             )
@@ -151,8 +181,12 @@ fun ForgetPasswordScreen(
                             OtpVerificationContent(
                                 otp = state.value.otp,
                                 email = state.value.email,
+                                otpError = state.value.otpError,
+                                canResendOtp = state.value.canResendOtp,
+                                resendCooldown = state.value.resendCooldown,
                                 onOtpChange = viewModel::updateOtp,
-                                onVerifyClick = viewModel::verifyOtp
+                                onVerifyClick = viewModel::verifyOtp,
+                                onResendClick = viewModel::resendOtp
                             )
                         }
                         ForgetPasswordStep.CHANGE_PASSWORD -> {
@@ -169,7 +203,13 @@ fun ForgetPasswordScreen(
                             )
                         }
                         ForgetPasswordStep.SUCCESS -> {
-                            SuccessContent()
+                            SuccessContent(
+                                onBackToLoginClick = {
+                                    navController.navigate(Screen.Login.route) {
+                                        popUpTo(Screen.ForgetPassword.route) { inclusive = true }
+                                    }
+                                }
+                            )
                         }
                     }
                 }
@@ -181,6 +221,7 @@ fun ForgetPasswordScreen(
 @Composable
 private fun EmailVerificationContent(
     email: String,
+    emailError: String,
     onEmailChange: (String) -> Unit,
     onVerifyClick: () -> Unit
 ) {
@@ -220,6 +261,28 @@ private fun EmailVerificationContent(
             label = { Text("Email") },
             leadingIcon = { Icon(Icons.Filled.Email, contentDescription = null) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            placeholder = { Text("Enter your email address") },
+            singleLine = true,
+            isError = emailError.isNotEmpty() || (email.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()),
+            supportingText = {
+                when {
+                    emailError.isNotEmpty() -> {
+                        Text(
+                            text = emailError,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp
+                        )
+                    }
+                    email.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                        Text(
+                            text = "Please enter a valid email address",
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            },
+            shape = RoundedCornerShape(20.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(25.dp, shape = RoundedCornerShape(20.dp))
@@ -229,13 +292,18 @@ private fun EmailVerificationContent(
 
         Button(
             onClick = onVerifyClick,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B5998)),
+            enabled = email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() && emailError.isEmpty(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() && emailError.isEmpty()) 
+                    Color(0xFF3B5998) else Color.Gray,
+                disabledContainerColor = Color.Gray
+            ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row {
                 Text("Send OTP", fontSize = 18.sp)
                 Spacer(modifier = Modifier.width(5.dp))
-                Icon(Icons.Filled.Send, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
             }
         }
     }
@@ -245,8 +313,12 @@ private fun EmailVerificationContent(
 private fun OtpVerificationContent(
     otp: String,
     email: String,
+    otpError: String,
+    canResendOtp: Boolean,
+    resendCooldown: Int,
     onOtpChange: (String) -> Unit,
-    onVerifyClick: () -> Unit
+    onVerifyClick: () -> Unit,
+    onResendClick: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
@@ -289,10 +361,28 @@ private fun OtpVerificationContent(
 
         TextField(
             value = otp,
-            onValueChange = onOtpChange,
+            onValueChange = { newOtp ->
+                // Only allow numbers and max 6 digits
+                if (newOtp.all { it.isDigit() } && newOtp.length <= 6) {
+                    onOtpChange(newOtp)
+                }
+            },
             label = { Text("OTP Code") },
             leadingIcon = { Icon(Icons.Filled.VpnKey, contentDescription = null) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            placeholder = { Text("Enter 6-digit OTP") },
+            singleLine = true,
+            isError = otpError.isNotEmpty(),
+            supportingText = {
+                if (otpError.isNotEmpty()) {
+                    Text(
+                        text = otpError,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                }
+            },
+            shape = RoundedCornerShape(20.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(25.dp, shape = RoundedCornerShape(20.dp))
@@ -302,13 +392,51 @@ private fun OtpVerificationContent(
 
         Button(
             onClick = onVerifyClick,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B5998)),
+            enabled = otp.length == 6 && otpError.isEmpty(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (otp.length == 6 && otpError.isEmpty()) Color(0xFF3B5998) else Color.Gray,
+                disabledContainerColor = Color.Gray
+            ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row {
                 Text("Verify OTP", fontSize = 18.sp)
                 Spacer(modifier = Modifier.width(5.dp))
                 Icon(Icons.Filled.CheckCircle, contentDescription = null)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Resend OTP section
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Didn't receive OTP?",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            if (canResendOtp) {
+                TextButton(
+                    onClick = onResendClick,
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF3B5998))
+                ) {
+                    Text(
+                        text = "Resend OTP",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            } else {
+                Text(
+                    text = if (resendCooldown > 0) "Resend in ${resendCooldown}s" else "Resend OTP",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
             }
         }
     }
@@ -370,10 +498,58 @@ private fun ChangePasswordContent(
                     )
                 }
             },
+            placeholder = { Text("Enter a strong password") },
+            singleLine = true,
+            shape = RoundedCornerShape(20.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(25.dp, shape = RoundedCornerShape(20.dp))
         )
+
+        // Password requirements
+        if (password.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Password Requirements:",
+                    fontSize = 14.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                val requirements = listOf(
+                    "At least 8 characters" to (password.length >= 8),
+                    "One uppercase letter" to password.any { it.isUpperCase() },
+                    "One lowercase letter" to password.any { it.isLowerCase() },
+                    "One number" to password.any { it.isDigit() },
+                    "One special character" to password.any { it in "!@#$%^&*()_+-=[]{}|;:,.<>?" }
+                )
+                
+                requirements.forEach { (requirement, isMet) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isMet) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                            contentDescription = null,
+                            tint = if (isMet) Color.Green else Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = requirement,
+                            fontSize = 12.sp,
+                            color = if (isMet) Color.Green else Color.Gray
+                        )
+                    }
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -391,6 +567,25 @@ private fun ChangePasswordContent(
                     )
                 }
             },
+            placeholder = { Text("Confirm your password") },
+            singleLine = true,
+            isError = confirmPassword.isNotEmpty() && password != confirmPassword,
+            supportingText = {
+                if (confirmPassword.isNotEmpty() && password != confirmPassword) {
+                    Text(
+                        text = "Passwords do not match",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                } else if (confirmPassword.isNotEmpty() && password == confirmPassword) {
+                    Text(
+                        text = "Passwords match",
+                        color = Color.Green,
+                        fontSize = 12.sp
+                    )
+                }
+            },
+            shape = RoundedCornerShape(20.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(25.dp, shape = RoundedCornerShape(20.dp))
@@ -398,9 +593,20 @@ private fun ChangePasswordContent(
 
         Spacer(modifier = Modifier.height(28.dp))
 
+        val isPasswordValid = password.length >= 8 && 
+                            password.any { it.isUpperCase() } &&
+                            password.any { it.isLowerCase() } &&
+                            password.any { it.isDigit() } &&
+                            password.any { it in "!@#$%^&*()_+-=[]{}|;:,.<>?" }
+        val isFormValid = isPasswordValid && password == confirmPassword && confirmPassword.isNotEmpty()
+
         Button(
             onClick = onChangePasswordClick,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B5998)),
+            enabled = isFormValid,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isFormValid) Color(0xFF3B5998) else Color.Gray,
+                disabledContainerColor = Color.Gray
+            ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row {
@@ -413,7 +619,9 @@ private fun ChangePasswordContent(
 }
 
 @Composable
-private fun SuccessContent() {
+private fun SuccessContent(
+    onBackToLoginClick: () -> Unit
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -449,6 +657,20 @@ private fun SuccessContent() {
             fontSize = 16.sp,
             color = Color.Gray
         )
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        Button(
+            onClick = onBackToLoginClick,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B5998)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row {
+                Text("Back to Login", fontSize = 18.sp)
+                Spacer(modifier = Modifier.width(5.dp))
+                Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
+            }
+        }
     }
 }
 
