@@ -84,12 +84,14 @@ public class SongController {
             }
     )
     @GetMapping
-    public ResponseEntity<PagedResponse<SongDTO>> getAllSongs(
+    public ResponseEntity<PagedResponse<SongResponseDTO>> getAllSongsByCurrentUser(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(songService.getAllSongs(pageable));
     }
+
+
 
     @Operation(
             summary = "Update an existing song with optional audio and thumbnail",

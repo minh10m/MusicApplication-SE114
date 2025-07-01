@@ -1,23 +1,28 @@
 package com.music.application.be.modules.notification;
 
 import com.music.application.be.modules.notification.dto.CreateNotificationRequest;
+import com.music.application.be.modules.notification.dto.NotificationDto;
 import com.music.application.be.modules.notification.dto.NotificationResponse;
 import com.music.application.be.modules.user.User;
 import com.music.application.be.modules.user.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-@Transactional(readOnly = true)
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
@@ -28,7 +33,6 @@ public class NotificationService {
         this.userRepository = userRepository;
     }
 
-    @Transactional
     @CachePut(value = "notifications", key = "#result.id")
     public NotificationResponse createNotification(CreateNotificationRequest request) {
         User user = userRepository.findById(request.getUserId())
@@ -46,7 +50,6 @@ public class NotificationService {
         return NotificationResponse.fromEntity(savedNotification);
     }
 
-    @Transactional
     @CachePut(value = "notifications", key = "#result.id")
     public NotificationResponse createNotificationForUser(Long userId, String title, String content, NotificationType type) {
         CreateNotificationRequest request = new CreateNotificationRequest();
@@ -57,16 +60,19 @@ public class NotificationService {
         return createNotification(request);
     }
 
-    @Cacheable(value = "userNotifications", key = "#userId")
-    public List<Notification> getUserNotifications(Long userId) {
-        try {
-            return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        } catch (Exception e) {
-            // Log the error (you should add proper logging here)
-            System.err.println("Error fetching user notifications: " + e.getMessage());
-            return Collections.emptyList();
+    public List<NotificationDto> getMyNotifications() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new UsernameNotFoundException("User not authenticated");
         }
+
+        List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+
+        return notifications.stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
     }
+
 
     public Page<Notification> getUserNotificationsPaginated(Long userId, Pageable pageable) {
         try {
@@ -133,5 +139,18 @@ public class NotificationService {
             System.err.println("Error fetching notification by ID: " + e.getMessage());
             return Optional.empty();
         }
+    }
+
+    public NotificationDto mapToDto(Notification notification) {
+        if (notification == null) return null;
+
+        return NotificationDto.builder()
+                .id(notification.getId())
+                .title(notification.getTitle())
+                .content(notification.getContent())
+                .type(notification.getType())
+                .read(notification.isRead())
+                .createdAt(notification.getCreatedAt())
+                .build();
     }
 }

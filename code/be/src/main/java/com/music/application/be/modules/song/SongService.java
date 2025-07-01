@@ -240,9 +240,11 @@ public class SongService {
 
     // Read all with pagination
     @Cacheable(value = "allSongs", key = "'page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize")
-    public PagedResponse<SongDTO> getAllSongs(Pageable pageable) {
+    public PagedResponse<SongResponseDTO> getAllSongs(Pageable pageable) {
         Page<Song> page = songRepository.findAll(pageable);
-        List<SongDTO> content = page.getContent().stream().map(this::mapToDTO).toList();
+        List<SongResponseDTO> content = page.getContent().stream()
+                .map(this::mapToResponseDTO)
+                .toList();
 
         return new PagedResponse<>(
                 content,
@@ -253,7 +255,6 @@ public class SongService {
                 page.isLast()
         );
     }
-
 
     // Delete
     @CacheEvict(value = {"songs", "searchedSongs", "songsByGenre", "songsByArtist", "topSongs"}, allEntries = true)
