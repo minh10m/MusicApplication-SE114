@@ -1,15 +1,22 @@
 package com.music.application.be.modules.notification;
 
 import com.music.application.be.modules.notification.dto.CreateNotificationRequest;
+import com.music.application.be.modules.notification.dto.NotificationDto;
 import com.music.application.be.modules.notification.dto.NotificationResponse;
+import com.music.application.be.modules.user.User;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/notifications")
@@ -39,14 +46,16 @@ public class NotificationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<?> getUserNotifications(@PathVariable Long userId) {
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyNotifications() {
         try {
-            List<Notification> notifications = notificationService.getUserNotifications(userId);
+            List<NotificationDto> notifications = notificationService.getMyNotifications();
             return ResponseEntity.ok(notifications);
+        } catch (UsernameNotFoundException | EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new Error("Failed to fetch notifications"));
+                    .body("Failed to fetch notifications");
         }
     }
 
