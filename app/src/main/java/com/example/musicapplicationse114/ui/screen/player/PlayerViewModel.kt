@@ -10,6 +10,7 @@ import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -61,6 +62,7 @@ class PlayerViewModel @Inject constructor(
                             status = LoadStatus.Success()
                         )
                         Log.d("PlayerViewModel", "Loaded song: ${playlist[index].title}, likedSongIds=$likedSongs, downloadedSongIds=$downloadedSongs")
+//                        Log.d("PlayerViewModel", "Is Favorite: ${playlist[index].isFavorite}, Is Downloaded: ${playlist[index].isDownloaded}")
                     } else {
                         _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không tìm thấy bài hát"))
                         Log.w("PlayerViewModel", "Song with ID $songId not found in playlist")
@@ -79,12 +81,12 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    fun toggleFavorite(songId: Long) {
-        viewModelScope.launch {
+    fun toggleFavorite(song: SongResponse) {
+        viewModelScope.launch(NonCancellable) {
             val token = tokenManager?.getToken()
             val userId = tokenManager?.getUserId()
 
-            Log.d("FavoriteSong", "toggleFavorite called for songId=$songId, token=$token, userId=$userId, api=${api != null}")
+            Log.d("FavoriteSong", "toggleFavorite called for songId=${song.id}, token=$token, userId=$userId, api=${api != null}")
 
             if (token.isNullOrBlank() || api == null || userId == null) {
                 Log.e("FavoriteError", "Missing token, userId, or api")
@@ -94,22 +96,22 @@ class PlayerViewModel @Inject constructor(
 
             val prevSet = _uiState.value.likedSongIds
             val currentSet = prevSet.toMutableSet()
-            val isLiked = currentSet.contains(songId)
+            val isLiked = currentSet.contains(song.id)
 
             Log.d("FavoriteSong", "isLiked=$isLiked, prevSet=$prevSet")
 
             // Cập nhật UI ngay lập tức
-            if (isLiked) currentSet.remove(songId) else currentSet.add(songId)
+            if (isLiked) currentSet.remove(song.id) else currentSet.add(song.id)
             _uiState.value = _uiState.value.copy(likedSongIds = currentSet)
 
             try {
                 if (isLiked) {
                     val favoriteSongs = api.getFavoriteSongs(token).body()?.content
-                    val favoriteId = favoriteSongs?.firstOrNull { it.song.id == songId }?.id
+                    val favoriteId = favoriteSongs?.firstOrNull { it.song.id == song.id }?.id
                     Log.d("FavoriteSong", "favoriteId=$favoriteId, favoriteSongs=$favoriteSongs")
 
                     if (favoriteId != null) {
-                        val response = api.removeFavoriteSong(token, songId)
+                        val response = api.removeFavoriteSong(token, song.id)
                         Log.d("FavoriteSong", "removeFavoriteSong response: ${response.code()}, isSuccessful=${response.isSuccessful}, body=${response.body()}")
                         if (response.isSuccessful) {
                             Log.d("FavoriteSong", "Đã xóa khỏi danh sách yêu thích")
@@ -125,9 +127,9 @@ class PlayerViewModel @Inject constructor(
                     }
                 } else {
                     val existed = api.getFavoriteSongs(token)
-                        .body()?.content?.any { it.song.id == songId } ?: false
+                        .body()?.content?.any { it.song.id == song.id } ?: false
                     if (!existed) {
-                        val response = api.addFavoriteSong(token, AddFavoriteSongRequest(songId))
+                        val response = api.addFavoriteSong(token, AddFavoriteSongRequest(song.id))
                         if (response.isSuccessful) {
                             Log.d("FavoriteSong", "Đã thêm vào danh sách yêu thích")
                             delay(500)
@@ -152,12 +154,12 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    fun toggleDownload(songId: Long) {
-        viewModelScope.launch {
+    fun toggleDownload(song: SongResponse) {
+        viewModelScope.launch(NonCancellable) {
             val token = tokenManager?.getToken()
             val userId = tokenManager?.getUserId()
 
-            Log.d("DownloadSong", "toggleDownload called for songId=$songId, token=$token, userId=$userId, api=${api != null}")
+            Log.d("DownloadSong", "toggleDownload called for songId=${song.id}, token=$token, userId=$userId, api=${api != null}")
 
             if (token.isNullOrBlank() || api == null || userId == null) {
                 Log.e("DownloadError", "Missing token, userId, or api")
@@ -167,22 +169,22 @@ class PlayerViewModel @Inject constructor(
 
             val prevSet = _uiState.value.downloadedSongIds
             val currentSet = prevSet.toMutableSet()
-            val isDownloaded = currentSet.contains(songId)
+            val isDownloaded = currentSet.contains(song.id)
 
             Log.d("DownloadSong", "isDownloaded=$isDownloaded, prevSet=$prevSet")
 
             // Cập nhật UI ngay lập tức
-            if (isDownloaded) currentSet.remove(songId) else currentSet.add(songId)
+            if (isDownloaded) currentSet.remove(song.id) else currentSet.add(song.id)
             _uiState.value = _uiState.value.copy(downloadedSongIds = currentSet)
 
             try {
                 if (isDownloaded) {
                     val downloadedSongs = api.getDownloadedSongs(token).body()?.content
-                    val downloadedId = downloadedSongs?.firstOrNull { it.song.id == songId }?.id
+                    val downloadedId = downloadedSongs?.firstOrNull { it.song.id == song.id }?.id
                     Log.d("DownloadSong", "downloadedId=$downloadedId, downloadedSongs=$downloadedSongs")
 
                     if (downloadedId != null) {
-                        val response = api.removeDownloadedSong(token, songId)
+                        val response = api.removeDownloadedSong(token, song.id)
                         Log.d("DownloadSong", "removeDownloadedSong response: ${response.code()}, isSuccessful=${response.isSuccessful}, body=${response.body()}")
                         if (response.isSuccessful) {
                             Log.d("DownloadSong", "Đã xóa khỏi danh sách tải xuống")
@@ -198,9 +200,9 @@ class PlayerViewModel @Inject constructor(
                     }
                 } else {
                     val existed = api.getDownloadedSongs(token)
-                        .body()?.content?.any { it.song.id == songId } ?: false
+                        .body()?.content?.any { it.song.id == song.id } ?: false
                     if (!existed) {
-                        val response = api.addDownloadedSong(token, songId)
+                        val response = api.addDownloadedSong(token, song.id)
                         if (response.isSuccessful) {
                             Log.d("DownloadSong", "Đã thêm vào danh sách tải xuống")
                             delay(500)

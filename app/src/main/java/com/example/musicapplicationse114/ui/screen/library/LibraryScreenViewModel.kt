@@ -42,13 +42,19 @@ class LibraryViewModel @Inject constructor(
                 val userId = tokenManager?.getUserId()?.takeIf { it != -1L }
                 if (!token.isNullOrBlank() && api != null && userId != null)
                 {
-                    val response = api.getRecentlyPlayed(token, userId)
+                    val response = api.getRecentlyPlayed(token)
                     if (response.isSuccessful)
                     {
                         _uiState.value = _uiState.value.copy(
                             recentlyPlayed = response.body()?: emptyList(),
                             status = LoadStatus.Success()
                         )
+                        _uiState.value = response.body()?.let {
+                            _uiState.value.copy(
+                                recentlyPlayed = it.content,
+                                status = LoadStatus.Success()
+                            )
+                        }!!
                     }
                     else
                     {
