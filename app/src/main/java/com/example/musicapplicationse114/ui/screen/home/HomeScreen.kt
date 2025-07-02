@@ -724,7 +724,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .size(50.dp)
                         .clickable {
-                            Log.d("HomeScreen", "Profile image clicked")
+                            navController.navigate(Screen.Profile.route)
                         }
                 )
             }
