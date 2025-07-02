@@ -12,4 +12,5 @@ public interface FavoritePlaylistRepository extends JpaRepository<FavoritePlayli
     Page<FavoritePlaylist> findByUserId(Long userId, Pageable pageable);
     Page<FavoritePlaylist> findByUserIdAndPlaylistNameContainingIgnoreCase(Long userId, String name, Pageable pageable);
     Optional<FavoritePlaylist> findByUserIdAndPlaylistId(Long userId, Long playlistId);
+    int countByUserId(Long userId);
 }

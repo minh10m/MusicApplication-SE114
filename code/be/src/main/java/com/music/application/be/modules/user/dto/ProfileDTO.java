@@ -1,20 +1,20 @@
 package com.music.application.be.modules.user.dto;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserUpdateDTO {
-
+public class ProfileDTO {
     private String username;
-    @Email
     private String email;
     private String phone;
+    private String avatar;
+    private int favoriteSongCount;
+    private int followedArtistCount;
+    private int playlistCount;
 }
+
