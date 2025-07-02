@@ -204,6 +204,7 @@ fun Navigation() {
                             navController = navController,
                             viewModel = hiltViewModel(),
                             mainViewModel,
+                            chartViewModel = hiltViewModel(),
                             username = username
                         )
                     }

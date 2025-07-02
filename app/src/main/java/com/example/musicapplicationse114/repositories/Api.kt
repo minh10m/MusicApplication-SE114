@@ -338,5 +338,11 @@ interface Api {
         @Header("Authorization") token: String
     ): Response<List<NotificationDto>>
 
-
+    //songChart
+    @GET("/api/songs/top")
+    suspend fun getTopSongByViewCount(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ) : Response<SongPageResponse>
 }

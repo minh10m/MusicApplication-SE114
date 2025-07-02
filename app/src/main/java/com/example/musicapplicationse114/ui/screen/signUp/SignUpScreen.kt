@@ -95,7 +95,10 @@ fun SignUpScreen(navController: NavController, viewModel: SignUpViewModel, mainV
                 Box(modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center)
                 {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
                 }
             }
             else if(state.value.status is LoadStatus.Success){
