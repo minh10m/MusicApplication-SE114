@@ -97,8 +97,8 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                 }
             }
             is LoadStatus.Error -> {
-                mainViewModel.setError(status.description)
                 viewModel.reset()
+                Toast.makeText(context, state.value.errorMessage, Toast.LENGTH_SHORT).show()
             }
             else -> {
                 // do nothing
