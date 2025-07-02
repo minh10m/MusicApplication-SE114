@@ -45,10 +45,6 @@ class LibraryViewModel @Inject constructor(
                     val response = api.getRecentlyPlayed(token)
                     if (response.isSuccessful)
                     {
-                        _uiState.value = _uiState.value.copy(
-                            recentlyPlayed = response.body()?: emptyList(),
-                            status = LoadStatus.Success()
-                        )
                         _uiState.value = response.body()?.let {
                             _uiState.value.copy(
                                 recentlyPlayed = it.content,
