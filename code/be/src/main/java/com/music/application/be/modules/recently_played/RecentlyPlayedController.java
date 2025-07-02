@@ -1,6 +1,7 @@
 package com.music.application.be.modules.recently_played;
 
 import com.music.application.be.common.PagedResponse;
+import com.music.application.be.modules.recently_played.dto.RecentlyPlayedDTO;
 import com.music.application.be.modules.song.dto.SongDTO;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +24,8 @@ public class RecentlyPlayedController {
     @PostMapping("/me")
     public ResponseEntity<?> addRecentlyPlayed(@RequestParam Long songId) {
         try {
-            RecentlyPlayed recentlyPlayed = recentlyPlayedService.addRecentlyPlayedForCurrentUser(songId);
-            return ResponseEntity.ok(recentlyPlayed);
+            RecentlyPlayedDTO recentlyPlayedDTO = recentlyPlayedService.addRecentlyPlayedForCurrentUser(songId);
+            return ResponseEntity.ok(recentlyPlayedDTO);
         } catch (EntityNotFoundException | NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
@@ -32,7 +33,6 @@ public class RecentlyPlayedController {
                     .body("Error adding recently played: " + e.getMessage());
         }
     }
-
 
     @GetMapping("/me")
     public ResponseEntity<?> getRecentlyPlayedByCurrentUser(

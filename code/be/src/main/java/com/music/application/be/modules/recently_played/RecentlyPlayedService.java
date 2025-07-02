@@ -3,6 +3,7 @@ package com.music.application.be.modules.recently_played;
 import com.music.application.be.common.PagedResponse;
 import com.music.application.be.common.PaginationUtils;
 import com.music.application.be.modules.genre.Genre;
+import com.music.application.be.modules.recently_played.dto.RecentlyPlayedDTO;
 import com.music.application.be.modules.song.Song;
 import com.music.application.be.modules.song.SongRepository;
 import com.music.application.be.modules.song.dto.SongDTO;
@@ -41,15 +42,15 @@ public class RecentlyPlayedService {
             key = "T(java.util.Objects).hash('user-' + #root.target.getCurrentUserId(), 0, 10)",
             allEntries = true
     )
-    public RecentlyPlayed addRecentlyPlayedForCurrentUser(Long songId) {
+    public RecentlyPlayedDTO addRecentlyPlayedForCurrentUser(Long songId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
             throw new EntityNotFoundException("User not authenticated");
         }
+
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new NoSuchElementException("Song not found"));
 
-        // Remove existing entry if exists
         recentlyPlayedRepository.findByUserAndSong(user, song)
                 .ifPresent(recentlyPlayedRepository::delete);
 
@@ -58,7 +59,17 @@ public class RecentlyPlayedService {
                 .song(song)
                 .build();
 
-        return recentlyPlayedRepository.save(recentlyPlayed);
+        RecentlyPlayed saved = recentlyPlayedRepository.save(recentlyPlayed);
+
+        return toRecentlyPlayedDTO(saved);
+    }
+
+    public Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new EntityNotFoundException("User not authenticated");
+        }
+        return user.getId();
     }
 
 
@@ -140,5 +151,16 @@ public class RecentlyPlayedService {
         }
 
         return dto;
+    }
+
+    public RecentlyPlayedDTO toRecentlyPlayedDTO(RecentlyPlayed recentlyPlayed) {
+        return RecentlyPlayedDTO.builder()
+                .id(recentlyPlayed.getId())
+                .songId(recentlyPlayed.getSong().getId())
+                .songTitle(recentlyPlayed.getSong().getTitle())
+                .userId(recentlyPlayed.getUser().getId())
+                .username(recentlyPlayed.getUser().getUsername())
+                .playedAt(recentlyPlayed.getPlayedAt()) // hoặc .getPlayedAt() nếu bạn có field đó
+                .build();
     }
 }
