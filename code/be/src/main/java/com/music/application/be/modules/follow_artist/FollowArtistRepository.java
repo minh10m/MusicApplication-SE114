@@ -13,4 +13,6 @@ public interface FollowArtistRepository extends JpaRepository<FollowArtist, Long
     Page<FollowArtist> findByUserId(Long userId, Pageable pageable);
     Page<FollowArtist> findByUserIdAndArtistNameContainingIgnoreCase(Long userId, String name, Pageable pageable);
     Optional<FollowArtist> findByUserIdAndArtistId(Long userId, Long artistId);
+
+    int countByUserId(Long id);
 }

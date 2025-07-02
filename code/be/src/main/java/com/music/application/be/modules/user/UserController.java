@@ -1,5 +1,6 @@
 package com.music.application.be.modules.user;
 
+import com.music.application.be.modules.user.dto.ProfileDTO;
 import com.music.application.be.modules.user.dto.UserDetailDTO;
 import com.music.application.be.modules.user.dto.UserResponseDTO;
 import com.music.application.be.modules.user.dto.UserUpdateDTO;
@@ -9,10 +10,13 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -48,6 +52,20 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    @GetMapping("/me/profile")
+    public ResponseEntity<?> getMyProfile() {
+        try {
+            ProfileDTO profile = userService.getMyProfile();
+            return ResponseEntity.ok(profile);
+        } catch (UsernameNotFoundException | EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to fetch profile");
+        }
+    }
+
+
     @Operation(
             summary = "Update user with optional avatar",
             description = "Updates a user's details and optionally uploads a new avatar. Requires multipart/form-data with two parts: 'user' (JSON) and 'avatar' (file, optional).",
@@ -70,6 +88,23 @@ public class UserController {
         UserDetailDTO updatedUser = userService.updateUser(userId, userUpdateDTO, avatarFile);
         return ResponseEntity.ok(updatedUser);
     }
+
+    @PutMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateMyProfile(
+            @RequestPart("profile") String profileJson,
+            @RequestPart(value = "avatarFile", required = false) MultipartFile avatarFile) {
+        try {
+            UserUpdateDTO userDTO = objectMapper.readValue(profileJson, UserUpdateDTO.class);
+            UserDetailDTO updated = userService.updateCurrentUser(userDTO, avatarFile);
+            return ResponseEntity.ok(updated);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace(); // để xem lỗi chi tiết nếu cần
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update profile");
+        }
+    }
+
 
     @Operation(
             summary = "Get all users",

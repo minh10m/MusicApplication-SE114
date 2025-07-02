@@ -35,4 +35,5 @@ public interface PlaylistRepository extends JpaRepository<Playlist, Long> {
     // Tìm playlist theo genre (playlist có genre luôn là public)
     @Query("SELECT p FROM Playlist p JOIN p.genres g WHERE g.id = :genreId")
     Page<Playlist> findByGenresId(Long genreId, Pageable pageable);
+
 }
