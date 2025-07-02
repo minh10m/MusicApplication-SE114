@@ -19,6 +19,7 @@ data class SignUpUiState(
     val email: String = "",
     val password: String = "",
     val successMessage: String = "",
+    val errorMessage: String = "",
     val confirmPassword: String = "",
     var isShowPassword: Boolean = false,
     var isShowConfirmPassword: Boolean = false,
@@ -74,6 +75,11 @@ class SignUpViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(successMessage = successMessage)
     }
 
+    fun updateErrorMessage(errorMessage: String)
+    {
+        _uiState.value = _uiState.value.copy(errorMessage = errorMessage)
+    }
+
     fun signUp(){
         _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
         viewModelScope.launch {
@@ -84,21 +90,29 @@ class SignUpViewModel @Inject constructor(
                     if(accessToken != null){
                         _uiState.value = _uiState.value.copy(status = LoadStatus.Success())
                         Log.e("SignUpResult", "SUcesssssssssssss")
-                        updateSuccessMessage(result.body()?.message.toString())
+                        updateSuccessMessage("Đăng kí thành công")
                         //Save Token sau khi đăng nhập ở đâu đó
                     }else{
                         _uiState.value = _uiState.value.copy(status = LoadStatus.Error(result.body()?.message.toString()))
+                        updateErrorMessage("Đăng kí thất bại")
                         Log.e("SIGNUP", "FAILEDDDDDDDDDDDDDDD")
-                        updateSuccessMessage("")
                         Log.e("SignUpError", "Response body: ${result.body()?.toString()}")
                         Log.e("SignUpError", "Response code: ${result.code()}")
                         Log.e("SignUpError", "AccessToken: ${result.body()?.access_token}")
                     }
+
+                }
+                else
+                {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error(result?.body()?.message.toString()))
+                    updateErrorMessage("Đăng kí thất bại")
+                    Log.e("SIGNUP", "FAILEDDDDDDDDDDDDDDD")
                 }
 
             }catch (ex: Exception){
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Error(ex.message.toString()))
                 mainLog?.e("SignUpViewModel", ex.message.toString())
+                updateErrorMessage("Lỗi kết nối tới máy chủ")
             }
         }
     }

@@ -110,8 +110,8 @@ fun SignUpScreen(navController: NavController, viewModel: SignUpViewModel, mainV
             }
             else {
                 if(state.value.status is LoadStatus.Error){
-                    mainViewModel.setError(state.value.status.description)
                     viewModel.reset()
+                    Toast.makeText(context, state.value.errorMessage, Toast.LENGTH_SHORT).show()
                 }
                 Spacer(modifier = Modifier.height(80.dp)) // Cách lề trên
 
