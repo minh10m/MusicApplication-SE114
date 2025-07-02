@@ -62,6 +62,7 @@ import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.R
 import com.example.musicapplicationse114.Screen
+import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.common.enum.TimeOfDay
 import com.example.musicapplicationse114.model.AlbumResponse
 import com.example.musicapplicationse114.model.ArtistResponse
@@ -88,142 +89,157 @@ fun Home(
     val state by viewModel.uiState.collectAsState()
     val globalPlayerController = sharedViewModel.player
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .padding(bottom = 129.dp, start = 2.dp) // Tăng padding để tránh che bởi MiniPlayer và NavigationBar
-    ) {
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                "Albums nổi bật",
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 16.dp)
+    if(state.status is LoadStatus.Loading)
+    {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(
+                strokeWidth = 2.dp,
+                color = Color.White
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 2.dp)
-            ) {
-                items(items = state.albums) { album ->
-                    AlbumItem(
-                        album = album,
-                        onClick = {
-                            navController.navigate(Screen.Album.createRoute(album.id))
-                        }
-                    )
-                }
-            }
         }
+    }
+    else {
 
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                "Gợi ý bài hát",
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 2.dp)
-            ) {
-                items(items = state.songs) { song ->
-                    SongItem(
-                        song = song,
-                        onClick = {
-                            Log.d("HomeScreen", "Playing song: ${song.title}, id: ${song.id}")
-                            sharedViewModel.setSongList(state.songs, state.songs.indexOf(song))
-                            sharedViewModel.addRecentlyPlayed(song.id)
-                            globalPlayerController.play(song)
-                            mainViewModel.setFullScreenPlayer(true)
-                            navController.navigate(Screen.Player.createRoute(song.id))
-                        }
-                    )
-                }
-            }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                "Nghệ sĩ top trending",
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 2.dp)
-            ) {
-                items(items = state.artists) { artist ->
-                    ArtistItem(artist = artist,
-                        onClick = {navController.navigate(Screen.Artist.createRoute(artist.id))})
-                }
-            }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                "ID bài hát yêu thích",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 8.dp)
-            ) {
-                items(state.favoriteSongs.toList()) { id ->
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .background(Color.DarkGray, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text(text = "ID: ${id.id}", color = Color.White)
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .padding(
+                    bottom = 129.dp,
+                    start = 2.dp
+                ) // Tăng padding để tránh che bởi MiniPlayer và NavigationBar
+        ) {
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Albums nổi bật",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 2.dp)
+                ) {
+                    items(items = state.albums) { album ->
+                        AlbumItem(
+                            album = album,
+                            onClick = {
+                                navController.navigate(Screen.Album.createRoute(album.id))
+                            }
+                        )
                     }
                 }
             }
-        }
 
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                "ID bài hát đã tải",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 8.dp)
-            ) {
-                items(state.downloadSongs.toList()) { id ->
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .background(Color.DarkGray, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text(text = "ID: ${id.id}", color = Color.White)
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    "Gợi ý bài hát",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 2.dp)
+                ) {
+                    items(items = state.songs) { song ->
+                        SongItem(
+                            song = song,
+                            onClick = {
+                                Log.d("HomeScreen", "Playing song: ${song.title}, id: ${song.id}")
+                                sharedViewModel.setSongList(state.songs, state.songs.indexOf(song))
+                                sharedViewModel.addRecentlyPlayed(song.id)
+                                globalPlayerController.play(song)
+                                mainViewModel.setFullScreenPlayer(true)
+                                navController.navigate(Screen.Player.createRoute(song.id))
+                            }
+                        )
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    "Nghệ sĩ top trending",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 2.dp)
+                ) {
+                    items(items = state.artists) { artist ->
+                        ArtistItem(artist = artist,
+                            onClick = { navController.navigate(Screen.Artist.createRoute(artist.id)) })
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    "ID bài hát yêu thích",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                ) {
+                    items(state.favoriteSongs.toList()) { id ->
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text(text = "ID: ${id.id}", color = Color.White)
+                        }
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    "ID bài hát đã tải",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                ) {
+                    items(state.downloadSongs.toList()) { id ->
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text(text = "ID: ${id.id}", color = Color.White)
+                        }
                     }
                 }
             }
@@ -655,98 +671,100 @@ fun HomeScreen(
         TimeOfDay.EVENING -> "Good Evening"
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .padding(10.dp)
-    ) {
-        Spacer(modifier = Modifier.height(40.dp))
-        Row(verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 7.dp)) {
-            Column(horizontalAlignment = Alignment.Start) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Image(
-                        painter = painterResource(id = R.drawable.hello),
-                        contentDescription = null,
-                        modifier = Modifier.size(23.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        "Hi ${state.username},",
-                        fontSize = 18.sp,
-                        color = Color.White
-                    )
-                    Log.d("HomeScreen", "Displayed username: ${state.username}")
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    greeting,
-                    fontSize = 21.sp,
-                    color = Color.White,
-                    fontWeight = FontWeight.W700
-                )
-                Log.d("HomeScreen", "Displayed greeting: $greeting")
-            }
-            Spacer(modifier = Modifier.width(110.dp))
-            Image(
-                painter = painterResource(id = R.drawable.notification),
-                contentDescription = "Notifications",
-                modifier = Modifier
-                    .size(30.dp)
-                    .clickable {
-                        Log.d("HomeScreen", "Notification bell clicked")
-                        navController.navigate(Screen.Notification.route)
-                    }
-            )
-            Spacer(modifier = Modifier.width(15.dp))
-            Image(
-                painter = painterResource(id = R.drawable.logan),
-                contentDescription = "Profile",
-                modifier = Modifier
-                    .size(50.dp)
-                    .clickable {
-                        Log.d("HomeScreen", "Profile image clicked")
-                    }
-            )
-        }
-        Spacer(modifier = Modifier.height(15.dp))
-
-        TabRow(
-            selectedTabIndex = tabIndex,
-            containerColor = Color.Black,
-            contentColor = Color.LightGray,
-            indicator = { tabPositions ->
-                TabRowDefaults.Indicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[tabIndex]),
-                    color = Color.DarkGray,
-                    height = 3.dp
-                )
-            },
-            divider = {}
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .padding(10.dp)
         ) {
-            tabs.forEachIndexed { index, tabItem ->
-                Tab(
-                    selected = tabIndex == index,
-                    onClick = {
-                        tabIndex = index
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(index)
+            Spacer(modifier = Modifier.height(40.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = 7.dp)
+            ) {
+                Column(horizontalAlignment = Alignment.Start) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.drawable.hello),
+                            contentDescription = null,
+                            modifier = Modifier.size(23.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            "Hi ${state.username},",
+                            fontSize = 18.sp,
+                            color = Color.White
+                        )
+                        Log.d("HomeScreen", "Displayed username: ${state.username}")
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        greeting,
+                        fontSize = 21.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.W700
+                    )
+                    Log.d("HomeScreen", "Displayed greeting: $greeting")
+                }
+                Spacer(modifier = Modifier.width(110.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.notification),
+                    contentDescription = "Notifications",
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clickable {
+                            Log.d("HomeScreen", "Notification bell clicked")
+                            navController.navigate(Screen.Notification.route)
                         }
-                    },
-                    text = { Text(tabItem.text, fontSize = 15.sp) }
+                )
+                Spacer(modifier = Modifier.width(15.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.logan),
+                    contentDescription = "Profile",
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clickable {
+                            Log.d("HomeScreen", "Profile image clicked")
+                        }
                 )
             }
-        }
+            Spacer(modifier = Modifier.height(15.dp))
 
-        Spacer(modifier = Modifier.height(5.dp))
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.Top,
-            userScrollEnabled = false
-        ) { page ->
-            tabs[page].screen()
+            TabRow(
+                selectedTabIndex = tabIndex,
+                containerColor = Color.Black,
+                contentColor = Color.LightGray,
+                indicator = { tabPositions ->
+                    TabRowDefaults.Indicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[tabIndex]),
+                        color = Color.DarkGray,
+                        height = 3.dp
+                    )
+                },
+                divider = {}
+            ) {
+                tabs.forEachIndexed { index, tabItem ->
+                    Tab(
+                        selected = tabIndex == index,
+                        onClick = {
+                            tabIndex = index
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
+                        },
+                        text = { Text(tabItem.text, fontSize = 15.sp) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(5.dp))
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.Top,
+                userScrollEnabled = false
+            ) { page ->
+                tabs[page].screen()
+            }
         }
-    }
 }

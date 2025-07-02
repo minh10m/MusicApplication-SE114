@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -47,6 +48,7 @@ import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.R
 import com.example.musicapplicationse114.Screen
+import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 
 
@@ -157,53 +159,75 @@ fun ChartScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
             }
+            if(state.status is LoadStatus.Loading)
+            {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                }
+            }
+            else {
 
-            // Danh sách bài hát
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(state.songs) { song ->
-                    val index = state.songs.indexOf(song)
+                // Danh sách bài hát
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(state.songs) { song ->
+                        val index = state.songs.indexOf(song)
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                sharedViewModel.setSongList(state.songs, index)
-                                sharedViewModel.addRecentlyPlayed(song.id)
-                                globalPlayerController.play(song)
-                                mainViewModel.setFullScreenPlayer(true)
-                                navController.navigate(Screen.Player.createRoute(song.id))
-                            }
-                            .padding(vertical = 12.dp),
-                    ) {
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Ảnh bài hát
-                        AsyncImage(
-                            model = song.thumbnail,
-                            contentDescription = song.title,
+                        Row(
                             modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(4.dp)),
-                            contentScale = ContentScale.Crop
-                        )
+                                .fillMaxWidth()
+                                .clickable {
+                                    sharedViewModel.setSongList(state.songs, index)
+                                    sharedViewModel.addRecentlyPlayed(song.id)
+                                    globalPlayerController.play(song)
+                                    mainViewModel.setFullScreenPlayer(true)
+                                    navController.navigate(Screen.Player.createRoute(song.id))
+                                }
+                                .padding(vertical = 12.dp),
+                        ) {
+                            Spacer(modifier = Modifier.height(16.dp))
 
-                        Spacer(Modifier.width(6.dp))
+                            // Ảnh bài hát
+                            AsyncImage(
+                                model = song.thumbnail,
+                                contentDescription = song.title,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                contentScale = ContentScale.Crop
+                            )
 
-                        Column(modifier = Modifier.width(40.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally){
-                            // Thứ hạng hoặc vương miện
-                            if (index == 0) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_crown),
-                                    contentDescription = "Top 1",
-                                    tint = Color(0xFFFFD700),
-                                    modifier = Modifier
-                                        .size(28.dp)
-                                        .padding(horizontal = 6.dp)
-                                )
-                            } else {
+                            Spacer(Modifier.width(6.dp))
+
+                            Column(
+                                modifier = Modifier.width(40.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                // Thứ hạng hoặc vương miện
+                                if (index == 0) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_crown),
+                                        contentDescription = "Top 1",
+                                        tint = Color(0xFFFFD700),
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .padding(horizontal = 6.dp)
+                                    )
+                                } else {
+                                    Text(
+                                        text = "${index + 1}",
+                                        color = Color.White,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.padding(horizontal = 6.dp),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+
                                 Text(
-                                    text = "${index + 1}",
+                                    text = "•",
                                     color = Color.White,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -211,42 +235,34 @@ fun ChartScreen(
                                     textAlign = TextAlign.Center
                                 )
                             }
+                            Spacer(modifier = Modifier.width(6.dp))
 
-                            Text(
-                                text = "•",
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 6.dp),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(6.dp))
+                            // Thông tin bài hát
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = song.title,
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = song.artistName,
+                                    color = Color.LightGray,
+                                    fontSize = 14.sp,
+                                    maxLines = 1
+                                )
+                            }
 
-                        // Thông tin bài hát
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = song.title,
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1
-                            )
-                            Text(
-                                text = song.artistName,
-                                color = Color.LightGray,
-                                fontSize = 14.sp,
-                                maxLines = 1
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(36.dp))
-                        IconButton(onClick = { /* TODO: More options */ }) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = null,
-                                tint = Color.White
-                            )
+                            Spacer(modifier = Modifier.width(20.dp))
+                            IconButton(onClick = { /* TODO: More options */ }) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
+                            }
                         }
                     }
                 }

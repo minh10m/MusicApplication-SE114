@@ -40,6 +40,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.Screen
+import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
@@ -102,7 +103,7 @@ fun LikedSongsScreen(
                 .fillMaxSize()
                 .background(Color.Black)
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 14.dp) // Điều chỉnh padding tổng thể
+                .padding(horizontal = 16.dp, vertical = 25.dp) // Điều chỉnh padding tổng thể
         ) {
             // Header
             Row(
@@ -110,7 +111,7 @@ fun LikedSongsScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
+                Column() {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.ArrowBackIos,
@@ -175,56 +176,70 @@ fun LikedSongsScreen(
                 likedSongs
             }
 
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                itemsIndexed(displayedSongs) { index, song ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                sharedViewModel.setSongList(displayedSongs, index)
-                                sharedViewModel.addRecentlyPlayed(song.id)
-                                Log.d("LikedSongsScreen", "Called addRecentlyPlayed for songId: ${song.id}")
-                                globalPlayerController.play(song)
-                                mainViewModel.setFullScreenPlayer(true)
-                                navController.navigate(Screen.Player.createRoute(song.id))
-                            }
-                            .padding(vertical = 12.dp), // Tăng padding giữa các mục
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        AsyncImage(
-                            model = song.thumbnail,
-                            contentDescription = song.title,
+            if(uiState.value.status is LoadStatus.Loading)
+            {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                }
+            }
+            else {
+                LazyColumn(modifier = Modifier.fillMaxWidth().padding(bottom = 18.dp)) {
+                    itemsIndexed(displayedSongs) { index, song ->
+                        Row(
                             modifier = Modifier
-                                .size(50.dp) // Tăng kích thước hình ảnh
-                                .clip(RoundedCornerShape(8.dp)), // Bo góc lớn hơn
-                            contentScale = ContentScale.Crop
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = song.title,
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                .fillMaxWidth()
+                                .clickable {
+                                    sharedViewModel.setSongList(displayedSongs, index)
+                                    sharedViewModel.addRecentlyPlayed(song.id)
+                                    Log.d(
+                                        "LikedSongsScreen",
+                                        "Called addRecentlyPlayed for songId: ${song.id}"
+                                    )
+                                    globalPlayerController.play(song)
+                                    mainViewModel.setFullScreenPlayer(true)
+                                    navController.navigate(Screen.Player.createRoute(song.id))
+                                }
+                                .padding(vertical = 12.dp), // Tăng padding giữa các mục
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = song.thumbnail,
+                                contentDescription = song.title,
+                                modifier = Modifier
+                                    .size(50.dp) // Tăng kích thước hình ảnh
+                                    .clip(RoundedCornerShape(8.dp)), // Bo góc lớn hơn
+                                contentScale = ContentScale.Crop
                             )
-                            Text(
-                                text = song.artistName,
-                                color = Color.Gray,
-                                fontSize = 14.sp,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = song.title,
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = song.artistName,
+                                    color = Color.Gray,
+                                    fontSize = 14.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
 
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "More",
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
-                            )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "More",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
                     }
                 }
