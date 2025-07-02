@@ -126,9 +126,9 @@ class PlayerViewModel @Inject constructor(
                         throw Exception("Không tìm thấy favoriteId để xóa trong danh sách mới")
                     }
                 } else {
-                    val existed = api.getFavoriteSongs(token)
-                        .body()?.content?.any { it.song.id == song.id } ?: false
-                    if (!existed) {
+//                    val existed = api.getFavoriteSongs(token)
+//                        .body()?.content?.any { it.song.id == song.id } ?: false
+//                    if (!existed) {
                         val response = api.addFavoriteSong(token, AddFavoriteSongRequest(song.id))
                         if (response.isSuccessful) {
                             Log.d("FavoriteSong", "Đã thêm vào danh sách yêu thích")
@@ -140,9 +140,10 @@ class PlayerViewModel @Inject constructor(
                         } else {
                             throw Exception("API thêm thất bại: ${response.code()} - ${response.errorBody()?.string()}")
                         }
-                    } else {
-                        Log.d("FavoriteSong", "Đã tồn tại trong danh sách, không thêm lại")
-                    }
+//                    }
+//                    else {
+//                        Log.d("FavoriteSong", "Đã tồn tại trong danh sách, không thêm lại")
+//                    }
                 }
             } catch (e: Exception) {
                 Log.e("FavoriteError", "Thao tác yêu thích thất bại: ${e.message}")
@@ -199,9 +200,9 @@ class PlayerViewModel @Inject constructor(
                         throw Exception("Không tìm thấy downloadedId để xóa trong danh sách mới")
                     }
                 } else {
-                    val existed = api.getDownloadedSongs(token)
-                        .body()?.content?.any { it.song.id == song.id } ?: false
-                    if (!existed) {
+//                    val existed = api.getDownloadedSongs(token)
+//                        .body()?.content?.any { it.song.id == song.id } ?: false
+//                    if (!existed) {
                         val response = api.addDownloadedSong(token, song.id)
                         if (response.isSuccessful) {
                             Log.d("DownloadSong", "Đã thêm vào danh sách tải xuống")
@@ -213,9 +214,10 @@ class PlayerViewModel @Inject constructor(
                         } else {
                             throw Exception("API thêm thất bại: ${response.code()} - ${response.errorBody()?.string()}")
                         }
-                    } else {
-                        Log.d("DownloadSong", "Đã tồn tại trong danh sách tải, không thêm lại")
-                    }
+//                    }
+//                    else {
+//                        Log.d("DownloadSong", "Đã tồn tại trong danh sách tải, không thêm lại")
+//                    }
                 }
             } catch (e: Exception) {
                 Log.e("DownloadError", "Thao tác tải xuống thất bại: ${e.message}")

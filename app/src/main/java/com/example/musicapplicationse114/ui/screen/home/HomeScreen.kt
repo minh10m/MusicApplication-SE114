@@ -68,6 +68,8 @@ import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.GenreResponse
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
+import com.example.musicapplicationse114.ui.screen.chart.ChartScreen
+import com.example.musicapplicationse114.ui.screen.chart.ChartViewModel
 import com.example.musicapplicationse114.ui.screen.player.PlayerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -568,15 +570,17 @@ fun SongItemForGenre(song: SongResponse, onClick: () -> Unit) {
 }
 
 @Composable
-fun Workout() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Workout Content", color = Color.White, fontSize = 20.sp)
-    }
+fun Workout(chartViewModel: ChartViewModel,
+            mainViewModel: MainViewModel,
+            sharedViewModel: PlayerSharedViewModel,
+            navController: NavController
+) {
+    ChartScreen(
+        navController = navController,
+        viewModel = chartViewModel,
+        mainViewModel = mainViewModel,
+        sharedViewModel = sharedViewModel
+    )
 }
 
 @Composable
@@ -597,6 +601,7 @@ fun HomeScreen(
     navController: NavController,
     viewModel: HomeViewModel,
     mainViewModel: MainViewModel,
+    chartViewModel: ChartViewModel,
     username: String,
     playerViewModel: PlayerViewModel = hiltViewModel(),
     sharedViewModel: PlayerSharedViewModel = hiltViewModel()
@@ -607,8 +612,8 @@ fun HomeScreen(
 
     val tabs = listOf(
         TabItem("For you") { Home(viewModel, navController, mainViewModel, sharedViewModel) },
-        TabItem("Relax") { Relax1(viewModel, navController, mainViewModel, sharedViewModel) },
-        TabItem("Workout") { Workout() },
+        TabItem("Genre") { Relax1(viewModel, navController, mainViewModel, sharedViewModel) },
+        TabItem("Chart") { Workout(chartViewModel, mainViewModel, sharedViewModel, navController) },
         TabItem("Travel") { Travel() }
     )
 
@@ -654,10 +659,11 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .padding(start = 20.dp)
+            .padding(10.dp)
     ) {
         Spacer(modifier = Modifier.height(40.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 7.dp)) {
             Column(horizontalAlignment = Alignment.Start) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Image(
@@ -682,9 +688,9 @@ fun HomeScreen(
                 )
                 Log.d("HomeScreen", "Displayed greeting: $greeting")
             }
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(110.dp))
             Image(
-                painter = painterResource(id = R.drawable.bell),
+                painter = painterResource(id = R.drawable.notification),
                 contentDescription = "Notifications",
                 modifier = Modifier
                     .size(30.dp)
