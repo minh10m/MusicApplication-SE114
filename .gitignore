@@ -9,6 +9,10 @@ captures/
 .idea/
 *.iml
 
+#ip
+app/src/main/java/com/example/musicapplicationse114/ApiModule.kt
+app/src/main/res/xml/network_security_config.xml
+
 # Local config
 local.properties
 

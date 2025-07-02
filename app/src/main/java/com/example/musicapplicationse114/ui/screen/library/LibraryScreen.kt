@@ -36,6 +36,7 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.Screen
+import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import com.example.musicapplicationse114.ui.screen.artists.ArtistsFollowingViewModel
 import com.example.musicapplicationse114.ui.screen.home.HomeUiState
@@ -124,38 +125,55 @@ fun LibraryScreen(navController: NavController,
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(state.recentlyPlayed) { song ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                sharedViewModel.setSongList(state.recentlyPlayed, state.recentlyPlayed.indexOf(song))
-                                sharedViewModel.addRecentlyPlayed(song.id)
-                                Log.d("LibraryScreen", "Called addRecentlyPlayed for songId: ${song.id}")
-                                globalPlayerController.play(song)
-                                mainViewModel.setFullScreenPlayer(true)
-                                navController.navigate(Screen.Player.createRoute(song.id))
+            if(state.status is LoadStatus.Loading)
+            {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                }
+            }
+            else {
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    items(state.recentlyPlayed) { song ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    sharedViewModel.setSongList(
+                                        state.recentlyPlayed,
+                                        state.recentlyPlayed.indexOf(song)
+                                    )
+                                    sharedViewModel.addRecentlyPlayed(song.id)
+                                    Log.d(
+                                        "LibraryScreen",
+                                        "Called addRecentlyPlayed for songId: ${song.id}"
+                                    )
+                                    globalPlayerController.play(song)
+                                    mainViewModel.setFullScreenPlayer(true)
+                                    navController.navigate(Screen.Player.createRoute(song.id))
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = song.thumbnail,
+                                contentDescription = song.title,
+                                modifier = Modifier.size(50.dp).clip(RoundedCornerShape(4.dp)),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(song.title, color = Color.White, fontSize = 16.sp)
+                                Text(song.artistName, color = Color.Gray, fontSize = 14.sp)
                             }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        AsyncImage(
-                            model = song.thumbnail,
-                            contentDescription = song.title,
-                            modifier = Modifier.size(50.dp).clip(RoundedCornerShape(4.dp)),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(song.title, color = Color.White, fontSize = 16.sp)
-                            Text(song.artistName, color = Color.Gray, fontSize = 14.sp)
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "More",
+                                tint = Color.White
+                            )
                         }
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "More",
-                            tint = Color.White
-                        )
                     }
                 }
             }
