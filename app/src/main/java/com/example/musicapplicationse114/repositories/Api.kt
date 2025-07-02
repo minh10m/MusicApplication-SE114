@@ -20,10 +20,8 @@ import com.example.musicapplicationse114.model.NotificationDto
 import com.example.musicapplicationse114.model.PlaylistPageResponse
 import com.example.musicapplicationse114.model.PlaylistRequest
 import com.example.musicapplicationse114.model.PlaylistResponse
-import com.example.musicapplicationse114.model.RecentlyPlayedPageRespo
-import com.example.musicapplicationse114.model.RecentlyPlayedRequest
+import com.example.musicapplicationse114.model.RecentlyPlayedPageResponse
 import com.example.musicapplicationse114.model.SongPageResponse
-import com.example.musicapplicationse114.model.SongPageResponseDTO
 import com.example.musicapplicationse114.model.SongPlaylist
 import com.example.musicapplicationse114.model.SongPlaylistRequest
 import com.example.musicapplicationse114.model.SongResponse

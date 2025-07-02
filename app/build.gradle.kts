@@ -5,7 +5,7 @@ plugins {
 
     alias(libs.plugins.hilt) // ← THÊM
     id("org.jetbrains.kotlin.kapt")
-
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -90,5 +90,6 @@ dependencies {
     implementation (libs.retrofit)
     implementation (libs.converter.gson)
 
-
+    implementation("com.google.firebase:firebase-messaging-ktx:24.0.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
