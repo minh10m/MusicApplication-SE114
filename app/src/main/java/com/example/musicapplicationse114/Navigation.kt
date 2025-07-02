@@ -15,7 +15,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.SavedSearch
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +31,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.musicapplicationse114.common.enum.TimeOfDay
 import com.example.musicapplicationse114.ui.createPlaylist.CreatePlaylistScreen
+import com.example.musicapplicationse114.ui.notification.NotificationsScreen
+import com.example.musicapplicationse114.ui.notification.NotificationsViewModel
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import com.example.musicapplicationse114.ui.queue.QueueScreen
 import com.example.musicapplicationse114.ui.screen.album.AlbumSongListScreen
@@ -60,6 +61,7 @@ import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 
 sealed class Screen(val route: String, val title: String) {
     object Home : Screen("home", "Home")
+    object Notification : Screen("notification", "Notifications")
     object Login : Screen("login", "Login")
     object SignUp : Screen("signup", "Sign Up")
     object ForgetPassword : Screen("forgetPassword", "Forget Password")
@@ -135,6 +137,13 @@ fun Navigation() {
                             navController = navController,
                             viewModel = hiltViewModel(),
                             mainViewModel
+                        )
+                    }
+                    composable(Screen.Notification.route) {
+                        val viewModel: NotificationsViewModel = hiltViewModel() // 👈 fix tên ViewModel
+                        NotificationsScreen(
+                            navController = navController,
+                            viewModel = viewModel
                         )
                     }
                     composable(Screen.Login.route) {
