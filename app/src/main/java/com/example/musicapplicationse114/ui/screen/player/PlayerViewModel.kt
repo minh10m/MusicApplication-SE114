@@ -25,9 +25,13 @@ data class PlayerUiState(
     val likedSongIds: Set<Long> = emptySet(),
     val downloadedSongIds: Set<Long> = emptySet(),
     val status: LoadStatus = LoadStatus.Init(),
+
     val successMes : String = "",
     val errorMes : String = "",
     val toggle : Boolean = false
+
+    val shareUrl: String? = null
+
 )
 
 @HiltViewModel
@@ -263,6 +267,185 @@ class PlayerViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun addToFavorites(songId: Long) {
+        viewModelScope.launch {
+            try {
+                val token = tokenManager?.getToken()
+                if (!token.isNullOrBlank() && api != null) {
+                    val request = AddFavoriteSongRequest(songId)
+                    val response = api.addFavoriteSong(token, request)
+                    if (response.isSuccessful) {
+                        _uiState.value = _uiState.value.copy(
+                            likedSongIds = _uiState.value.likedSongIds + songId,
+                            status = LoadStatus.Success()
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            status = LoadStatus.Error("Failed to add to favorites")
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    status = LoadStatus.Error(e.message ?: "Unknown error")
+                )
+            }
+        }
+    }
+
+    fun removeFromFavorites(songId: Long) {
+        viewModelScope.launch {
+            try {
+                val token = tokenManager?.getToken()
+                if (!token.isNullOrBlank() && api != null) {
+                    val response = api.removeFavoriteSong(token, songId)
+                    if (response.isSuccessful) {
+                        _uiState.value = _uiState.value.copy(
+                            likedSongIds = _uiState.value.likedSongIds - songId,
+                            status = LoadStatus.Success()
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            status = LoadStatus.Error("Failed to remove from favorites")
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    status = LoadStatus.Error(e.message ?: "Unknown error")
+                )
+            }
+        }
+    }
+
+    fun downloadSong(songId: Long) {
+        viewModelScope.launch {
+            try {
+                val token = tokenManager?.getToken()
+                if (!token.isNullOrBlank() && api != null) {
+                    val response = api.addDownloadedSong(token, songId)
+                    if (response.isSuccessful) {
+                        _uiState.value = _uiState.value.copy(
+                            downloadedSongIds = _uiState.value.downloadedSongIds + songId,
+                            status = LoadStatus.Success()
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            status = LoadStatus.Error("Failed to download song")
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    status = LoadStatus.Error(e.message ?: "Unknown error")
+                )
+            }
+        }
+    }
+
+    fun shareSong(songId: Long) {
+        viewModelScope.launch {
+            try {
+                val token = tokenManager?.getToken()
+                if (!token.isNullOrBlank() && api != null) {
+                    val response = api.shareSong(
+                        token = token,
+                        songId = songId
+                    )
+                    
+                    if (response.isSuccessful) {
+                        val shareUrl = response.body()?.string()?.trim()
+                        if (!shareUrl.isNullOrBlank()) {
+                            Log.d("PlayerViewModel", "Share URL from backend: $shareUrl")
+                            _uiState.value = _uiState.value.copy(
+                                shareUrl = shareUrl,
+                                status = LoadStatus.Success()
+                            )
+                        } else {
+                            Log.e("PlayerViewModel", "Share URL is empty")
+                            _uiState.value = _uiState.value.copy(
+                                status = LoadStatus.Error("Share URL is empty")
+                            )
+                        }
+                    } else {
+                        Log.e("PlayerViewModel", "Failed to share song: ${response.code()}")
+                        _uiState.value = _uiState.value.copy(
+                            status = LoadStatus.Error("Failed to get share URL")
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("PlayerViewModel", "Error sharing song", e)
+                _uiState.value = _uiState.value.copy(
+                    status = LoadStatus.Error(e.message ?: "Unknown error")
+                )
+            }
+        }
+    }
+
+    fun clearShareUrl() {
+        _uiState.value = _uiState.value.copy(shareUrl = null)
+    }
+
+    fun addToPlaylists(songId: Long, playlistIds: List<Long>) {
+        viewModelScope.launch {
+            try {
+                val token = tokenManager?.getToken()
+                if (!token.isNullOrBlank() && api != null) {
+                    var successCount = 0
+                    var failCount = 0
+                    
+                    for (playlistId in playlistIds) {
+                        val request = com.example.musicapplicationse114.model.SongPlaylistRequest(
+                            songId = songId,
+                            playlistId = playlistId
+                        )
+                        
+                        val response = api.addSongToPlaylist(
+                            token = token,
+                            request = request
+                        )
+                        
+                        if (response.isSuccessful) {
+                            successCount++
+                            Log.d("PlayerViewModel", "Song added to playlist $playlistId successfully")
+                        } else {
+                            failCount++
+                            Log.e("PlayerViewModel", "Failed to add song to playlist $playlistId: ${response.code()}")
+                        }
+                    }
+                    
+                    if (failCount == 0) {
+                        _uiState.value = _uiState.value.copy(
+                            status = LoadStatus.Success()
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            status = LoadStatus.Error("Failed to add to $failCount playlists")
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("PlayerViewModel", "Error adding song to playlists", e)
+                _uiState.value = _uiState.value.copy(
+                    status = LoadStatus.Error(e.message ?: "Unknown error")
+                )
+            }
+        }
+    }
+
+    fun isSongFavorite(songId: Long): Boolean {
+        return _uiState.value.likedSongIds.contains(songId)
+    }
+
+    fun isSongDownloaded(songId: Long): Boolean {
+        return _uiState.value.downloadedSongIds.contains(songId)
+    }
+
+    fun clearStatus() {
+        _uiState.value = _uiState.value.copy(status = LoadStatus.Init())
     }
 
     fun nextSong() {
