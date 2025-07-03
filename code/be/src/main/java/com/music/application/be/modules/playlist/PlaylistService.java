@@ -146,36 +146,44 @@ public class PlaylistService {
         return mapToDTO(playlist);
     }    // Read playlist with songs by ID
 
-    @Cacheable(value = "playlistWithSongs", key = "#id")
     public PlaylistDTO getPlaylistWithSongs(Long id) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist not found with id: " + id));
 
-        // Kiểm tra quyền truy cập
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User) {
-            User currentUser = (User) authentication.getPrincipal();
-            // Admin có thể xem tất cả, user có thể xem public playlist hoặc playlist của mình
-            if (!currentUser.getRole().equals(Role.ADMIN) && !playlist.getIsPublic() && !playlist.getCreatedBy().getId().equals(currentUser.getId())) {
-                throw new SecurityException("You do not have permission to view this playlist");
-            }
-        } else {
-            // Guest chỉ có thể xem public playlist
-            if (!playlist.getIsPublic()) {
-                throw new SecurityException("You do not have permission to view this playlist");
-            }
-        }
+        checkAccessPermission(playlist); //
 
-        // Lấy danh sách bài hát từ SongPlaylist
+        return getCachedPlaylistWithSongs(id); //
+    }
+
+    @Cacheable(value = "playlistWithSongs", key = "#id")
+    public PlaylistDTO getCachedPlaylistWithSongs(Long id) {
+        Playlist playlist = playlistRepository.findById(id).orElseThrow();
+
         List<SongPlaylist> songPlaylists = songPlaylistRepository.findByPlaylistIdOrderByAddedAtDesc(id);
         List<SongPlaylistDTO> songPlaylistDTOs = songPlaylists.stream()
                 .map(this::mapToSongPlaylistDTO)
                 .collect(Collectors.toList());
 
         PlaylistDTO dto = mapToDTO(playlist);
-        dto.setSongPlaylists(songPlaylistDTOs); // Thêm danh sách bài hát
+        dto.setSongPlaylists(songPlaylistDTOs);
         return dto;
-    }    // Read all with pagination
+    }
+
+    private void checkAccessPermission(Playlist playlist) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User user) {
+            if (!user.getRole().equals(Role.ADMIN)
+                    && !playlist.getIsPublic()
+                    && !playlist.getCreatedBy().getId().equals(user.getId())) {
+                throw new SecurityException("You do not have permission to view this playlist");
+            }
+        } else {
+            if (!playlist.getIsPublic()) {
+                throw new SecurityException("You do not have permission to view this playlist");
+            }
+        }
+    }
+    // Read all with pagination
 
     @Cacheable(
             value = "allPlaylists",
