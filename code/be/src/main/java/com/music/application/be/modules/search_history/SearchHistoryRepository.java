@@ -6,7 +6,6 @@ import java.util.List;
 public interface SearchHistoryRepository extends JpaRepository<SearchHistory, Long> {
 
     List<SearchHistory> findByUser(User user);
-
     void deleteByUser(User user);
 }
 
