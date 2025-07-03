@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 @Service
 public class PlaylistService {
 
+    private static final String DEFAULT_THUMBNAIL = "https://res.cloudinary.com/djuollv0e/image/upload/v1751565561/song_cover_vjjmta.png";
+
     @Autowired
     private PlaylistRepository playlistRepository;
 
@@ -50,7 +52,6 @@ public class PlaylistService {
     // Create playlist for user (no genre)
     @CacheEvict(value = "myPlaylists", allEntries = true)
     public PlaylistDTO createPlaylist(PlaylistRequestDTO playlistRequestDTO) {
-
         System.out.println("Cache for 'myPlaylists' evicted");
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -64,11 +65,11 @@ public class PlaylistService {
         playlist.setIsPublic(playlistRequestDTO.getIsPublic() != null ? playlistRequestDTO.getIsPublic() : false);
         playlist.setCreatedAt(LocalDateTime.now());
         playlist.setCreatedBy(user);
-        playlist.setThumbnail("https://i.pinimg.com/736x/ea/3e/f0/ea3ef0f3978bb09d4bfa40f86952cb43.jpg");
+        playlist.setThumbnail(DEFAULT_THUMBNAIL); // Set default thumbnail
 
         Playlist savedPlaylist = playlistRepository.save(playlist);
 
-        // Cập nhật thumbnail từ bài hát đầu tiên (nếu có)
+        // Update thumbnail from first song (if any songs are added later)
         updateThumbnail(savedPlaylist.getId());
 
         return mapToDTO(savedPlaylist);
