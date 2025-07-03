@@ -68,6 +68,16 @@ fun ChartScreen(
         viewModel.loadSongByTopViewCount()
     }
 
+    if(state.status is LoadStatus.Loading)
+    {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(
+                strokeWidth = 2.dp,
+                color = Color.White
+            )
+        }
+    }
+    else {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -159,16 +169,7 @@ fun ChartScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
             }
-            if(state.status is LoadStatus.Loading)
-            {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        strokeWidth = 2.dp,
-                        color = Color.White
-                    )
-                }
-            }
-            else {
+
 
                 // Danh sách bài hát
                 LazyColumn(modifier = Modifier.fillMaxSize()) {

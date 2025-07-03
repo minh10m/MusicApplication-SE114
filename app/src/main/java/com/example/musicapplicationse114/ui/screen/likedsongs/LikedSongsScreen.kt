@@ -93,152 +93,156 @@ fun LikedSongsScreen(
         }
     }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets
-            .safeDrawing
-            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 25.dp) // Điều chỉnh padding tổng thể
-        ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+    if (uiState.value.status is LoadStatus.Loading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(strokeWidth = 2.dp, color = Color.White)
+        }
+    } else {
+        Scaffold(
+            contentWindowInsets = WindowInsets
+                .safeDrawing
+                .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp, vertical = 25.dp) // Điều chỉnh padding tổng thể
             ) {
-                Column() {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBackIos,
-                            contentDescription = "Back",
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    if (!navController.popBackStack()) {
-                                        navController.navigate("library")
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column() {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBackIos,
+                                contentDescription = "Back",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                        if (!navController.popBackStack()) {
+                                            navController.navigate("library")
+                                        }
                                     }
-                                }
-                        )
+                            )
 
-                        Spacer(modifier = Modifier.width(26.dp))
+                            Spacer(modifier = Modifier.width(26.dp))
 
+                            Text(
+                                text = "Yêu thích",
+                                fontSize = 28.sp, // Tăng kích thước tiêu đề
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+
+                        }
+                        Spacer(modifier = Modifier.height(30.dp))
                         Text(
-                            text = "Yêu thích",
-                            fontSize = 28.sp, // Tăng kích thước tiêu đề
-                            fontWeight = FontWeight.Bold,
+                            text = "${uiState.value.likedSongs.size} bài hát yêu thích",
+                            fontSize = 14.sp,
+                            color = Color.LightGray,
+                            textAlign = TextAlign.Start
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Row {
+                    // Search Bar
+                    SearchBar(
+                        query = uiState.value.query,
+                        onQueryChange = {
+                            viewModel.updateQuery(it)
+                            viewModel.searchAllDebounced(it)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Icon(
+                        imageVector = Icons.Default.SwapVert,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
+
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                val displayedSongs = if (uiState.value.query.isNotBlank()) {
+                    likedSongsSearch
+                } else {
+                    likedSongs
+                }
+
+                if (uiState.value.status is LoadStatus.Loading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
                             color = Color.White
                         )
-
                     }
-                    Spacer(modifier = Modifier.height(30.dp))
-                    Text(
-                        text = "${uiState.value.likedSongs.size} bài hát yêu thích",
-                        fontSize = 14.sp,
-                        color = Color.LightGray,
-                        textAlign = TextAlign.Start
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(15.dp))
-
-            Row {
-                // Search Bar
-                SearchBar(
-                    query = uiState.value.query,
-                    onQueryChange = {
-                        viewModel.updateQuery(it)
-                        viewModel.searchAllDebounced(it)
-                    }
-                )
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Icon(
-                    imageVector = Icons.Default.SwapVert,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(40.dp)
-                )
-
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            val displayedSongs = if (uiState.value.query.isNotBlank()) {
-                likedSongsSearch
-            } else {
-                likedSongs
-            }
-
-            if(uiState.value.status is LoadStatus.Loading)
-            {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        strokeWidth = 2.dp,
-                        color = Color.White
-                    )
-                }
-            }
-            else {
-                LazyColumn(modifier = Modifier.fillMaxWidth().padding(bottom = 18.dp)) {
-                    itemsIndexed(displayedSongs) { index, song ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    sharedViewModel.setSongList(displayedSongs, index)
-                                    sharedViewModel.addRecentlyPlayed(song.id)
-                                    Log.d(
-                                        "LikedSongsScreen",
-                                        "Called addRecentlyPlayed for songId: ${song.id}"
-                                    )
-                                    globalPlayerController.play(song)
-                                    mainViewModel.setFullScreenPlayer(true)
-                                    navController.navigate(Screen.Player.createRoute(song.id))
-                                }
-                                .padding(vertical = 12.dp), // Tăng padding giữa các mục
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AsyncImage(
-                                model = song.thumbnail,
-                                contentDescription = song.title,
+                } else {
+                    LazyColumn(modifier = Modifier.fillMaxWidth().padding(bottom = 18.dp)) {
+                        itemsIndexed(displayedSongs) { index, song ->
+                            Row(
                                 modifier = Modifier
-                                    .size(50.dp) // Tăng kích thước hình ảnh
-                                    .clip(RoundedCornerShape(8.dp)), // Bo góc lớn hơn
-                                contentScale = ContentScale.Crop
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = song.title,
-                                    color = Color.White,
-                                    fontSize = 16.sp,
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        sharedViewModel.setSongList(displayedSongs, index)
+                                        sharedViewModel.addRecentlyPlayed(song.id)
+                                        Log.d(
+                                            "LikedSongsScreen",
+                                            "Called addRecentlyPlayed for songId: ${song.id}"
+                                        )
+                                        globalPlayerController.play(song)
+                                        mainViewModel.setFullScreenPlayer(true)
+                                        navController.navigate(Screen.Player.createRoute(song.id))
+                                    }
+                                    .padding(vertical = 12.dp), // Tăng padding giữa các mục
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AsyncImage(
+                                    model = song.thumbnail,
+                                    contentDescription = song.title,
+                                    modifier = Modifier
+                                        .size(50.dp) // Tăng kích thước hình ảnh
+                                        .clip(RoundedCornerShape(8.dp)), // Bo góc lớn hơn
+                                    contentScale = ContentScale.Crop
                                 )
-                                Text(
-                                    text = song.artistName,
-                                    color = Color.Gray,
-                                    fontSize = 14.sp,
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                )
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = song.title,
+                                        color = Color.White,
+                                        fontSize = 16.sp,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = song.artistName,
+                                        color = Color.Gray,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
 
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Icon(
-                                    imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "More",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(24.dp)
-                                )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = "More",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
                         }
                     }

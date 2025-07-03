@@ -54,6 +54,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.Screen
+import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import com.example.musicapplicationse114.ui.screen.artists.ArtistsFollowingViewModel
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
@@ -92,126 +93,136 @@ fun PlaylistScreen(
         }
     }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets
-            .safeDrawing
-            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 14.dp)
-        ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+    if (uiState.value.status is LoadStatus.Loading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(strokeWidth = 2.dp, color = Color.White)
+        }
+    } else {
+        Scaffold(
+            contentWindowInsets = WindowInsets
+                .safeDrawing
+                .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBackIos,
-                            contentDescription = "Back",
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    if (!navController.popBackStack()) {
-                                        navController.navigate("library")
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBackIos,
+                                contentDescription = "Back",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                        if (!navController.popBackStack()) {
+                                            navController.navigate("library")
+                                        }
                                     }
-                                }
-                        )
+                            )
 
-                        Spacer(modifier = Modifier.width(26.dp))
+                            Spacer(modifier = Modifier.width(26.dp))
 
+                            Text(
+                                text = "Playlists",
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(30.dp))
                         Text(
-                            text = "Playlists",
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            text = "${uiState.value.playlist.size} playlists",
+                            fontSize = 14.sp,
+                            color = Color.LightGray,
+                            textAlign = TextAlign.Start
                         )
                     }
-                    Spacer(modifier = Modifier.height(30.dp))
-                    Text(
-                        text = "${uiState.value.playlist.size} playlists",
-                        fontSize = 14.sp,
-                        color = Color.LightGray,
-                        textAlign = TextAlign.Start
+                }
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Row {
+                    // Search Bar
+                    SearchBar(
+                        query = uiState.value.query,
+                        onQueryChange = {
+                            viewModel.updateQuery(it)
+                            viewModel.searchAllDebounced(it)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                            .clickable {
+                                navController.navigate(Screen.CreatePlaylist.route)
+                            },
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(15.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                val displayedPlaylists = if (uiState.value.query.isNotBlank()) {
+                    uiState.value.searchPlaylist
+                } else {
+                    uiState.value.playlist
+                }
 
-            Row {
-                // Search Bar
-                SearchBar(
-                    query = uiState.value.query,
-                    onQueryChange = {
-                        viewModel.updateQuery(it)
-                        viewModel.searchAllDebounced(it)
-                    }
-                )
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(40.dp)
-                        .clickable {
-                            navController.navigate(Screen.CreatePlaylist.route)
-                        },
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            val displayedPlaylists = if (uiState.value.query.isNotBlank()) {
-                uiState.value.searchPlaylist
-            } else {
-                uiState.value.playlist
-            }
-
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(displayedPlaylists.chunked(2)) { rowPlaylists ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        rowPlaylists.forEach { playlist ->
-                            Column(
-                                modifier = Modifier
-                                    .width(180.dp)
-                                    .clickable {
-                                        navController.navigate(Screen.PlaylistSongs.createRoute(playlist.id))
-                                    },
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                AsyncImage(
-                                    model = playlist.thumbnail,
-                                    contentDescription = playlist.name,
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    items(displayedPlaylists.chunked(2)) { rowPlaylists ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            rowPlaylists.forEach { playlist ->
+                                Column(
                                     modifier = Modifier
-                                        .size(180.dp)
-                                        .clip(RectangleShape),
-                                    contentScale = ContentScale.Crop
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = playlist.name,
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Start
-                                )
+                                        .width(180.dp)
+                                        .clickable {
+                                            navController.navigate(
+                                                Screen.PlaylistSongs.createRoute(
+                                                    playlist.id
+                                                )
+                                            )
+                                        },
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    AsyncImage(
+                                        model = playlist.thumbnail,
+                                        contentDescription = playlist.name,
+                                        modifier = Modifier
+                                            .size(180.dp)
+                                            .clip(RectangleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = playlist.name,
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Start
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
                             }
-                            Spacer(modifier = Modifier.width(16.dp))
                         }
                     }
                 }

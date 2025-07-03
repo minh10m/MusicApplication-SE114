@@ -96,7 +96,10 @@ fun SearchSongAddIntoPlaylistScreen(
                     modifier = Modifier
                         .size(28.dp)
                         .clickable {
-                            navController.previousBackStackEntry?.savedStateHandle?.set("reload", true)
+                            navController.previousBackStackEntry?.savedStateHandle?.set(
+                                "reload",
+                                true
+                            )
                             navController.popBackStack()
 
                         }
@@ -112,83 +115,94 @@ fun SearchSongAddIntoPlaylistScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            val displayedSongs = if (uiState.query.isNotBlank()) {
-                uiState.songsSearch
+            if (uiState.status is LoadStatus.Loading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(strokeWidth = 2.dp, color = Color.White)
+                }
             } else {
-                uiState.songs
-            }
+                Spacer(modifier = Modifier.height(16.dp))
+                val displayedSongs = if (uiState.query.isNotBlank()) {
+                    uiState.songsSearch
+                } else {
+                    uiState.songs
+                }
 
-            if(displayedSongs == uiState.songs)
-            {
-                Text(
-                    text = "Gợi ý bài hát",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
+                if (displayedSongs == uiState.songs) {
+                    Text(
+                        text = "Gợi ý bài hát",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
 
 //            Spacer(modifier = Modifier.height(20.dp))
 
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                itemsIndexed(displayedSongs) { index, song ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                sharedViewModel.setSongList(displayedSongs, index)
-                                sharedViewModel.addRecentlyPlayed(song.id)
-                                Log.d("SearchSongAddIntoPlaylistScreen", "Called addRecentlyPlayed for songId: ${song.id}")
-                                globalPlayerController.play(song)
-                                mainViewModel.setFullScreenPlayer(true)
-                                navController.navigate(Screen.Player.createRoute(song.id))
-                            }
-                            .padding(vertical = 12.dp), // Tăng padding giữa các mục
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val isAdded = uiState.addedSongIds.contains(song.id)
-                        AsyncImage(
-                            model = song.thumbnail,
-                            contentDescription = song.title,
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    itemsIndexed(displayedSongs) { index, song ->
+                        Row(
                             modifier = Modifier
-                                .size(50.dp) // Tăng kích thước hình ảnh
-                                .clip(RoundedCornerShape(8.dp)), // Bo góc lớn hơn
-                            contentScale = ContentScale.Crop
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = song.title,
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = song.artistName,
-                                color = Color.Gray,
-                                fontSize = 14.sp,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(
-                                imageVector = if (isAdded) Icons.Default.Check else Icons.Default.Add,
-                                contentDescription = if (isAdded) "Added" else "Add",
-                                tint = if (isAdded) Color.Green else Color.White,
+                                .fillMaxWidth()
+                                .clickable {
+                                    sharedViewModel.setSongList(displayedSongs, index)
+                                    sharedViewModel.addRecentlyPlayed(song.id)
+                                    Log.d(
+                                        "SearchSongAddIntoPlaylistScreen",
+                                        "Called addRecentlyPlayed for songId: ${song.id}"
+                                    )
+                                    globalPlayerController.play(song)
+                                    mainViewModel.setFullScreenPlayer(true)
+                                    navController.navigate(Screen.Player.createRoute(song.id))
+                                }
+                                .padding(vertical = 12.dp), // Tăng padding giữa các mục
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val isAdded = uiState.addedSongIds.contains(song.id)
+                            AsyncImage(
+                                model = song.thumbnail,
+                                contentDescription = song.title,
                                 modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable {
-                                        if (!isAdded) {
-                                            viewModel.addSongToPlaylist(song.id, uiState.playlistId)
-                                        }
-                                    }
+                                    .size(50.dp) // Tăng kích thước hình ảnh
+                                    .clip(RoundedCornerShape(8.dp)), // Bo góc lớn hơn
+                                contentScale = ContentScale.Crop
                             )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = song.title,
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = song.artistName,
+                                    color = Color.Gray,
+                                    fontSize = 14.sp,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = if (isAdded) Icons.Default.Check else Icons.Default.Add,
+                                    contentDescription = if (isAdded) "Added" else "Add",
+                                    tint = if (isAdded) Color.Green else Color.White,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable {
+                                            if (!isAdded) {
+                                                viewModel.addSongToPlaylist(
+                                                    song.id,
+                                                    uiState.playlistId
+                                                )
+                                            }
+                                        }
+                                )
+                            }
                         }
                     }
                 }
