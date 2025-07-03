@@ -38,7 +38,7 @@ public class SongPlaylistService {
     private PlaylistService playlistService; // Thêm dependency
 
     // Add song to playlist
-    @CacheEvict(value = "songs", key = "#requestDTO.songId")
+//    @CacheEvict(value = "songs", key = "#requestDTO.songId")
     public SongPlaylistDTO addSongToPlaylist(SongPlaylistRequestDTO requestDTO) {
         Song song = songRepository.findById(requestDTO.getSongId())
                 .orElseThrow(() -> new EntityNotFoundException("Song not found with id: " + requestDTO.getSongId()));
@@ -70,11 +70,11 @@ public class SongPlaylistService {
     }
 
     // Update song or playlist in SongPlaylist
-    @CacheEvict(value = {
-            "playlists", "searchedPlaylists",
-            "playlistWithSongs",
-            "songs", "songsByGenre", "songsByArtist", "topSongs"
-    }, allEntries = true)
+//    @CacheEvict(value = {
+//            "playlists", "searchedPlaylists",
+//            "playlistWithSongs",
+//            "songs", "songsByGenre", "songsByArtist", "topSongs"
+//    }, allEntries = true)
 
     public SongPlaylistDTO updateSongPlaylist(Long id, SongPlaylistRequestDTO requestDTO) {
         SongPlaylist songPlaylist = songPlaylistRepository.findById(id)
@@ -116,11 +116,11 @@ public class SongPlaylistService {
     }
 
     // Remove song from playlist
-    @CacheEvict(value = {
-            "playlists", "searchedPlaylists",
-            "playlistWithSongs",
-            "songs", "songsByGenre", "songsByArtist", "topSongs"
-    }, allEntries = true)
+//    @CacheEvict(value = {
+//            "playlists", "searchedPlaylists",
+//            "playlistWithSongs",
+//            "songs", "songsByGenre", "songsByArtist", "topSongs"
+//    }, allEntries = true)
     public void removeSongFromPlaylist(Long id) {
         SongPlaylist songPlaylist = songPlaylistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("SongPlaylist not found with id: " + id));
@@ -138,7 +138,7 @@ public class SongPlaylistService {
     }
 
     // Get all song playlists với pagination để admin theo dõi dữ liệu
-    @Cacheable(value = "allSongPlaylists", key = "'page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize")
+//    @Cacheable(value = "allSongPlaylists", key = "'page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize")
     public PagedResponse<SongPlaylistDTO> getAllSongPlaylists(Pageable pageable) {
         Page<SongPlaylist> page = songPlaylistRepository.findAll(pageable);
         List<SongPlaylistDTO> content = page.getContent()

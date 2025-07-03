@@ -64,6 +64,7 @@ public class PlaylistService {
         playlist.setIsPublic(playlistRequestDTO.getIsPublic() != null ? playlistRequestDTO.getIsPublic() : false);
         playlist.setCreatedAt(LocalDateTime.now());
         playlist.setCreatedBy(user);
+        playlist.setThumbnail("https://i.pinimg.com/736x/ea/3e/f0/ea3ef0f3978bb09d4bfa40f86952cb43.jpg");
 
         Playlist savedPlaylist = playlistRepository.save(playlist);
 
@@ -377,10 +378,6 @@ public class PlaylistService {
     }
 
     // Get user's own playlists
-    @Cacheable(
-            value = "myPlaylists",
-            key = "'user-' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().id + '-page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize"
-    )
     public PagedResponse<PlaylistDTO> getMyPlaylists(Pageable pageable) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User user)) {
