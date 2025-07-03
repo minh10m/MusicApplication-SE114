@@ -203,10 +203,10 @@ fun EditProfileScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Tap to change avatar", color = Color.LightGray, fontSize = 15.sp)
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 // Text fields
-                EditTextField("Username", username) { username = it }
+//                EditTextField("Username", username) { username = it }
                 Spacer(modifier = Modifier.height(12.dp))
                 EditTextField("Email", email) { email = it }
                 Spacer(modifier = Modifier.height(12.dp))
