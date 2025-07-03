@@ -58,6 +58,7 @@ import com.example.musicapplicationse114.ui.screen.forget_password.ForgetPasswor
 import com.example.musicapplicationse114.ui.screen.forget_password.ForgetPasswordViewModel
 import com.example.musicapplicationse114.ui.screen.profile.EditProfileScreen
 import com.example.musicapplicationse114.ui.screen.profile.ProfileScreen
+import com.example.musicapplicationse114.ui.screen.profile.ProfileViewModel
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 
@@ -111,6 +112,7 @@ fun Navigation() {
     val sharedViewModel: PlayerSharedViewModel = hiltViewModel()
     val globalPlayerController = sharedViewModel.player
     val playerState by globalPlayerController.state.collectAsState()
+    val profileViewModel : ProfileViewModel = hiltViewModel()
 
     val context = LocalContext.current
     LaunchedEffect(mainState.value.error) {

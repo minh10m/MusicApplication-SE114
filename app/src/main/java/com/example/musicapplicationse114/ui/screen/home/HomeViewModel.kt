@@ -307,6 +307,46 @@ class HomeViewModel @Inject constructor(
         return _uiState.value.timeOfDay
     }
 
+
+
+    fun loadProfile(forceRefresh: Boolean = false) {
+        viewModelScope.launch {
+            if (!forceRefresh && _uiState.value.avatar.isNotEmpty()) {
+                Log.d("HomeViewModel", "Using cached profile")
+                return@launch
+            }
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+            val token = tokenManager?.getToken()
+            if (api != null && !token.isNullOrBlank()) {
+                try {
+                    val response = api.getMyProfile(token)
+                    if (response.isSuccessful) {
+                        val profile = response.body()
+                        _uiState.value = _uiState.value.copy(
+                            avatar = profile?.avatar ?: "",
+                            username = profile?.username ?: tokenManager?.getUserName() ?: "",
+                            status = LoadStatus.Success()
+                        )
+                        Log.d("HomeViewModel", "Profile loaded: ${profile?.username}, avatar: ${profile?.avatar}")
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            status = LoadStatus.Error("Failed to load profile")
+                        )
+                    }
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(
+                        status = LoadStatus.Error(e.message ?: "Unknown error")
+                    )
+                    Log.e("HomeViewModel", "Failed to load profile: ${e.message}")
+                }
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    status = LoadStatus.Error("No token or API")
+                )
+            }
+        }
+    }
+
     override fun clearSessionCache() {
         _uiState.value = HomeUiState()
     }
@@ -316,7 +356,8 @@ class HomeViewModel @Inject constructor(
                 _uiState.value.albums.isNotEmpty() ||
                 _uiState.value.artists.isNotEmpty() ||
                 _uiState.value.favoriteSongs.isNotEmpty() ||
-                _uiState.value.downloadSongs.isNotEmpty()
+                _uiState.value.downloadSongs.isNotEmpty() ||
+                _uiState.value.avatar.isNotEmpty()
     }
 
 }

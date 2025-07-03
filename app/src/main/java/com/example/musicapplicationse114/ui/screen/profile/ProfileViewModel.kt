@@ -2,6 +2,7 @@ package com.example.musicapplicationse114.ui.screen.profile
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapplicationse114.auth.TokenManager
@@ -33,6 +34,9 @@ class ProfileViewModel @Inject constructor(
     private val _loadState = MutableStateFlow<LoadState>(LoadState.Idle)
     val loadState = _loadState.asStateFlow()
 
+    private val _updateState = MutableStateFlow<LoadState>(LoadState.Idle)
+    val updateState = _updateState.asStateFlow()
+
     private val _logoutState = MutableStateFlow<LoadState>(LoadState.Idle)
     val logoutState = _logoutState.asStateFlow()
 
@@ -41,6 +45,7 @@ class ProfileViewModel @Inject constructor(
             if (!forceRefresh && _profile.value != null) {
                 return@launch
             }
+            _loadState.value = LoadState.Loading
             try {
                 val token = tokenManager.getToken()
                 if (token != null) {
@@ -56,6 +61,50 @@ class ProfileViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _loadState.value = LoadState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun updateProfile(
+        username: String,
+        email: String,
+        phone: String,
+        avatarUri: Uri? = null,
+        context: Context,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            _updateState.value = LoadState.Loading
+            try {
+                val token = tokenManager.getToken() ?: run {
+                    _updateState.value = LoadState.Error("User not authenticated")
+                    return@launch
+                }
+
+                val userUpdateDTO = UserUpdateDTO(username, email, phone)
+                val gson = Gson()
+                val json = gson.toJson(userUpdateDTO)
+                val profilePart = json.toRequestBody("application/json".toMediaType())
+
+                val avatarPart = avatarUri?.let {
+                    val inputStream: InputStream? = context.contentResolver.openInputStream(it)
+                    val bytes = inputStream?.readBytes() ?: byteArrayOf()
+                    val requestBody = bytes.toRequestBody("image/*".toMediaType())
+                    MultipartBody.Part.createFormData("avatarFile", "avatar.jpg", requestBody)
+                }
+
+                val response = api.updateMyProfile(token, profilePart, avatarPart)
+                if (response.isSuccessful) {
+                    _profile.value = response.body()
+                    _updateState.value = LoadState.Success
+                    loadProfile(forceRefresh = true) // Reload profile để đảm bảo dữ liệu mới nhất
+                    onSuccess()
+                } else {
+                    _updateState.value = LoadState.Error("Failed to update profile: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                _updateState.value = LoadState.Error(e.message ?: "Unknown error")
+                Log.e("ProfileViewModel", "Error updating profile: ${e.message}")
             }
         }
     }
@@ -80,45 +129,6 @@ class ProfileViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _logoutState.value = LoadState.Error(e.message ?: "Unknown error")
-            }
-        }
-    }
-
-    fun updateProfile(
-        username: String,
-        email: String,
-        phone: String,
-        avatarUri: Uri?=null,
-        context: Context,
-        onSuccess: () -> Unit
-    ) {
-        viewModelScope.launch {
-            try {
-                val token = tokenManager.getToken() ?: return@launch
-
-                // Convert UserUpdateDTO to JSON string and create RequestBody
-                val userUpdateDTO = UserUpdateDTO(username, email, phone)
-                val gson = Gson()
-                val json = gson.toJson(userUpdateDTO)
-                val profilePart = json.toRequestBody("application/json".toMediaType())
-
-                // Convert avatarUri to MultipartBody.Part
-                val avatarPart = avatarUri?.let {
-                    val inputStream: InputStream? = context.contentResolver.openInputStream(it)
-                    val bytes = inputStream?.readBytes() ?: byteArrayOf()
-                    val requestBody = bytes.toRequestBody("image/*".toMediaType())
-                    MultipartBody.Part.createFormData("avatarFile", "avatar.jpg", requestBody)
-                }
-
-                val response = api.updateMyProfile(token, profilePart, avatarPart)
-                if (response.isSuccessful) {
-                    _profile.value = response.body()
-                    onSuccess()
-                } else {
-                    // Log error or handle it properly
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
         }
     }

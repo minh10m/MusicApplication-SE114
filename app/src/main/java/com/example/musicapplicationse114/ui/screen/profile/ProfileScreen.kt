@@ -19,8 +19,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material3.CircularProgressIndicator
@@ -69,7 +71,7 @@ fun ProfileScreen(
     LaunchedEffect(logoutState) {
         if (logoutState is LoadState.Success) {
             navController.navigate("login") {
-                popUpTo(0) { inclusive = true } // Xóa toàn bộ navigation stack
+                popUpTo(0) { inclusive = true }
             }
         }
     }
@@ -82,7 +84,7 @@ fun ProfileScreen(
                     .fillMaxWidth()
                     .background(Color.Transparent)
             ) {
-//                NavigationBar(navController = navController) { }
+                // NavigationBar(navController = navController) { }
             }
         }
     ) { innerPadding ->
@@ -94,24 +96,44 @@ fun ProfileScreen(
                         .padding(innerPadding),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = Color.White)
+                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp)
                 }
             }
             is LoadState.Error -> {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center
+                        .padding(innerPadding)
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Text(
                         (loadState as LoadState.Error).message,
-                        color = Color.Red
+                        color = Color.Red,
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Retry",
+                        modifier = Modifier
+                            .clickable { viewModel.loadProfile(forceRefresh = true) }
+                            .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        color = Color.White,
+                        fontSize = 16.sp
                     )
                 }
             }
             is LoadState.Success -> {
-                profile?.let { ProfileContent(it, innerPadding, viewModel, navController) }
+                profile?.let {
+                    ProfileContent(
+                        profile = it,
+                        innerPadding = innerPadding,
+                        viewModel = viewModel,
+                        navController = navController
+                    )
+                }
             }
             else -> Unit
         }
@@ -119,140 +141,148 @@ fun ProfileScreen(
 }
 
 @Composable
-fun ProfileContent(profile: ProfileDto, innerPadding: PaddingValues, viewModel: ProfileViewModel, navController: NavController) {
-    LazyColumn(
+fun ProfileContent(
+    profile: ProfileDto,
+    innerPadding: PaddingValues,
+    viewModel: ProfileViewModel,
+    navController: NavController
+) {
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
             .padding(innerPadding)
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        contentPadding = PaddingValues(top = 24.dp, bottom = 180.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.Top
     ) {
-        item {
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left: Back button + Title
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = {
-                            navController.navigate("home") {
-                                popUpTo("home") { inclusive = true }
-                            }
+                IconButton(
+                    onClick = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Profile.route) { inclusive = true }
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
                     }
-
-                    Spacer(modifier = Modifier.width(2.dp))
-
-                    Text(
-                        "My Profile",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBackIos,
+                        contentDescription = "Back",
+                        tint = Color.White
                     )
                 }
 
-                // Right: Edit button
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.DarkGray)
-                        .clickable {
-                            navController.navigate(Screen.EditProfile.route)
-
-                        }
-                        .padding(horizontal = 20.dp, vertical = 10.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            "Edit",
-                            color = Color.White,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
+                Text(
+                    "My Profile",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AsyncImage(
-                model = profile.avatar,
-                contentDescription = "Avatar",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                profile.username,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            ProfileInfoRow(label = "Email", value = profile.email)
-            ProfileInfoRow(label = "Phone Number", value = profile.phone)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                ProfileStatBox(icon = Icons.Default.Favorite, value = profile.favoriteSongCount.toString(), label = "songs")
-                ProfileStatBox(icon = Icons.Default.QueueMusic, value = profile.playlistCount.toString(), label = "playlists")
-                ProfileStatBox(icon = Icons.Default.Group, value = profile.followedArtistCount.toString(), label = "artists")
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(Color.DarkGray)
                     .clickable {
-                        viewModel.logout()
+                        navController.navigate(Screen.EditProfile.route)
                     }
-                    .padding(vertical = 16.dp),
-                contentAlignment = Alignment.Center
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
-                Text(
-                    "Sign Out",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Edit", color = Color.White, fontSize = 13.sp)
+                }
             }
         }
+
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        AsyncImage(
+            model = profile.avatar,
+            contentDescription = "Avatar",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(110.dp)
+                .clip(CircleShape)
+                .background(Color.Gray)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            profile.username,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        ProfileInfoRow(label = "Email", value = profile.email)
+        ProfileInfoRow(label = "Phone Number", value = profile.phone)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            ProfileStatBox(icon = Icons.Default.FavoriteBorder, value = profile.favoriteSongCount.toString(), label = "songs", onClick = {
+                navController.navigate(Screen.LikedSong.route)
+            })
+            ProfileStatBox(icon = Icons.Default.QueueMusic, value = profile.playlistCount.toString(), label = "playlists",
+                onClick = {
+                    navController.navigate(Screen.Playlist.route)
+                })
+            ProfileStatBox(icon = Icons.Default.Group, value = profile.followedArtistCount.toString(), label = "artists",
+                onClick = {
+                    navController.navigate(Screen.ArtistFollow.route)
+                }
+                    )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Box(
+            modifier = Modifier
+                .width(150.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color.DarkGray)
+                .clickable {
+                    viewModel.logout()
+                }
+                .padding(vertical = 16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "Sign Out",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(150.dp))
     }
 }
+
 
 
 
@@ -260,26 +290,28 @@ fun ProfileContent(profile: ProfileDto, innerPadding: PaddingValues, viewModel: 
 fun ProfileStatBox(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     value: String,
-    label: String
+    label: String,
+    onClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .background(Color(0xFF1A1A1A), RoundedCornerShape(12.dp))
-            .padding(12.dp)
-            .width(90.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(10.dp)
+            .clickable { onClick() }
+            .width(95.dp),
+        horizontalAlignment = Alignment.Start
     ) {
         Icon(
             icon,
             contentDescription = null,
             tint = Color.White.copy(alpha = 0.9f),
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(28.dp)
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             "$value $label",
-            color = Color.White,
-            fontSize = 13.sp,
+            color = Color.LightGray,
+            fontSize = 14.sp,
             textAlign = TextAlign.Center
         )
     }
@@ -295,13 +327,13 @@ fun ProfileInfoRow(label: String, value: String) {
         Text(
             label,
             fontWeight = FontWeight.SemiBold,
-            fontSize = 13.sp,
-            color = Color.Gray
+            fontSize = 16.sp,
+            color = Color.White
         )
         Text(
             value,
-            fontSize = 13.sp,
-            color = Color.White
+            fontSize = 14.sp,
+            color = Color.LightGray
         )
     }
 }

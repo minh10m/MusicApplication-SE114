@@ -188,61 +188,63 @@ fun Home(
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    "ID bài hát yêu thích",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(start = 16.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 8.dp)
-                ) {
-                    items(state.favoriteSongs.toList()) { id ->
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .background(Color.DarkGray, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            Text(text = "ID: ${id.id}", color = Color.White)
-                        }
-                    }
-                }
-            }
+//            item {
+//                Spacer(modifier = Modifier.height(24.dp))
+//                Text(
+//                    "ID bài hát yêu thích",
+//                    color = Color.White,
+//                    fontSize = 16.sp,
+//                    fontWeight = FontWeight.SemiBold,
+//                    modifier = Modifier.padding(start = 16.dp)
+//                )
+//                Spacer(modifier = Modifier.height(8.dp))
+//                LazyRow(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(start = 8.dp)
+//                ) {
+//                    items(state.favoriteSongs.toList()) { id ->
+//                        Box(
+//                            modifier = Modifier
+//                                .padding(end = 8.dp)
+//                                .background(Color.DarkGray, RoundedCornerShape(8.dp))
+//                                .padding(horizontal = 16.dp, vertical = 8.dp)
+//                        ) {
+//                            Text(text = "ID: ${id.id}", color = Color.White)
+//                        }
+//                    }
+//                }
+//            }
 
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    "ID bài hát đã tải",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(start = 16.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 8.dp)
-                ) {
-                    items(state.downloadSongs.toList()) { id ->
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .background(Color.DarkGray, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            Text(text = "ID: ${id.id}", color = Color.White)
-                        }
-                    }
-                }
-            }
+//            item {
+//                Spacer(modifier = Modifier.height(24.dp))
+//                Text(
+//                    "ID bài hát đã tải",
+//                    color = Color.White,
+//                    fontSize = 16.sp,
+//                    fontWeight = FontWeight.SemiBold,
+//                    modifier = Modifier.padding(start = 16.dp)
+//                )
+//                Spacer(modifier = Modifier.height(8.dp))
+//                LazyRow(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(start = 8.dp)
+//                ) {
+//                    items(state.downloadSongs.toList()) { id ->
+//                        Box(
+//                            modifier = Modifier
+//                                .padding(end = 8.dp)
+//                                .background(Color.DarkGray, RoundedCornerShape(8.dp))
+//                                .padding(horizontal = 16.dp, vertical = 8.dp)
+//                        ) {
+//                            Text(text = "ID: ${id.id}", color = Color.White)
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
         }
     }
 }
@@ -687,10 +689,11 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         viewModel.setTimeOfDay()
         viewModel.updateUserName()
+        viewModel.loadProfile()
         viewModel.loadAlbum()
         viewModel.loadSong()
-        viewModel.loadDownloadedSong()
-        viewModel.loadFavoriteSong()
+//        viewModel.loadDownloadedSong()
+//        viewModel.loadFavoriteSong()
         viewModel.loadArtist()
         Log.d("HomeScreen", "Username: ${viewModel.getUserName()}, TimeOfDay: ${viewModel.getTimeOfDay()}")
     }
@@ -748,13 +751,18 @@ fun HomeScreen(
                         }
                 )
                 Spacer(modifier = Modifier.width(15.dp))
-                Image(
-                    painter = painterResource(id = R.drawable.logan),
-                    contentDescription = "Profile",
+                AsyncImage(
+                    model = state.avatar,
+                    contentDescription = "Profile Avatar",
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(50.dp)
+                        .clip(CircleShape)
+                        .background(Color.Gray)
                         .clickable {
-                            navController.navigate(Screen.Profile.route)
+                            navController.navigate(Screen.Profile.route) {
+                                popUpTo(Screen.Home.route) { inclusive = false }
+                            }
                         }
                 )
             }

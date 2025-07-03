@@ -96,7 +96,7 @@ fun PlaylistScreen(
 
     LaunchedEffect(uiState.value.status) {
         if (uiState.value.status is LoadStatus.Success) {
-            Toast.makeText(context, uiState.value.success, Toast.LENGTH_SHORT).show()
+//            Toast.makeText(context, uiState.value.success, Toast.LENGTH_SHORT).show()
         } else if (uiState.value.status is LoadStatus.Error) {
             Toast.makeText(context, uiState.value.error, Toast.LENGTH_SHORT).show()
         }
@@ -254,7 +254,6 @@ fun PlaylistScreen(
                                             modifier = Modifier
                                                 .align(Alignment.TopEnd)
                                                 .size(24.dp)
-                                                .background(Color.Black.copy(alpha = 0.6f), CircleShape)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Close,

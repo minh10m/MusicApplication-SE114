@@ -197,7 +197,10 @@ private fun EmptyNotifications() {
 @Composable
 private fun CenterLoadingIndicator() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(
+            color = Color.White,
+            strokeWidth = 2.dp
+        )
     }
 }
 
