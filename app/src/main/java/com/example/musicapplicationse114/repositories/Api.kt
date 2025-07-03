@@ -7,6 +7,10 @@ import com.example.musicapplicationse114.model.ArtistPageResponse
 import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.AuthenticationResponse
 import com.example.musicapplicationse114.model.ChangePasswordRequest
+import com.example.musicapplicationse114.model.CommentActionResponseDTO
+import com.example.musicapplicationse114.model.CommentPageResponse
+import com.example.musicapplicationse114.model.CommentRequest
+import com.example.musicapplicationse114.model.CommentResponse
 import com.example.musicapplicationse114.model.DownloadedSongPageResponse
 import com.example.musicapplicationse114.model.DownloadedSongResponse
 import com.example.musicapplicationse114.model.FavoriteSongPageResponse
@@ -23,6 +27,7 @@ import com.example.musicapplicationse114.model.PlaylistResponse
 import com.example.musicapplicationse114.model.RecentlyPlayedPageResponse
 import com.example.musicapplicationse114.model.SongPageResponse
 import com.example.musicapplicationse114.model.SongPlaylist
+import com.example.musicapplicationse114.model.SongPlaylistDTO
 import com.example.musicapplicationse114.model.SongPlaylistRequest
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.model.SongResponseDTO
@@ -313,6 +318,20 @@ interface Api {
         @Body request: SongPlaylistRequest
     ): Response<SongPlaylist>
 
+    // Get song-playlist relationship by songId and playlistId
+    @GET("/api/song-playlists/find")
+    suspend fun getSongPlaylistRelation(
+        @Header("Authorization") token: String,
+        @Query("songId") songId: Long,
+        @Query("playlistId") playlistId: Long
+    ): Response<SongPlaylist>
+
+    @DELETE("/api/song-playlists/{id}")
+    suspend fun deleteSongPlaylistById(
+        @Header("Authorization") token: String,
+        @Path("id") songPlaylistId: Long
+    ): Response<Void>
+
     @GET("/api/playlists/{playlistId}/with-songs")
     suspend fun getPlaylistWithSongs(
         @Header("Authorization") token: String,
@@ -345,4 +364,61 @@ interface Api {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ) : Response<SongPageResponse>
+
+    //comment endpoints in song controller - require auth headers
+    @GET("/api/songs/{songId}/comments")
+    suspend fun getCommentsBySongId(
+        @Header("Authorization") token: String,
+        @Path("songId") songId: Long
+    ): Response<List<CommentResponse>>
+
+    @POST("/api/songs/{songId}/comments")
+    suspend fun addComment(
+        @Header("Authorization") token: String,
+        @Path("songId") songId: Long,
+        @Body request: CommentRequest
+    ): Response<CommentResponse>
+
+    @DELETE("/api/songs/comments/{commentId}")
+    suspend fun deleteComment(
+        @Header("Authorization") token: String,
+        @Path("commentId") commentId: Long
+    ): Response<ResponseBody>
+
+    @POST("/api/songs/{songId}/comments/{commentId}/like")
+    suspend fun likeComment(
+        @Header("Authorization") token: String,
+        @Path("songId") songId: Long,
+        @Path("commentId") commentId: Long,
+        @Query("userId") userId: Long
+    ): Response<CommentActionResponseDTO>
+
+    @DELETE("/api/songs/{songId}/comments/{commentId}/unlike")
+    suspend fun unlikeComment(
+        @Header("Authorization") token: String,
+        @Path("songId") songId: Long,
+        @Path("commentId") commentId: Long,
+        @Query("userId") userId: Long
+    ): Response<CommentActionResponseDTO>
+
+    @GET("/api/comments/{commentId}/like-status")
+    suspend fun getLikeStatus(
+        @Header("Authorization") token: String,
+        @Path("commentId") commentId: Long
+    ): Response<Boolean>
+
+    // Get user's liked comments for a song
+    @GET("/api/songs/{songId}/liked-comments")
+    suspend fun getUserLikedComments(
+        @Header("Authorization") token: String,
+        @Path("songId") songId: Long,
+        @Query("userId") userId: Long
+    ): Response<List<Long>>
+
+    // Share song endpoint - require auth
+    @GET("/api/songs/{songId}/share")
+    suspend fun shareSong(
+        @Header("Authorization") token: String,
+        @Path("songId") songId: Long
+    ): Response<ResponseBody>
 }
