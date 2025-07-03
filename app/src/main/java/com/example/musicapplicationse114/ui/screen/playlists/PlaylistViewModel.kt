@@ -20,7 +20,9 @@ data class PlayListUiState(
     val searchPlaylist: List<PlaylistResponse> = emptyList(),
     val playlistCount : Int = 0,
     val status : LoadStatus = LoadStatus.Init(),
-    val query : String = ""
+    val query : String = "",
+    val success : String = "",
+    val error : String = ""
 )
 
 @HiltViewModel
@@ -34,6 +36,13 @@ class PlayListViewModel @Inject constructor(
 
     private var searchJob: Job? = null
 
+    fun updateSuccess(success: String) {
+        _uiState.value = _uiState.value.copy(success = success)
+    }
+
+    fun updateError(error: String) {
+        _uiState.value = _uiState.value.copy(error = error)
+    }
     fun loadPlaylist() {
         viewModelScope.launch {
             try {
@@ -61,6 +70,42 @@ class PlayListViewModel @Inject constructor(
         }
     }
 
+    fun deletePlaylist(playlistId: Long) {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+                val token = tokenManager?.getToken()
+                if(api != null && !token.isNullOrBlank())
+                {
+                    val result = api.deletePlaylist(token, playlistId)
+                    if(result.isSuccessful)
+                    {
+                        _uiState.value = _uiState.value.copy(status = LoadStatus.Success())
+                        loadPlaylist()
+                        updateSuccess("Xoá playlist thành công")
+                    }
+                    else
+                    {
+                        _uiState.value = _uiState.value.copy(status = LoadStatus.Error("API error: ${result.code()}"))
+                        updateError("Xoá playlist thất bại")
+                    }
+
+                }
+                else
+                {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có API hoặc token"))
+                    updateError("Xoá playlist thất bại")
+                }
+            }
+            catch (e: Exception)
+            {
+                Log.e("PlaylistViewModel", "Error: ${e.message}")
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
+                updateError("XLỗi máy chủ, vui lòng thử lại")
+            }
+        }
+
+    }
     fun searchAllDebounced(query: String, page: Int = 0, size: Int = 20) {
         searchJob?.cancel()
         searchJob = viewModelScope.launch {

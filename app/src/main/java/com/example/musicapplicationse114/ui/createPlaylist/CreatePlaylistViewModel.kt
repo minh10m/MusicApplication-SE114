@@ -17,7 +17,9 @@ data class CreatePlaylistUiState(
     val name : String = "",
     val description : String = "",
     val isPublic : Boolean = false,
-    val status : LoadStatus = LoadStatus.Init()
+    val status : LoadStatus = LoadStatus.Init(),
+    val successMessage : String = "",
+    val error : String = ""
 )
 
 @HiltViewModel
@@ -32,12 +34,23 @@ class CreatePlaylistViewModel @Inject constructor(
         _uiState.value = uiState.value.copy(name = name)
     }
 
+    fun updateSuccessMessage(message : String) {
+        _uiState.value = uiState.value.copy(successMessage = message)
+    }
+
+    fun updateError(error : String) {
+        _uiState.value = uiState.value.copy(error = error)
+    }
     fun updateDescription(description : String) {
         _uiState.value = uiState.value.copy(description = description)
     }
 
     fun updateIsPublic(isPublic : Boolean) {
         _uiState.value = uiState.value.copy(isPublic = isPublic)
+    }
+
+    fun reset() {
+        _uiState.value = _uiState.value.copy(status = LoadStatus.Init())
     }
 
     fun createPlaylist() {
@@ -50,23 +63,29 @@ class CreatePlaylistViewModel @Inject constructor(
                         uiState.value.name,
                         uiState.value.description,
                         uiState.value.isPublic))
-                    _uiState.value = _uiState.value.copy(status = LoadStatus.Success())
                     if(response.isSuccessful)
                     {
                         Log.d("CreatePlaylistViewModel", "Playlist created successfully")
+                        updateSuccessMessage("Tạo playlist thành công")
+                        _uiState.value = _uiState.value.copy(status = LoadStatus.Success())
+
                     }
                     else{
                         Log.e("CreatePlaylistViewModel", "Failed to create playlist: ${response.code()}")
+                        updateError("Tạo playlist thất bại")
                     }
                 }
                 else {
-                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Token hoặc API null"))
+                    _uiState.value =
+                        _uiState.value.copy(status = LoadStatus.Error("Token hoặc API null"))
                     Log.e("CreatePlaylistViewModel", "Token hoặc API null")
-                    }
+                    updateError("Tạo playlist thất bại")
+                }
                 }
             catch (e : Exception) {
                     _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message ?: "Unknown error"))
                     Log.e("CreatePlaylistViewModel", "Failed to create playlist: ${e.message}")
+                    updateError("Tạo playlist thất bại")
             }
         }
     }

@@ -24,7 +24,10 @@ data class PlayerUiState(
     val currentIndex: Int = -1,
     val likedSongIds: Set<Long> = emptySet(),
     val downloadedSongIds: Set<Long> = emptySet(),
-    val status: LoadStatus = LoadStatus.Init()
+    val status: LoadStatus = LoadStatus.Init(),
+    val successMes : String = "",
+    val errorMes : String = "",
+    val toggle : Boolean = false
 )
 
 @HiltViewModel
@@ -37,6 +40,14 @@ class PlayerViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     private var loadJob: Job? = null
+
+    fun updateSuccessMes(mes: String) {
+        _uiState.value = _uiState.value.copy(successMes = mes)
+    }
+
+    fun updateErrorMes(mes: String) {
+        _uiState.value = _uiState.value.copy(errorMes = mes)
+    }
 
     fun loadSongById(songId: Long) {
         loadJob?.cancel() // Hủy job trước nếu đang chạy
@@ -114,15 +125,22 @@ class PlayerViewModel @Inject constructor(
                         val response = api.removeFavoriteSong(token, song.id)
                         Log.d("FavoriteSong", "removeFavoriteSong response: ${response.code()}, isSuccessful=${response.isSuccessful}, body=${response.body()}")
                         if (response.isSuccessful) {
+                            updateSuccessMes("Xóa bài khỏi danh sách yêu thích thành công")
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Success(),
+                                toggle = true)
                             Log.d("FavoriteSong", "Đã xóa khỏi danh sách yêu thích")
                             val updatedLikedSongs = api.getFavoriteSongs(token)
                                 .body()?.content?.map { it.song.id }?.toSet() ?: emptySet()
                             Log.d("FavoriteSong", "Updated likedSongIds=$updatedLikedSongs")
                             _uiState.value = _uiState.value.copy(likedSongIds = updatedLikedSongs)
                         } else {
+                            updateErrorMes("Xóa yêu thích thất bại")
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Error(""), toggle = true)
                             throw Exception("API xóa thất bại: ${response.code()} - ${response.errorBody()?.string()}")
                         }
                     } else {
+                        updateErrorMes("Không tìm thấy bài hát trong danh sách để xóa")
+                        _uiState.value = _uiState.value.copy(status = LoadStatus.Error(""), toggle = true)
                         throw Exception("Không tìm thấy favoriteId để xóa trong danh sách mới")
                     }
                 } else {
@@ -131,6 +149,8 @@ class PlayerViewModel @Inject constructor(
 //                    if (!existed) {
                         val response = api.addFavoriteSong(token, AddFavoriteSongRequest(song.id))
                         if (response.isSuccessful) {
+                            updateSuccessMes("Thêm bài vào danh sách yêu thích thành công")
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Success(), toggle = true)
                             Log.d("FavoriteSong", "Đã thêm vào danh sách yêu thích")
                             delay(500)
                             val updatedLikedSongs = api.getFavoriteSongs(token)
@@ -138,6 +158,8 @@ class PlayerViewModel @Inject constructor(
                             Log.d("FavoriteSong", "Updated likedSongIds=$updatedLikedSongs")
                             _uiState.value = _uiState.value.copy(likedSongIds = updatedLikedSongs)
                         } else {
+                            updateErrorMes("Thêm bài yêu thích thất bại")
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Error(""), toggle = true)
                             throw Exception("API thêm thất bại: ${response.code()} - ${response.errorBody()?.string()}")
                         }
 //                    }
@@ -146,9 +168,11 @@ class PlayerViewModel @Inject constructor(
 //                    }
                 }
             } catch (e: Exception) {
+                updateErrorMes("Lỗi server, thao tác thất bại")
                 Log.e("FavoriteError", "Thao tác yêu thích thất bại: ${e.message}")
                 _uiState.value = _uiState.value.copy(
                     likedSongIds = prevSet,
+                    toggle = true,
                     status = LoadStatus.Error("Thao tác yêu thích thất bại: ${e.message}")
                 )
             }
@@ -188,15 +212,21 @@ class PlayerViewModel @Inject constructor(
                         val response = api.removeDownloadedSong(token, song.id)
                         Log.d("DownloadSong", "removeDownloadedSong response: ${response.code()}, isSuccessful=${response.isSuccessful}, body=${response.body()}")
                         if (response.isSuccessful) {
+                            updateSuccessMes("Xóa bài khỏi danh sách tải xuống thành công")
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Success(), toggle = true)
                             Log.d("DownloadSong", "Đã xóa khỏi danh sách tải xuống")
                             val updatedDownloadedSongs = api.getDownloadedSongs(token)
                                 .body()?.content?.map { it.song.id }?.toSet() ?: emptySet()
                             Log.d("DownloadSong", "Updated downloadedSongIds=$updatedDownloadedSongs")
                             _uiState.value = _uiState.value.copy(downloadedSongIds = updatedDownloadedSongs)
                         } else {
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Error(""), toggle = true)
+                            updateErrorMes("Xóa bài khỏi danh sách tải xuống thất bại")
                             throw Exception("API xóa thất bại: ${response.code()} - ${response.errorBody()?.string()}")
                         }
                     } else {
+                        _uiState.value = _uiState.value.copy(status = LoadStatus.Error(""), toggle = true)
+                        updateErrorMes("Không tìm thấy bài hát trong danh sách để xóa")
                         throw Exception("Không tìm thấy downloadedId để xóa trong danh sách mới")
                     }
                 } else {
@@ -205,6 +235,8 @@ class PlayerViewModel @Inject constructor(
 //                    if (!existed) {
                         val response = api.addDownloadedSong(token, song.id)
                         if (response.isSuccessful) {
+                            updateSuccessMes("Thêm bài vào danh sách tải xuống thành công")
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Success(), toggle = true)
                             Log.d("DownloadSong", "Đã thêm vào danh sách tải xuống")
                             delay(500)
                             val updatedDownloadedSongs = api.getDownloadedSongs(token)
@@ -212,6 +244,8 @@ class PlayerViewModel @Inject constructor(
                             Log.d("DownloadSong", "Updated downloadedSongIds=$updatedDownloadedSongs")
                             _uiState.value = _uiState.value.copy(downloadedSongIds = updatedDownloadedSongs)
                         } else {
+                            _uiState.value = _uiState.value.copy(status = LoadStatus.Error(""), toggle = true)
+                            updateErrorMes("Thêm bài vào danh sách tải xuống thất bại")
                             throw Exception("API thêm thất bại: ${response.code()} - ${response.errorBody()?.string()}")
                         }
 //                    }
@@ -220,9 +254,11 @@ class PlayerViewModel @Inject constructor(
 //                    }
                 }
             } catch (e: Exception) {
+                updateErrorMes("Lỗi server, thao tác thất bại")
                 Log.e("DownloadError", "Thao tác tải xuống thất bại: ${e.message}")
                 _uiState.value = _uiState.value.copy(
                     downloadedSongIds = prevSet,
+                    toggle = true,
                     status = LoadStatus.Error("Thao tác tải xuống thất bại: ${e.message}")
                 )
             }

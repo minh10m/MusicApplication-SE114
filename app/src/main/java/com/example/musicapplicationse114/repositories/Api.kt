@@ -325,6 +325,12 @@ interface Api {
         @Path("playlistId") playlistId: Long
     ): Response<PlaylistResponse>
 
+    @DELETE("api/playlists/{playlistId}")
+    suspend fun deletePlaylist(
+        @Header("Authorization") token: String,
+        @Path("playlistId") playlistId: Long
+    ): Response<Void>
+
     // forget password APIs
     @POST("/forget-password/verify-email/{email}")
     @Headers("Accept: text/plain")
