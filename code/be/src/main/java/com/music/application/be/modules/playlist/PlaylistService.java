@@ -65,6 +65,7 @@ public class PlaylistService {
         updateThumbnail(savedPlaylist.getId());
         return mapToDTO(savedPlaylist);
     }    // Create playlist for admin with genres (auto-add songs)
+
     public PlaylistDTO createPlaylistWithGenres(PlaylistRequestDTO playlistRequestDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
@@ -362,23 +363,23 @@ public class PlaylistService {
     // Get user's own playlists
     @Cacheable(
             value = "myPlaylists",
-            key = "'user-' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().id + '-page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize"
+            key = "'user-' + #userId + '-page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize"
     )
     public PagedResponse<PlaylistDTO> getMyPlaylists(Pageable pageable) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User user)) {
             throw new EntityNotFoundException("User not authenticated");
         }
 
-        User currentUser = (User) authentication.getPrincipal();
 
-        Page<Playlist> page = playlistRepository.findByCreatedBy(currentUser, pageable);
+        Page<Playlist> page = playlistRepository.findByCreatedBy(user, pageable);
         List<PlaylistDTO> dtoList = page.stream()
                 .map(this::mapToDTO)
                 .toList();
 
         return PaginationUtils.buildPagedResponse(dtoList, page);
     }
+
     // Map entity to DTO
 
     private PlaylistDTO mapToDTO(Playlist playlist) {

@@ -3,6 +3,8 @@ package com.music.application.be.modules.playlist;
 import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.playlist.dto.PlaylistDTO;
 import com.music.application.be.modules.playlist.dto.PlaylistRequestDTO;
+import com.music.application.be.modules.user.User;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -11,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -143,17 +147,8 @@ public class PlaylistController {
 
         PagedResponse<PlaylistDTO> pagedResponse = playlistService.getMyPlaylists(pageable);
 
-        // Chuyển từ PagedResponse → PagedResponseDTO nếu hai class khác nhau
-        PagedResponse<PlaylistDTO> responseDTO = new PagedResponse<>(
-                pagedResponse.getContent(),
-                pagedResponse.getPage(),
-                pagedResponse.getSize(),
-                pagedResponse.getTotalElements(),
-                pagedResponse.getTotalPages(),
-                pagedResponse.isLast()
-        );
-
-        return ResponseEntity.ok(responseDTO);
+        return ResponseEntity.ok(pagedResponse);
     }
+
 
 }
