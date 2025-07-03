@@ -16,6 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.lang.Error
 import javax.inject.Inject
 
 data class SearchSongAddIntoPlaylistState(
@@ -25,6 +26,9 @@ data class SearchSongAddIntoPlaylistState(
     val songsSearch: List<SongResponse> = emptyList(),
     val addedSongIds : Set<Long> = emptySet(),
     val playlistId : Long = 0,
+    val successMessage: String = "",
+    val addSong : Boolean = false,
+    val error: String = ""
 )
 
 @HiltViewModel
@@ -50,6 +54,18 @@ class SearchSongAddIntoPlaylistViewModel @Inject constructor(
 
     fun updateQuery(query: String) {
         _uiState.value = _uiState.value.copy(query = query)
+    }
+
+    fun reset() {
+        _uiState.value = _uiState.value.copy(status = LoadStatus.Init())
+    }
+
+    private fun updateSuccessMessage(message: String) {
+        _uiState.value = _uiState.value.copy(successMessage = message)
+    }
+
+    private fun updateError(error: String) {
+        _uiState.value = _uiState.value.copy(error = error)
     }
 
     fun searchSongs(query: String) {
@@ -108,21 +124,27 @@ class SearchSongAddIntoPlaylistViewModel @Inject constructor(
                     val result = api.addSongToPlaylist(token, SongPlaylistRequest(songId, playlistId))
                     Log.d("SearchSongAddIntoPlaylistViewModel", "API Response: ${result.body()?.song?.title}")
                     if (result.isSuccessful) {
+                        updateSuccessMessage("Thêm bài hát thành công")
                         Log.d("SearchSongAddIntoPlaylistViewModel", "Song added successfully")
                         _uiState.value = result.body()?.let {
                             _uiState.value.copy(
                                 addedSongIds = _uiState.value.addedSongIds + songId,
+                                addSong = true,
                                 status = LoadStatus.Success()
                             )
 
                         } ?: _uiState.value.copy(status = LoadStatus.Error("Empty response"))
                     } else {
+                        updateError("Thêm bài hát thất bại")
+                        Log.e("SearchSongAddIntoPlaylistViewModel", "API error: ${result.code()}")
                         _uiState.value = _uiState.value.copy(status = LoadStatus.Error("API error: ${result.errorBody()}"))
                     }
                 } else {
+                    updateError("Thêm bài hát thất bại")
                     _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có API hoặc token"))
                 }
             } catch (e: Exception) {
+                updateError("Thêm bài hát thất bại")
                 Log.e("SearchSongAddIntoPlaylistViewModel", "Error: ${e.message}")
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
             }

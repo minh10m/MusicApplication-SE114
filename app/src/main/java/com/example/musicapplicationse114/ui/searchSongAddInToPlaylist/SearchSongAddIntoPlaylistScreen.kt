@@ -1,6 +1,7 @@
 package com.example.musicapplicationse114.ui.searchSongAddInToPlaylist
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -41,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +70,7 @@ fun SearchSongAddIntoPlaylistScreen(
     val globalPlayerController = sharedViewModel.player
     val homeUiState by homeViewModel.uiState.collectAsState()
     val playListSongsUiState by playListSongsViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     val previousBackStackEntry = navController.previousBackStackEntry
     val playlistId = previousBackStackEntry?.savedStateHandle?.get<Long>("playlistId") ?: 0L
@@ -78,7 +81,26 @@ fun SearchSongAddIntoPlaylistScreen(
         viewModel.loadSong()
     }
 
+    LaunchedEffect(uiState.status) {
+        if (uiState.status is LoadStatus.Success && uiState.addSong) {
+            Toast.makeText(context, "Thêm bài hát thành công", Toast.LENGTH_SHORT).show()
+        }
+    }
 
+
+    if(uiState.status is LoadStatus.Loading)
+    {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                strokeWidth = 2.dp,
+                color = Color.White
+            )
+        }
+    }
+    else {
     Scaffold { innerPadding ->
         Column(
             modifier = Modifier
@@ -115,11 +137,6 @@ fun SearchSongAddIntoPlaylistScreen(
                 )
             }
 
-            if (uiState.status is LoadStatus.Loading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(strokeWidth = 2.dp, color = Color.White)
-                }
-            } else {
                 Spacer(modifier = Modifier.height(16.dp))
                 val displayedSongs = if (uiState.query.isNotBlank()) {
                     uiState.songsSearch
@@ -139,74 +156,74 @@ fun SearchSongAddIntoPlaylistScreen(
 
 //            Spacer(modifier = Modifier.height(20.dp))
 
-                LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    itemsIndexed(displayedSongs) { index, song ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    sharedViewModel.setSongList(displayedSongs, index)
-                                    sharedViewModel.addRecentlyPlayed(song.id)
-                                    Log.d(
-                                        "SearchSongAddIntoPlaylistScreen",
-                                        "Called addRecentlyPlayed for songId: ${song.id}"
-                                    )
-                                    globalPlayerController.play(song)
-                                    mainViewModel.setFullScreenPlayer(true)
-                                    navController.navigate(Screen.Player.createRoute(song.id))
-                                }
-                                .padding(vertical = 12.dp), // Tăng padding giữa các mục
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val isAdded = uiState.addedSongIds.contains(song.id)
-                            AsyncImage(
-                                model = song.thumbnail,
-                                contentDescription = song.title,
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        itemsIndexed(displayedSongs) { index, song ->
+                            Row(
                                 modifier = Modifier
-                                    .size(50.dp) // Tăng kích thước hình ảnh
-                                    .clip(RoundedCornerShape(8.dp)), // Bo góc lớn hơn
-                                contentScale = ContentScale.Crop
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = song.title,
-                                    color = Color.White,
-                                    fontSize = 16.sp,
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = song.artistName,
-                                    color = Color.Gray,
-                                    fontSize = 14.sp,
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                )
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Icon(
-                                    imageVector = if (isAdded) Icons.Default.Check else Icons.Default.Add,
-                                    contentDescription = if (isAdded) "Added" else "Add",
-                                    tint = if (isAdded) Color.Green else Color.White,
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        sharedViewModel.setSongList(displayedSongs, index)
+                                        sharedViewModel.addRecentlyPlayed(song.id)
+                                        Log.d(
+                                            "SearchSongAddIntoPlaylistScreen",
+                                            "Called addRecentlyPlayed for songId: ${song.id}"
+                                        )
+                                        globalPlayerController.play(song)
+                                        mainViewModel.setFullScreenPlayer(true)
+                                        navController.navigate(Screen.Player.createRoute(song.id))
+                                    }
+                                    .padding(vertical = 12.dp), // Tăng padding giữa các mục
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val isAdded = uiState.addedSongIds.contains(song.id)
+                                AsyncImage(
+                                    model = song.thumbnail,
+                                    contentDescription = song.title,
                                     modifier = Modifier
-                                        .size(24.dp)
-                                        .clickable {
-                                            if (!isAdded) {
-                                                viewModel.addSongToPlaylist(
-                                                    song.id,
-                                                    uiState.playlistId
-                                                )
-                                            }
-                                        }
+                                        .size(50.dp) // Tăng kích thước hình ảnh
+                                        .clip(RoundedCornerShape(8.dp)), // Bo góc lớn hơn
+                                    contentScale = ContentScale.Crop
                                 )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = song.title,
+                                        color = Color.White,
+                                        fontSize = 16.sp,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = song.artistName,
+                                        color = Color.Gray,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(
+                                        imageVector = if (isAdded) Icons.Default.Check else Icons.Default.Add,
+                                        contentDescription = if (isAdded) "Added" else "Add",
+                                        tint = if (isAdded) Color.Green else Color.White,
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clickable {
+                                                if (!isAdded) {
+                                                    viewModel.addSongToPlaylist(
+                                                        song.id,
+                                                        uiState.playlistId
+                                                    )
+                                                }
+                                            }
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
         }
     }
 }

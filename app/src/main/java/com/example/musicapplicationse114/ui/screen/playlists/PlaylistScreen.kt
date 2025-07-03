@@ -1,22 +1,9 @@
 package com.example.musicapplicationse114.ui.screen.playlists
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -25,25 +12,16 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIos
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,7 +34,6 @@ import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.Screen
 import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
-import com.example.musicapplicationse114.ui.screen.artists.ArtistsFollowingViewModel
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
 import kotlinx.coroutines.delay
 
@@ -70,9 +47,34 @@ fun PlaylistScreen(
 ) {
     val uiState = viewModel.uiState.collectAsState()
     var showLoading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var showDialog by remember { mutableStateOf(false) }
+    var playlistToDelete by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.loadPlaylist()
+    }
+
+    val shouldReload = navController.currentBackStackEntry
+        ?.savedStateHandle
+        ?.get<Boolean>("shouldReload") ?: false
+
+    LaunchedEffect(shouldReload) {
+        if (shouldReload) {
+            viewModel.loadPlaylist()
+            navController.currentBackStackEntry
+                ?.savedStateHandle
+                ?.set("shouldReload", false)
+        }
+    }
+
+    LaunchedEffect(uiState.value.status) {
+        if (uiState.value.status is LoadStatus.Success && uiState.value.success.isNotBlank()) {
+            Toast.makeText(context, uiState.value.success, Toast.LENGTH_SHORT).show()
+//            viewModel.loadPlaylist()
+        } else if (uiState.value.status is LoadStatus.Error && uiState.value.error.isNotBlank()) {
+            Toast.makeText(context, uiState.value.error, Toast.LENGTH_SHORT).show()
+        }
     }
 
     if (showLoading) {
@@ -94,8 +96,14 @@ fun PlaylistScreen(
     }
 
     if (uiState.value.status is LoadStatus.Loading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(strokeWidth = 2.dp, color = Color.White)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                strokeWidth = 2.dp,
+                color = Color.White
+            )
         }
     } else {
         Scaffold(
@@ -106,6 +114,7 @@ fun PlaylistScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(bottom = 110.dp)
                     .background(Color.Black)
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp, vertical = 14.dp)
@@ -203,14 +212,33 @@ fun PlaylistScreen(
                                         },
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    AsyncImage(
-                                        model = playlist.thumbnail,
-                                        contentDescription = playlist.name,
-                                        modifier = Modifier
-                                            .size(180.dp)
-                                            .clip(RectangleShape),
-                                        contentScale = ContentScale.Crop
-                                    )
+                                    Box {
+                                        AsyncImage(
+                                            model = playlist.thumbnail,
+                                            contentDescription = playlist.name,
+                                            modifier = Modifier
+                                                .size(180.dp)
+                                                .clip(RoundedCornerShape(10.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        IconButton(
+                                            onClick = {
+                                                playlistToDelete = playlist.id
+                                                showDialog = true
+                                            },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .size(24.dp)
+                                                .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Delete playlist",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = playlist.name,
@@ -225,6 +253,30 @@ fun PlaylistScreen(
                             }
                         }
                     }
+                }
+
+                // Dialog xác nhận xóa
+                if (showDialog && playlistToDelete != null) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        title = { Text("Xác nhận xóa") },
+                        text = { Text("Bạn có chắc chắn muốn xóa playlist này không?") },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    viewModel.deletePlaylist(playlistToDelete!!)
+                                    showDialog = false
+                                }
+                            ) {
+                                Text("Đồng ý")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDialog = false }) {
+                                Text("Hủy bỏ")
+                            }
+                        }
+                    )
                 }
             }
         }
