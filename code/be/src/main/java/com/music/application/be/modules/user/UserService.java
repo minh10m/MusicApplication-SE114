@@ -43,6 +43,7 @@ public class UserService {
         return convertToDetailDTO(user);
     }
 
+    @Cacheable(value = "userProfiles", key = "#root.authentication.principal.id")
     public ProfileDTO getMyProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -68,7 +69,7 @@ public class UserService {
         );
     }
 
-    @CacheEvict(value = {"allUsers", "followedArtists", "searchedFollowedArtists"}, allEntries = true)
+    @CacheEvict(value = {"allUsers", "userProfiles"}, allEntries = true)
     public UserDetailDTO updateCurrentUser(UserUpdateDTO userDTO, MultipartFile avatarFile) throws IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
