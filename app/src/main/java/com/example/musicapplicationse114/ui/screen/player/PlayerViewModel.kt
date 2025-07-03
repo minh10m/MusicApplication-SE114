@@ -28,7 +28,7 @@ data class PlayerUiState(
 
     val successMes : String = "",
     val errorMes : String = "",
-    val toggle : Boolean = false
+    val toggle : Boolean = false,
 
     val shareUrl: String? = null
 

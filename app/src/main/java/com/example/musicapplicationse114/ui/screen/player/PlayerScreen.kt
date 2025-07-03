@@ -399,7 +399,7 @@ fun PlayerContent(
             ) {
                 Text("Queue", color = Color.White, fontSize = 20.sp)
                 Spacer(modifier = Modifier.width(4.dp))
-                Icon(Icons.Default.Queue, contentDescription = "Queue", tint = Color.White, modifier = Modifier.size(32.dp))
+                Icon(Icons.Default.ArrowForwardIos, contentDescription = "Queue", tint = Color.White, modifier = Modifier.size(25.dp))
             }
         }
         upNextSong?.let { song ->
