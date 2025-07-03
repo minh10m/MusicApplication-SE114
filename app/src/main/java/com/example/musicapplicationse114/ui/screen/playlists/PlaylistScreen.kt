@@ -95,8 +95,8 @@ fun PlaylistScreen(
     }
 
     LaunchedEffect(uiState.value.status) {
-        if (uiState.value.status is LoadStatus.Success) {
-//            Toast.makeText(context, uiState.value.success, Toast.LENGTH_SHORT).show()
+        if (uiState.value.status is LoadStatus.Success && uiState.value.delete) {
+            Toast.makeText(context, uiState.value.success, Toast.LENGTH_SHORT).show()
         } else if (uiState.value.status is LoadStatus.Error) {
             Toast.makeText(context, uiState.value.error, Toast.LENGTH_SHORT).show()
         }

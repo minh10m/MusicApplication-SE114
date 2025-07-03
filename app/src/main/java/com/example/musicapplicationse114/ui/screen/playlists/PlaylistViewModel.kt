@@ -24,7 +24,8 @@ data class PlayListUiState(
     val status : LoadStatus = LoadStatus.Init(),
     val query : String = "",
     val success : String = "",
-    val error : String = ""
+    val error : String = "",
+    val delete:Boolean = false
 )
 
 @HiltViewModel
@@ -66,7 +67,6 @@ class PlayListViewModel @Inject constructor(
                 return@launch
             }
 
-            // 👉 Chỉ update status, giữ lại các field khác như success, error, query
             _uiState.value = _uiState.value.copy(
                 status = LoadStatus.Loading()
             )
@@ -118,6 +118,7 @@ class PlayListViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(
                             playlist = _playlists.value,
                             playlistCount = _playlists.value.size,
+                            delete = true,
                             status = LoadStatus.Success()
                         )
 
