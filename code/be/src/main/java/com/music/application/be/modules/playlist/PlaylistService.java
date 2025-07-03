@@ -17,6 +17,7 @@ import com.music.application.be.modules.user.User;
 import com.music.application.be.modules.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,11 +48,15 @@ public class PlaylistService {
     private UserRepository userRepository;
 
     // Create playlist for user (no genre)
+    @CacheEvict(value = "myPlaylists", allEntries = true)
     public PlaylistDTO createPlaylist(PlaylistRequestDTO playlistRequestDTO) {
+
+        System.out.println("Cache for 'myPlaylists' evicted");
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User)) {
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User user)) {
             throw new EntityNotFoundException("User not authenticated");
-        }        User user = (User) authentication.getPrincipal();
+        }
 
         Playlist playlist = new Playlist();
         playlist.setName(playlistRequestDTO.getName());
@@ -61,10 +66,13 @@ public class PlaylistService {
         playlist.setCreatedBy(user);
 
         Playlist savedPlaylist = playlistRepository.save(playlist);
+
         // Cập nhật thumbnail từ bài hát đầu tiên (nếu có)
         updateThumbnail(savedPlaylist.getId());
+
         return mapToDTO(savedPlaylist);
-    }    // Create playlist for admin with genres (auto-add songs)
+    }
+    // Create playlist for admin with genres (auto-add songs)
 
     public PlaylistDTO createPlaylistWithGenres(PlaylistRequestDTO playlistRequestDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -363,7 +371,7 @@ public class PlaylistService {
     // Get user's own playlists
     @Cacheable(
             value = "myPlaylists",
-            key = "'user-' + #userId + '-page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize"
+            key = "'user-' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().id + '-page-' + #pageable.pageNumber + '-size-' + #pageable.pageSize"
     )
     public PagedResponse<PlaylistDTO> getMyPlaylists(Pageable pageable) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
