@@ -51,15 +51,12 @@ fun CommentDialog(
     val keyboardController = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
 
-    // Load comments when dialog opens
     LaunchedEffect(song.id) {
         viewModel.loadComments(song.id, refresh = true)
     }
 
-    // Handle status changes
     LaunchedEffect(uiState.status) {
         if (uiState.status is LoadStatus.Error) {
-            // Handle error if needed
             viewModel.clearStatus()
         }
     }
@@ -82,7 +79,6 @@ fun CommentDialog(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -105,7 +101,6 @@ fun CommentDialog(
                     }
                 }
 
-                // Song info
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -145,7 +140,6 @@ fun CommentDialog(
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
 
-                // Comments list
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
@@ -191,12 +185,10 @@ fun CommentDialog(
                                     viewModel.startReply(commentId)
                                 },
                                 isReplying = uiState.replyingToCommentId == comment.id,
-                                replyText = if (uiState.replyingToCommentId == comment.id) uiState.replyText else "",
-                                onReplyTextChange = { text ->
-                                    Log.d("CommentDebug", "Main comment text change: '$text' for comment ${comment.id}, replyingTo: ${uiState.replyingToCommentId}")
-                                    if (uiState.replyingToCommentId == comment.id) {
-                                        viewModel.updateReplyText(text)
-                                    }
+                                replyText = uiState.replyTexts[comment.id] ?: "",
+                                onReplyTextChange = { commentId, text ->
+                                    Log.d("CommentDebug", "Main comment text change: '$text' for comment $commentId")
+                                    viewModel.updateReplyText(commentId, text)
                                 },
                                 onSubmitReply = { viewModel.submitReply(song.id) },
                                 onCancelReply = viewModel::cancelReply,
@@ -206,7 +198,6 @@ fun CommentDialog(
                             )
                         }
 
-                        // Load more indicator
                         if (uiState.hasMorePages) {
                             item {
                                 LaunchedEffect(Unit) {
@@ -227,7 +218,6 @@ fun CommentDialog(
                     }
                 }
 
-                // Add comment section
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -258,9 +248,9 @@ fun CommentDialog(
                         maxLines = 3,
                         shape = RoundedCornerShape(24.dp)
                     )
-                    
+
                     Spacer(modifier = Modifier.width(8.dp))
-                    
+
                     IconButton(
                         onClick = {
                             if (uiState.newCommentText.trim().isNotEmpty()) {
@@ -291,13 +281,15 @@ private fun CommentItem(
     onReplyComment: ((Long) -> Unit)? = null,
     isReplying: Boolean = false,
     replyText: String = "",
-    onReplyTextChange: (String) -> Unit = {},
+    onReplyTextChange: (Long, String) -> Unit = { _, _ -> },
     onSubmitReply: () -> Unit = {},
     onCancelReply: () -> Unit = {},
     likedCommentIds: Set<Long> = emptySet(),
     isNestedReply: Boolean = false,
     replyingToCommentId: Long? = null
 ) {
+    val uiState by hiltViewModel<CommentViewModel>().uiState.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -307,7 +299,6 @@ private fun CommentItem(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Top
         ) {
-            // User avatar placeholder
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -322,10 +313,9 @@ private fun CommentItem(
                     modifier = Modifier.size(24.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(12.dp))
-            
-            // Comment content
+
             Column(modifier = Modifier.weight(1f)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -333,35 +323,33 @@ private fun CommentItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "User ${comment.userId}", // Show user ID since we don't have username
+                        text = "User ${comment.userId}",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White
                     )
-                    
+
                     Text(
                         text = formatCommentDate(comment.createdAt),
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Text(
                     text = comment.content,
                     fontSize = 14.sp,
                     color = Color.White,
                     lineHeight = 20.sp
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
-                // Action buttons
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Like button
                     val isLiked = likedCommentIds.contains(comment.id)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -391,10 +379,9 @@ private fun CommentItem(
                             )
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.width(16.dp))
-                    
-                    // Reply button - Show for all comments
+
                     if (onReplyComment != null) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -420,15 +407,14 @@ private fun CommentItem(
                 }
             }
         }
-        
- // Reply input box
+
         if (isReplying) {
             Log.d("CommentDebug", "Showing reply box for comment ${comment.id}, replyText: '$replyText'")
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = if (isNestedReply) 52.dp else 0.dp), // Chỉ thụt vào nếu là reply lồng nhau
+                    .padding(start = if (isNestedReply) 52.dp else 0.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color(0xFF2C2C2C)
                 )
@@ -442,16 +428,16 @@ private fun CommentItem(
                         color = Color.Gray,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.Bottom
                     ) {
                         OutlinedTextField(
-                            value = replyText, // Truyền trực tiếp replyText từ tham số
+                            value = replyText,
                             onValueChange = { newText ->
                                 Log.d("CommentDebug", "TextField onValueChange called for comment ${comment.id}, newText: '$newText'")
-                                onReplyTextChange(newText) // Cập nhật trực tiếp không cần kiểm tra
+                                onReplyTextChange(comment.id, newText)
                             },
                             modifier = Modifier.weight(1f),
                             placeholder = { Text("Write a reply...", color = Color.Gray, fontSize = 14.sp) },
@@ -465,10 +451,9 @@ private fun CommentItem(
                             maxLines = 3,
                             shape = RoundedCornerShape(12.dp)
                         )
-                        
+
                         Spacer(modifier = Modifier.width(8.dp))
-                        
-                        // Cancel button
+
                         IconButton(onClick = onCancelReply) {
                             Icon(
                                 Icons.Default.Close,
@@ -477,8 +462,7 @@ private fun CommentItem(
                                 modifier = Modifier.size(20.dp)
                             )
                         }
-                        
-                        // Send button
+
                         IconButton(
                             onClick = onSubmitReply,
                             enabled = replyText.trim().isNotEmpty()
@@ -494,8 +478,7 @@ private fun CommentItem(
                 }
             }
         }
-        
-        // Show replies if any
+
         comment.replies?.let { replies ->
             if (replies.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -510,8 +493,10 @@ private fun CommentItem(
                             onLikeComment = onLikeComment,
                             onReplyComment = onReplyComment,
                             isReplying = replyingToCommentId == reply.id,
-                            replyText = if (replyingToCommentId == reply.id) replyText else "",
-                            onReplyTextChange = onReplyTextChange, // Truyền trực tiếp callback
+                            replyText = uiState.replyTexts[reply.id] ?: "",
+                            onReplyTextChange = { commentId, text ->
+                                onReplyTextChange(reply.id, text)
+                            },
                             onSubmitReply = onSubmitReply,
                             onCancelReply = onCancelReply,
                             likedCommentIds = likedCommentIds,
@@ -530,9 +515,9 @@ private fun formatCommentDate(dateString: String): String {
     return try {
         val dateTime = LocalDateTime.parse(dateString.replace("Z", ""))
         val now = LocalDateTime.now()
-        
+
         val minutesAgo = java.time.Duration.between(dateTime, now).toMinutes()
-        
+
         when {
             minutesAgo < 1 -> "Just now"
             minutesAgo < 60 -> "${minutesAgo}m ago"

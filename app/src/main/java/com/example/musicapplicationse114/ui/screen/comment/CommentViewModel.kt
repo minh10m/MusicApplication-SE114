@@ -22,7 +22,7 @@ data class CommentUiState(
     val currentPage: Int = 0,
     val hasMorePages: Boolean = true,
     val replyingToCommentId: Long? = null,
-    val replyText: String = "",
+    val replyTexts: Map<Long, String> = emptyMap(),
     val likedCommentIds: Set<Long> = emptySet()
 )
 
@@ -45,9 +45,9 @@ class CommentViewModel @Inject constructor(
                         hasMorePages = true
                     )
                 }
-                
+
                 _uiState.value = _uiState.value.copy(isLoading = true)
-                
+
                 val token = tokenManager.getToken()
                 if (token.isNullOrEmpty()) {
                     _uiState.value = _uiState.value.copy(
@@ -59,12 +59,11 @@ class CommentViewModel @Inject constructor(
 
                 Log.d("CommentViewModel", "Loading comments for songId: $songId")
 
-                // Load comments and liked comments simultaneously
                 val commentsResponse = api.getCommentsBySongId(
                     token = token,
                     songId = songId
                 )
-                
+
                 val userId = getUserId()
                 val likedCommentsResponse = api.getUserLikedComments(
                     token = token,
@@ -82,16 +81,16 @@ class CommentViewModel @Inject constructor(
                     } else {
                         emptySet()
                     }
-                    
+
                     Log.d("CommentViewModel", "Loaded ${comments.size} comments")
                     Log.d("CommentViewModel", "Liked comments: $likedCommentIds")
-                    
+
                     _uiState.value = _uiState.value.copy(
                         comments = comments,
                         likedCommentIds = likedCommentIds,
                         status = LoadStatus.Success(),
                         isLoading = false,
-                        hasMorePages = false // Backend returns all comments at once
+                        hasMorePages = false
                     )
                 } else {
                     Log.e("CommentViewModel", "Failed to load comments: ${commentsResponse.errorBody()?.string()}")
@@ -130,7 +129,7 @@ class CommentViewModel @Inject constructor(
 
                 val request = CommentRequest(
                     content = commentText,
-                    userId = getUserId() // Get current user ID
+                    userId = getUserId()
                 )
 
                 Log.d("CommentViewModel", "Sending comment: $commentText for songId: $songId")
@@ -148,7 +147,6 @@ class CommentViewModel @Inject constructor(
                     val newComment = response.body()
                     if (newComment != null) {
                         Log.d("CommentViewModel", "Successfully added comment: ${newComment.content}")
-                        // Add new comment to the top of the list
                         val updatedComments = listOf(newComment) + _uiState.value.comments
                         _uiState.value = _uiState.value.copy(
                             comments = updatedComments,
@@ -156,8 +154,7 @@ class CommentViewModel @Inject constructor(
                             status = LoadStatus.Success(),
                             isLoading = false
                         )
-                        
-                        // Reload comments to ensure consistency
+
                         loadComments(songId, refresh = true)
                     }
                 } else {
@@ -193,7 +190,6 @@ class CommentViewModel @Inject constructor(
                 )
 
                 if (response.isSuccessful) {
-                    // Remove comment from the list
                     val updatedComments = _uiState.value.comments.filter { it.id != commentId }
                     _uiState.value = _uiState.value.copy(
                         comments = updatedComments,
@@ -224,36 +220,37 @@ class CommentViewModel @Inject constructor(
         Log.d("CommentViewModel", "startReply called for commentId: $commentId")
         _uiState.value = _uiState.value.copy(
             replyingToCommentId = commentId,
-            replyText = ""
+            replyTexts = _uiState.value.replyTexts + (commentId to "")
         )
-        Log.d("CommentViewModel", "State updated - replyingToCommentId: ${_uiState.value.replyingToCommentId}, replyText: '${_uiState.value.replyText}'")
+        Log.d("CommentViewModel", "State updated - replyingToCommentId: ${_uiState.value.replyingToCommentId}, replyTexts: ${_uiState.value.replyTexts}")
     }
 
     fun cancelReply() {
         Log.d("CommentViewModel", "cancelReply called")
         _uiState.value = _uiState.value.copy(
             replyingToCommentId = null,
-            replyText = ""
+            replyTexts = _uiState.value.replyTexts.filterKeys { it != _uiState.value.replyingToCommentId }
         )
     }
 
-    fun updateReplyText(text: String) {
-        Log.d("CommentViewModel", "updateReplyText called with: '$text', current replyingTo: ${_uiState.value.replyingToCommentId}")
-        _uiState.value = _uiState.value.copy(replyText = text)
-        Log.d("CommentViewModel", "State updated - replyText: '${_uiState.value.replyText}'")
+    fun updateReplyText(commentId: Long, text: String) {
+        Log.d("CommentViewModel", "updateReplyText called for commentId: $commentId with text: '$text'")
+        _uiState.value = _uiState.value.copy(
+            replyTexts = _uiState.value.replyTexts + (commentId to text)
+        )
+        Log.d("CommentViewModel", "State updated - replyTexts: ${_uiState.value.replyTexts}")
     }
 
     fun submitReply(songId: Long) {
-        val replyText = _uiState.value.replyText.trim()
-        val replyingToCommentId = _uiState.value.replyingToCommentId
-        
-        if (replyText.isEmpty() || replyingToCommentId == null) return
+        val replyingToCommentId = _uiState.value.replyingToCommentId ?: return
+        val replyText = _uiState.value.replyTexts[replyingToCommentId]?.trim() ?: return
+
+        if (replyText.isEmpty()) return
 
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
 
-                // Find the parent comment ID (for nested replies, use the root parent)
                 val parentCommentId = findRootParentId(replyingToCommentId)
 
                 val request = CommentRequest(
@@ -273,10 +270,9 @@ class CommentViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     _uiState.value = _uiState.value.copy(
                         replyingToCommentId = null,
-                        replyText = "",
+                        replyTexts = _uiState.value.replyTexts.filterKeys { it != replyingToCommentId },
                         isLoading = false
                     )
-                    // Reload comments to show the new reply
                     loadComments(songId, refresh = true)
                 } else {
                     Log.e("CommentViewModel", "Failed to add reply: ${response.errorBody()?.string()}")
@@ -296,20 +292,16 @@ class CommentViewModel @Inject constructor(
     }
 
     private fun findRootParentId(commentId: Long): Long {
-        // Find if this comment is already a reply (has parentId)
         for (comment in _uiState.value.comments) {
             if (comment.id == commentId) {
-                // This is a top-level comment, so it becomes the parent
                 return commentId
             }
             comment.replies?.forEach { reply ->
                 if (reply.id == commentId) {
-                    // This is a reply to a comment, so use the parent comment as root
                     return comment.id
                 }
             }
         }
-        // Fallback: return the commentId itself
         return commentId
     }
 
@@ -324,7 +316,6 @@ class CommentViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Find the comment to get songId (search in both main comments and replies)
                 val comment = findCommentById(commentId)
                 if (comment == null) {
                     _uiState.value = _uiState.value.copy(
@@ -334,21 +325,19 @@ class CommentViewModel @Inject constructor(
                 }
 
                 val isCurrentlyLiked = _uiState.value.likedCommentIds.contains(commentId)
-                
-                // Don't allow liking an already liked comment or unliking a not-liked comment
+
                 if (isCurrentlyLiked) {
-                    // Unlike the comment
                     val response = api.unlikeComment(
                         token = token,
                         songId = comment.songId,
                         commentId = commentId,
                         userId = getUserId()
                     )
-                    
+
                     if (response.isSuccessful) {
                         val updatedLikedIds = _uiState.value.likedCommentIds - commentId
                         val updatedComments = updateCommentLikes(_uiState.value.comments, commentId, -1)
-                        
+
                         _uiState.value = _uiState.value.copy(
                             comments = updatedComments,
                             likedCommentIds = updatedLikedIds
@@ -360,18 +349,17 @@ class CommentViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    // Like the comment
                     val response = api.likeComment(
                         token = token,
                         songId = comment.songId,
                         commentId = commentId,
                         userId = getUserId()
                     )
-                    
+
                     if (response.isSuccessful) {
                         val updatedLikedIds = _uiState.value.likedCommentIds + commentId
                         val updatedComments = updateCommentLikes(_uiState.value.comments, commentId, 1)
-                        
+
                         _uiState.value = _uiState.value.copy(
                             comments = updatedComments,
                             likedCommentIds = updatedLikedIds
@@ -403,8 +391,8 @@ class CommentViewModel @Inject constructor(
     }
 
     private fun updateCommentLikes(
-        comments: List<CommentResponse>, 
-        commentId: Long, 
+        comments: List<CommentResponse>,
+        commentId: Long,
         likeChange: Int
     ): List<CommentResponse> {
         return comments.map { comment ->
@@ -446,7 +434,6 @@ class CommentViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     val newReply = response.body()
                     if (newReply != null) {
-                        // Reload comments to show the new reply
                         loadComments(newReply.songId, refresh = true)
                     }
                 } else {
