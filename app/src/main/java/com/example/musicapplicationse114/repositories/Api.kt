@@ -24,6 +24,7 @@ import com.example.musicapplicationse114.model.NotificationDto
 import com.example.musicapplicationse114.model.PlaylistPageResponse
 import com.example.musicapplicationse114.model.PlaylistRequest
 import com.example.musicapplicationse114.model.PlaylistResponse
+import com.example.musicapplicationse114.model.ProfileDto
 import com.example.musicapplicationse114.model.RecentlyPlayedPageResponse
 import com.example.musicapplicationse114.model.SongPageResponse
 import com.example.musicapplicationse114.model.SongPlaylist
@@ -33,6 +34,8 @@ import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.model.SongResponseDTO
 import com.example.musicapplicationse114.model.UserLoginRequest
 import com.example.musicapplicationse114.model.UserSignUpRequest
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -40,7 +43,10 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Headers
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -338,6 +344,12 @@ interface Api {
         @Path("playlistId") playlistId: Long
     ): Response<PlaylistResponse>
 
+    @DELETE("api/playlists/{playlistId}")
+    suspend fun deletePlaylist(
+        @Header("Authorization") token: String,
+        @Path("playlistId") playlistId: Long
+    ): Response<Void>
+
     // forget password APIs
     @POST("/forget-password/verify-email/{email}")
     @Headers("Accept: text/plain")
@@ -364,6 +376,24 @@ interface Api {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ) : Response<SongPageResponse>
+
+    @GET("/users/me/profile")
+    suspend fun getMyProfile(
+        @Header("Authorization") token: String
+    ): Response<ProfileDto>
+
+    @POST("/logout")
+    suspend fun logout(
+        @Header("Authorization") token: String
+    ): Response<Unit>
+
+    @Multipart
+    @PUT("users/me")
+    suspend fun updateMyProfile(
+        @Header("Authorization") token: String,
+        @Part("profile") profile: RequestBody,
+        @Part avatarFile: MultipartBody.Part?
+    ): Response<ProfileDto>
 
     //comment endpoints in song controller - require auth headers
     @GET("/api/songs/{songId}/comments")
@@ -421,4 +451,5 @@ interface Api {
         @Header("Authorization") token: String,
         @Path("songId") songId: Long
     ): Response<ResponseBody>
+
 }

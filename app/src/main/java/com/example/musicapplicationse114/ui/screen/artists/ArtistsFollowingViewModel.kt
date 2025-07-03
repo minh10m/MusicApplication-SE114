@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.model.FollowArtistResponse
+import com.example.musicapplicationse114.model.SessionCacheHandler
 import com.example.musicapplicationse114.repositories.Api
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -27,14 +28,24 @@ data class ArtistsFollowingUiState(
 class ArtistsFollowingViewModel @Inject constructor(
     private val api: Api?,
     private val tokenManager: TokenManager?
-) : ViewModel() {
+) : ViewModel(), SessionCacheHandler {
     private val _uiState = MutableStateFlow(ArtistsFollowingUiState())
     val uiState: StateFlow<ArtistsFollowingUiState> = _uiState
 
     private var searchJob: Job? = null
 
-    fun loadFollowedArtists() {
+    override fun clearSessionCache() {
+        _uiState.value = ArtistsFollowingUiState()
+    }
+
+    override fun hasSessionCache(): Boolean {
+        return _uiState.value.followedArtists.isNotEmpty()
+    }
+
+    fun loadFollowedArtists(forceRefresh: Boolean = false) {
         viewModelScope.launch {
+            if (!forceRefresh && _uiState.value.followedArtists.isNotEmpty()) return@launch
+
             try {
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
                 val token = tokenManager?.getToken()

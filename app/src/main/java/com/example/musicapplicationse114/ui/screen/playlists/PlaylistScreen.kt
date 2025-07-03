@@ -1,5 +1,6 @@
 package com.example.musicapplicationse114.ui.screen.playlists
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,12 +26,15 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIos
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,8 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,8 +58,8 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.Screen
+import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
-import com.example.musicapplicationse114.ui.screen.artists.ArtistsFollowingViewModel
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
 import kotlinx.coroutines.delay
 
@@ -69,9 +73,33 @@ fun PlaylistScreen(
 ) {
     val uiState = viewModel.uiState.collectAsState()
     var showLoading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var showDialog by remember { mutableStateOf(false) }
+    var playlistToDelete by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(Unit) {
-        viewModel.loadPlaylist()
+        viewModel.loadPlaylist(forceRefresh = true)
+    }
+
+    val shouldReload = navController.currentBackStackEntry
+        ?.savedStateHandle
+        ?.get<Boolean>("shouldReload") ?: false
+
+    LaunchedEffect(shouldReload) {
+        if (shouldReload) {
+            viewModel.loadPlaylist()
+            navController.currentBackStackEntry
+                ?.savedStateHandle
+                ?.set("shouldReload", false)
+        }
+    }
+
+    LaunchedEffect(uiState.value.status) {
+        if (uiState.value.status is LoadStatus.Success && uiState.value.delete) {
+            Toast.makeText(context, uiState.value.success, Toast.LENGTH_SHORT).show()
+        } else if (uiState.value.status is LoadStatus.Error) {
+            Toast.makeText(context, uiState.value.error, Toast.LENGTH_SHORT).show()
+        }
     }
 
     if (showLoading) {
@@ -92,128 +120,187 @@ fun PlaylistScreen(
         }
     }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets
-            .safeDrawing
-            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 14.dp)
+    if (uiState.value.status is LoadStatus.Loading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            CircularProgressIndicator(
+                strokeWidth = 2.dp,
+                color = Color.White
+            )
+        }
+    } else {
+        Scaffold(
+            contentWindowInsets = WindowInsets
+                .safeDrawing
+                .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 110.dp)
+                    .background(Color.Black)
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBackIos,
-                            contentDescription = "Back",
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    if (!navController.popBackStack()) {
-                                        navController.navigate("library")
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBackIos,
+                                contentDescription = "Back",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                        if (!navController.popBackStack()) {
+                                            navController.navigate("library")
+                                        }
                                     }
-                                }
-                        )
+                            )
 
-                        Spacer(modifier = Modifier.width(26.dp))
+                            Spacer(modifier = Modifier.width(26.dp))
 
+                            Text(
+                                text = "Playlists",
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(30.dp))
                         Text(
-                            text = "Playlists",
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            text = "${uiState.value.playlist.size} playlists",
+                            fontSize = 14.sp,
+                            color = Color.LightGray,
+                            textAlign = TextAlign.Start
                         )
                     }
-                    Spacer(modifier = Modifier.height(30.dp))
-                    Text(
-                        text = "${uiState.value.playlist.size} playlists",
-                        fontSize = 14.sp,
-                        color = Color.LightGray,
-                        textAlign = TextAlign.Start
+                }
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Row {
+                    // Search Bar
+                    SearchBar(
+                        query = uiState.value.query,
+                        onQueryChange = {
+                            viewModel.updateQuery(it)
+                            viewModel.searchAllDebounced(it)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                            .clickable {
+                                navController.navigate(Screen.CreatePlaylist.route)
+                            },
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(15.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                val displayedPlaylists = if (uiState.value.query.isNotBlank()) {
+                    uiState.value.searchPlaylist
+                } else {
+                    uiState.value.playlist
+                }
 
-            Row {
-                // Search Bar
-                SearchBar(
-                    query = uiState.value.query,
-                    onQueryChange = {
-                        viewModel.updateQuery(it)
-                        viewModel.searchAllDebounced(it)
-                    }
-                )
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(40.dp)
-                        .clickable {
-                            navController.navigate(Screen.CreatePlaylist.route)
-                        },
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            val displayedPlaylists = if (uiState.value.query.isNotBlank()) {
-                uiState.value.searchPlaylist
-            } else {
-                uiState.value.playlist
-            }
-
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(displayedPlaylists.chunked(2)) { rowPlaylists ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        rowPlaylists.forEach { playlist ->
-                            Column(
-                                modifier = Modifier
-                                    .width(180.dp)
-                                    .clickable {
-                                        navController.navigate(Screen.PlaylistSongs.createRoute(playlist.id))
-                                    },
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                AsyncImage(
-                                    model = playlist.thumbnail,
-                                    contentDescription = playlist.name,
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    items(displayedPlaylists.chunked(2)) { rowPlaylists ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            rowPlaylists.forEach { playlist ->
+                                Column(
                                     modifier = Modifier
-                                        .size(180.dp)
-                                        .clip(RectangleShape),
-                                    contentScale = ContentScale.Crop
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = playlist.name,
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Start
-                                )
+                                        .width(180.dp)
+                                        .clickable {
+                                            navController.navigate(
+                                                Screen.PlaylistSongs.createRoute(
+                                                    playlist.id
+                                                )
+                                            )
+                                        },
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Box {
+                                        AsyncImage(
+                                            model = playlist.thumbnail,
+                                            contentDescription = playlist.name,
+                                            modifier = Modifier
+                                                .size(180.dp)
+                                                .clip(RoundedCornerShape(10.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        IconButton(
+                                            onClick = {
+                                                playlistToDelete = playlist.id
+                                                showDialog = true
+                                            },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Delete playlist",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = playlist.name,
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Start
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
                             }
-                            Spacer(modifier = Modifier.width(16.dp))
                         }
                     }
+                }
+
+                // Dialog xác nhận xóa
+                if (showDialog && playlistToDelete != null) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        title = { Text("Xác nhận xóa") },
+                        text = { Text("Bạn có chắc chắn muốn xóa playlist này không?") },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    viewModel.deletePlaylist(playlistToDelete!!)
+                                    showDialog = false
+                                }
+                            ) {
+                                Text("Đồng ý")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDialog = false }) {
+                                Text("Hủy bỏ")
+                            }
+                        }
+                    )
                 }
             }
         }

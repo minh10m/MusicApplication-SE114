@@ -12,6 +12,7 @@ import com.example.musicapplicationse114.model.DownloadedSongResponse
 import com.example.musicapplicationse114.model.FavoriteSongResponse
 import com.example.musicapplicationse114.model.GenreResponse
 import com.example.musicapplicationse114.model.RecentlyPlayedResponse
+import com.example.musicapplicationse114.model.SessionCacheHandler
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
 import com.example.musicapplicationse114.repositories.MainLog
@@ -44,219 +45,229 @@ class HomeViewModel @Inject constructor(
     private val api: Api?,
     private val mainLog: MainLog?,
     private val tokenManager: TokenManager?
-): ViewModel() {
+): ViewModel(), SessionCacheHandler {
     val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
 
-    fun loadSong()
-    {
+    fun loadSong(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
-                val token = tokenManager?.getToken()
-                if(api != null && !token.isNullOrBlank()){
+            // Nếu đã có cache và không ép làm mới thì không gọi lại API
+            if (!forceRefresh && _uiState.value.songs.isNotEmpty()) {
+                Log.d("HomeViewModel", "Using cached songs")
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+
+            val token = tokenManager?.getToken()
+
+            if (api != null && !token.isNullOrBlank()) {
+                try {
                     Log.d("SongRequest", "Token: $token")
+
                     val songs = api.getSongs(token)
+
                     Log.d("HomeViewModel", "Songs loaded: ${songs.content.size} items")
+
                     _uiState.value = _uiState.value.copy(
                         songs = songs.content,
                         status = LoadStatus.Success()
                     )
-                }
-                else
-                {
-                    Log.e("HomeViewModel", "API hoặc token null")
-                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
-                }
-            }catch(ex : Exception)
-            {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(ex.message.toString()))
-                Log.d("HomeViewModel", "Failed to load songs: ${ex.message}")
-            }
-        }
-    }
-
-    fun loadGenre() {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
-                val token = tokenManager?.getToken()
-                if(api != null && !token.isNullOrBlank()){
-                    Log.d("GenreRequest", "Token: $token")
-                    val genres = api.getGenres(token)
-                    Log.d("HomeViewModel", "Genres loaded: ${genres.body()?.content?.size} items")
+                } catch (ex: Exception) {
+                    Log.e("HomeViewModel", "Failed to load songs: ${ex.message}", ex)
                     _uiState.value = _uiState.value.copy(
-                        genres = genres.body()?.content.orEmpty(),
-                        status = LoadStatus.Success()
+                        status = LoadStatus.Error(ex.message ?: "Unknown error")
                     )
                 }
-                else
-                {
-                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
-                }
-            }
-            catch (e:Exception)
-            {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
+            } else {
+                Log.e("HomeViewModel", "API hoặc token null")
+                _uiState.value = _uiState.value.copy(
+                    status = LoadStatus.Error("Không có token hoặc API")
+                )
             }
         }
-
     }
 
-    fun loadSongByGenre(genreId : Long)
-    {
+    fun loadGenre(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
-                val token = tokenManager?.getToken()
-                if(api != null && !token.isNullOrBlank()){
-                    Log.d("SongRequest", "Token: $token")
+            if (!forceRefresh && _uiState.value.genres.isNotEmpty()) {
+                Log.d("HomeViewModel", "Using cached genres")
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+            val token = tokenManager?.getToken()
+
+            if (api != null && !token.isNullOrBlank()) {
+                try {
+                    val response = api.getGenres(token)
+                    val genres = response.body()?.content.orEmpty()
+                    _uiState.value = _uiState.value.copy(
+                        genres = genres,
+                        status = LoadStatus.Success()
+                    )
+                    Log.d("HomeViewModel", "Genres loaded: ${genres.size} items")
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
+                    Log.e("HomeViewModel", "Failed to load genres: ${e.message}")
+                }
+            } else {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
+            }
+        }
+    }
+
+    fun loadSongByGenre(genreId: Long, forceRefresh: Boolean = false) {
+        viewModelScope.launch {
+            if (!forceRefresh && _uiState.value.songsByGenre.containsKey(genreId)) {
+                Log.d("HomeViewModel", "Using cached songs for genreId: $genreId")
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+            val token = tokenManager?.getToken()
+
+            if (api != null && !token.isNullOrBlank()) {
+                try {
                     val songs = api.getSongByGenreId(token, genreId)
-                    Log.d("HomeViewModel", "Songs loaded: ${songs.content.size} items")
                     _uiState.value = _uiState.value.copy(
                         songsByGenre = _uiState.value.songsByGenre + (genreId to songs.content),
                         status = LoadStatus.Success()
                     )
+                    Log.d("HomeViewModel", "Songs loaded: ${songs.content.size} items for genre $genreId")
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
+                    Log.e("HomeViewModel", "Failed to load songs by genre: ${e.message}")
                 }
-                else
-                {
-                    Log.e("HomeViewModel", "API hoặc token null")
-                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
-                }
+            } else {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
             }
-            catch (e : Exception)
-            {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
-                Log.d("HomeViewModel", "Failed to load songs: ${e.message}")
-            }
-
         }
     }
-    fun loadAlbum() {
+
+    fun loadAlbum(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
-                val token = tokenManager?.getToken()
-                if (api != null && !token.isNullOrBlank()) {
-                    Log.d("AlbumRequest", "Token: $token")
+            if (!forceRefresh && _uiState.value.albums.isNotEmpty()) {
+                Log.d("HomeViewModel", "Using cached albums")
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+            val token = tokenManager?.getToken()
+
+            if (api != null && !token.isNullOrBlank()) {
+                try {
                     val albums = api.getAlbums(token)
-                    Log.d("HomeViewModel", "Albums loaded: ${albums.content.size} items")
                     _uiState.value = _uiState.value.copy(
                         albums = albums.content,
                         status = LoadStatus.Success()
                     )
-                } else {
-                    Log.e("HomeViewModel", "API hoặc token null")
-                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
+                    Log.d("HomeViewModel", "Albums loaded: ${albums.content.size}")
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
+                    Log.e("HomeViewModel", "Failed to load albums: ${e.message}")
                 }
-            } catch (ex: Exception) {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(ex.message.toString()))
-                Log.e("HomeViewModel", "Failed to load albums: ${ex.message}")
+            } else {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
             }
         }
     }
 
-    fun loadArtist() {
+    fun loadArtist(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
-                val token = tokenManager?.getToken()
-                if (api != null && !token.isNullOrBlank()) {
-                    Log.d("ArtistRequest", "Token: $token")
+            if (!forceRefresh && _uiState.value.artists.isNotEmpty()) {
+                Log.d("HomeViewModel", "Using cached artists")
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+            val token = tokenManager?.getToken()
+
+            if (api != null && !token.isNullOrBlank()) {
+                try {
                     val artists = api.getArtists(token)
-                    Log.d("HomeViewModel", "Artists loaded: ${artists.content.size} items")
                     _uiState.value = _uiState.value.copy(
                         artists = artists.content,
                         status = LoadStatus.Success()
                     )
-                } else {
-                    Log.e("HomeViewModel", "API hoặc token null")
-                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
+                    Log.d("HomeViewModel", "Artists loaded: ${artists.content.size}")
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message.toString()))
+                    Log.e("HomeViewModel", "Failed to load artists: ${e.message}")
                 }
-            } catch (ex: Exception) {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(ex.message.toString()))
-                Log.e("HomeViewModel", "Failed to load artists: ${ex.message}")
+            } else {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Không có token hoặc API"))
             }
         }
     }
 
-    fun loadFavoriteSong() {
+    fun loadFavoriteSong(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+            if (!forceRefresh && _uiState.value.favoriteSongs.isNotEmpty()) {
+                Log.d("HomeViewModel", "Using cached favorite songs")
+                return@launch
+            }
 
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
             val token = tokenManager?.getToken()
             val userId = tokenManager?.getUserId()
 
             if (api == null || token.isNullOrBlank() || userId == null) {
-                Log.e("HomeViewModel", "API, token, hoặc userId null")
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Thiếu thông tin xác thực"))
                 return@launch
             }
 
             try {
-                Log.d("FavoriteSong", "Token: $token - UserId: $userId")
-
                 val response = api.getFavoriteSongs(token)
                 if (response.isSuccessful) {
                     val songs = response.body()?.content.orEmpty()
-
                     _uiState.value = _uiState.value.copy(
                         favoriteSongs = songs,
                         likeCount = songs.size,
                         status = LoadStatus.Success()
                     )
-
-                    Log.d("HomeViewModel", "Favorite songs loaded: ${songs.size}")
                 } else {
-                    val errorMsg = response.errorBody()?.string() ?: "Lỗi không xác định"
-                    Log.e("HomeViewModel", "Lỗi response: $errorMsg")
                     _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Lỗi tải danh sách yêu thích"))
                 }
-            } catch (ex: Exception) {
-                Log.e("HomeViewModel", "Exception: ${ex.message}", ex)
+            } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Lỗi mạng hoặc máy chủ"))
             }
         }
     }
-    fun loadDownloadedSong() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
 
+    fun loadDownloadedSong(forceRefresh: Boolean = false) {
+        viewModelScope.launch {
+            if (!forceRefresh && _uiState.value.downloadSongs.isNotEmpty()) {
+                Log.d("HomeViewModel", "Using cached downloaded songs")
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
             val token = tokenManager?.getToken()
             val userId = tokenManager?.getUserId()
 
             if (api == null || token.isNullOrBlank() || userId == null) {
-                Log.e("HomeViewModel", "API, token hoặc userId null khi load downloaded songs")
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Thiếu thông tin xác thực"))
                 return@launch
             }
 
             try {
-                Log.d("DownloadedSongs", "Token: $token - UserId: $userId")
-
                 val response = api.getDownloadedSongs(token)
                 if (response.isSuccessful) {
                     val downloadedSongs = response.body()?.content.orEmpty()
-
                     _uiState.value = _uiState.value.copy(
                         downloadSongs = downloadedSongs,
                         downloadCount = downloadedSongs.size,
                         status = LoadStatus.Success()
                     )
-
-                    Log.d("HomeViewModel", "Downloaded songs loaded: ${downloadedSongs.size}")
                 } else {
-                    val errorMsg = response.errorBody()?.string() ?: "Lỗi không xác định"
-                    Log.e("HomeViewModel", "Lỗi response downloaded songs: $errorMsg")
                     _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Lỗi tải bài hát đã tải xuống"))
                 }
-            } catch (ex: Exception) {
-                Log.e("HomeViewModel", "Exception khi load downloaded songs: ${ex.message}", ex)
+            } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Lỗi mạng hoặc máy chủ"))
             }
         }
     }
-
 
 
 //    fun loadRecentPlayed()
@@ -295,4 +306,58 @@ class HomeViewModel @Inject constructor(
     fun getTimeOfDay() : TimeOfDay{
         return _uiState.value.timeOfDay
     }
+
+
+
+    fun loadProfile(forceRefresh: Boolean = false) {
+        viewModelScope.launch {
+            if (!forceRefresh && _uiState.value.avatar.isNotEmpty()) {
+                Log.d("HomeViewModel", "Using cached profile")
+                return@launch
+            }
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+            val token = tokenManager?.getToken()
+            if (api != null && !token.isNullOrBlank()) {
+                try {
+                    val response = api.getMyProfile(token)
+                    if (response.isSuccessful) {
+                        val profile = response.body()
+                        _uiState.value = _uiState.value.copy(
+                            avatar = profile?.avatar ?: "",
+                            username = profile?.username ?: tokenManager?.getUserName() ?: "",
+                            status = LoadStatus.Success()
+                        )
+                        Log.d("HomeViewModel", "Profile loaded: ${profile?.username}, avatar: ${profile?.avatar}")
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            status = LoadStatus.Error("Failed to load profile")
+                        )
+                    }
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(
+                        status = LoadStatus.Error(e.message ?: "Unknown error")
+                    )
+                    Log.e("HomeViewModel", "Failed to load profile: ${e.message}")
+                }
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    status = LoadStatus.Error("No token or API")
+                )
+            }
+        }
+    }
+
+    override fun clearSessionCache() {
+        _uiState.value = HomeUiState()
+    }
+
+    override fun hasSessionCache(): Boolean {
+        return _uiState.value.songs.isNotEmpty() ||
+                _uiState.value.albums.isNotEmpty() ||
+                _uiState.value.artists.isNotEmpty() ||
+                _uiState.value.favoriteSongs.isNotEmpty() ||
+                _uiState.value.downloadSongs.isNotEmpty() ||
+                _uiState.value.avatar.isNotEmpty()
+    }
+
 }

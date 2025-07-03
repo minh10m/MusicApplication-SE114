@@ -64,10 +64,14 @@ fun PlayerScreen(
 
     // Hiển thị thông báo lỗi nếu có
     LaunchedEffect(state.status) {
-        if (state.status is LoadStatus.Error) {
-            Toast.makeText(context, (state.status as LoadStatus.Error).description, Toast.LENGTH_SHORT).show()
+        if (state.status is LoadStatus.Error && state.toggle) {
+            Toast.makeText(context, state.errorMes, Toast.LENGTH_SHORT).show()
+        }
+        else if(state.status is LoadStatus.Success && state.toggle) {
+            Toast.makeText(context, state.successMes, Toast.LENGTH_SHORT).show()
         }
     }
+
 
     // Handle share URL
     LaunchedEffect(state.shareUrl) {
@@ -83,6 +87,7 @@ fun PlayerScreen(
             viewModel.clearShareUrl()
         }
     }
+
 
     LaunchedEffect(songId) {
         viewModel.loadSongById(songId)
