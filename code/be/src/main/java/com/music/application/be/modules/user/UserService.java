@@ -34,7 +34,7 @@ public class UserService {
     private final CloudinaryService cloudinaryService;
     private final FavoriteSongRepository favoriteSongRepository;
     private final FollowArtistRepository followArtistRepository;
-    private final FavoritePlaylistRepository favoritePlaylistRepository;
+    private final PlaylistRepository playlistRepository;
 
     @Cacheable(value = "users", key = "#userId")
     public UserDetailDTO getUserById(Long userId) {
@@ -50,7 +50,7 @@ public class UserService {
 
         int favoriteSongCount = favoriteSongRepository.countByUserId(userId);
         int followedArtistCount = followArtistRepository.countByUserId(userId);
-        int playlistCount = favoritePlaylistRepository.countByUserId(userId);
+        int playlistCount = playlistRepository.countByCreatedBy_Id(userId);
 
         return new ProfileDTO(
                 fullUser.getUsername(),

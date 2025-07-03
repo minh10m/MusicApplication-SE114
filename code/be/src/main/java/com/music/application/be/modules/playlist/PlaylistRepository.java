@@ -36,4 +36,5 @@ public interface PlaylistRepository extends JpaRepository<Playlist, Long> {
     @Query("SELECT p FROM Playlist p JOIN p.genres g WHERE g.id = :genreId")
     Page<Playlist> findByGenresId(Long genreId, Pageable pageable);
 
+    int countByCreatedBy_Id(Long userId);
 }
