@@ -21,6 +21,7 @@ data class LoginUiState(
     val username: String = "",
     val password: String = "",
     val successMessage : String = "",
+    val errorMessage : String = "",
     var isShowPassword: Boolean = false,
     val status: LoadStatus = LoadStatus.Init()
 )
@@ -46,6 +47,10 @@ class LoginViewModel @Inject constructor(
 
     fun updateSuccessMessage(successMessage: String){
         _uiState.value = _uiState.value.copy(successMessage = successMessage)
+    }
+
+    fun updateErrorMessage(errorMessage: String){
+        _uiState.value = _uiState.value.copy(errorMessage = errorMessage)
     }
 
     fun reset()
@@ -88,16 +93,23 @@ class LoginViewModel @Inject constructor(
                         }
 
                         _uiState.value = _uiState.value.copy(status = LoadStatus.Success())
-                        updateSuccessMessage(result.body()?.message.toString())
+                        updateSuccessMessage("Đăng nhập thành công")
                     } else {
                         _uiState.value = _uiState.value.copy(status = LoadStatus.Error(result.body()?.message.toString()))
+                        updateErrorMessage("Đăng nhập thất bại")
                         Log.e("SignUpError", "Response body: ${result.body()?.toString()}")
                         Log.e("SignUpError", "Response code: ${result.code()}")
                         Log.e("SignUpError", "AccessToken: ${result.body()?.access_token}")
                     }
                 }
+                else
+                {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error(result?.body()?.message.toString()))
+                    updateErrorMessage("Sai toàn khoản hoặc mật khẩu vui lòng thử lại")
+                }
             } catch (ex : Exception){
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Error(ex.message.toString()))
+                updateErrorMessage("Lỗi kết nối tới máy chủ")
             }
         }
     }

@@ -37,6 +37,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.Screen
+import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
 import kotlinx.coroutines.delay
@@ -75,123 +76,129 @@ fun ArtistsFollowingScreen(
         }
     }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets
-            .safeDrawing
-            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 14.dp)
-        ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+    if (uiState.value.status is LoadStatus.Loading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(strokeWidth = 2.dp, color = Color.White)
+        }
+    } else {
+        Scaffold(
+            contentWindowInsets = WindowInsets
+                .safeDrawing
+                .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBackIos,
-                            contentDescription = "Back",
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable {
-                                    if (!navController.popBackStack()) {
-                                        navController.navigate("library")
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBackIos,
+                                contentDescription = "Back",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                        if (!navController.popBackStack()) {
+                                            navController.navigate("library")
+                                        }
                                     }
-                                }
-                        )
+                            )
 
-                        Spacer(modifier = Modifier.width(26.dp))
+                            Spacer(modifier = Modifier.width(26.dp))
 
+                            Text(
+                                text = "Đang theo dõi",
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(30.dp))
                         Text(
-                            text = "Đang theo dõi",
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            text = "${uiState.value.followedArtists.size} nghệ sĩ",
+                            fontSize = 14.sp,
+                            color = Color.LightGray,
+                            textAlign = TextAlign.Start
                         )
                     }
-                    Spacer(modifier = Modifier.height(30.dp))
-                    Text(
-                        text = "${uiState.value.followedArtists.size} nghệ sĩ",
-                        fontSize = 14.sp,
-                        color = Color.LightGray,
-                        textAlign = TextAlign.Start
+                }
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Row {
+                    // Search Bar
+                    SearchBar(
+                        query = uiState.value.query,
+                        onQueryChange = {
+                            viewModel.updateQuery(it)
+                            viewModel.searchAllDebounced(it)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Icon(
+                        imageVector = Icons.Default.SwapVert,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(15.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                val displayedArtists = if (uiState.value.query.isNotBlank()) {
+                    uiState.value.searchedArtists
+                } else {
+                    uiState.value.followedArtists
+                }
 
-            Row {
-                // Search Bar
-                SearchBar(
-                    query = uiState.value.query,
-                    onQueryChange = {
-                        viewModel.updateQuery(it)
-                        viewModel.searchAllDebounced(it)
-                    }
-                )
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Icon(
-                    imageVector = Icons.Default.SwapVert,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            val displayedArtists = if (uiState.value.query.isNotBlank()) {
-                uiState.value.searchedArtists
-            } else {
-                uiState.value.followedArtists
-            }
-
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(displayedArtists.chunked(3)) { rowArtists ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        rowArtists.forEach { artist ->
-                            Column(
-                                modifier = Modifier
-                                    .width(115.dp)
-                                    .clickable {
-                                        navController.navigate(Screen.Artist.createRoute(artist.artist.id))
-                                    },
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                AsyncImage(
-                                    model = artist.artist.avatar,
-                                    contentDescription = artist.artist.name,
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    items(displayedArtists.chunked(3)) { rowArtists ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            rowArtists.forEach { artist ->
+                                Column(
                                     modifier = Modifier
-                                        .size(115.dp)
-                                        .clip(CircleShape),
-                                    contentScale = ContentScale.Crop
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = artist.artist.name,
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center
-                                )
+                                        .width(115.dp)
+                                        .clickable {
+                                            navController.navigate(Screen.Artist.createRoute(artist.artist.id))
+                                        },
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    AsyncImage(
+                                        model = artist.artist.avatar,
+                                        contentDescription = artist.artist.name,
+                                        modifier = Modifier
+                                            .size(115.dp)
+                                            .clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = artist.artist.name,
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
                             }
-                            Spacer(modifier = Modifier.width(16.dp))
                         }
                     }
                 }

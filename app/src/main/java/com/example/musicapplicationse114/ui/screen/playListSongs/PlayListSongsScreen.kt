@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -44,8 +45,11 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.Screen
+import com.example.musicapplicationse114.common.enum.LoadStatus
+import com.example.musicapplicationse114.ui.createPlaylist.CreatePlaylistViewModel
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
 import com.example.musicapplicationse114.ui.screen.album.AlbumSongListViewModel
+import com.example.musicapplicationse114.ui.screen.playlists.PlayListViewModel
 
 @Composable
 fun PlayListSongsScreen(
@@ -54,6 +58,7 @@ fun PlayListSongsScreen(
     viewModel: PlayListSongsViewModel = hiltViewModel(),
     sharedViewModel: PlayerSharedViewModel = hiltViewModel(),
     mainViewModel: MainViewModel,
+    playlistViewModel: PlayListViewModel = hiltViewModel()
 ) {
     val state = viewModel.uiState.collectAsState().value
     val globalPlayerController = sharedViewModel.player
@@ -65,6 +70,7 @@ fun PlayListSongsScreen(
         if (reloadTrigger) {
             viewModel.loadPlaylistById(playlistId)
             viewModel.loadPlaylistWithSong(playlistId)
+            playlistViewModel.loadPlaylist()
             currentBackStackEntry?.savedStateHandle?.set("reload", false) // reset lại
         }
     }
@@ -74,167 +80,199 @@ fun PlayListSongsScreen(
         viewModel.loadPlaylistWithSong(playlistId)
     }
 
-
-
-    Column(modifier = Modifier.fillMaxSize().background(Color.Black).padding(bottom = 129.dp)) {
-        // Fixed album cover with overlay
-        Box(modifier = Modifier.height(300.dp)) {
-            AsyncImage(
-                model = state.playlist?.thumbnail,
-                contentDescription = state.playlist?.name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
+        if(state.status is LoadStatus.Loading)
+        {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f))
-                    .padding(horizontal = 16.dp, vertical = 20.dp),
-                contentAlignment = Alignment.BottomCenter
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Spacer(modifier = Modifier.height(10.dp))
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.align(Alignment.TopStart)
-                        .padding(top = 24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBackIos,
-                        contentDescription = "Back",
-                        tint = Color.White
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = state.playlist?.name ?: "",
-                        color = Color.White,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Playlist",
-                        color = Color.LightGray,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    color = Color.White
+                )
             }
-        }
+        }else {
 
-        // Info and action row below cover
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.Black)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-            Text(
-                text = "1.2K likes • ${state.songs.size} songs",
-                color = Color.LightGray,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            Column(
+                modifier = Modifier.fillMaxSize().background(Color.Black).padding(bottom = 129.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.FavoriteBorder,
-                        contentDescription = "Like",
-                        tint = Color.White,
-                        modifier = Modifier.size(30.dp)
+                // Fixed album cover with overlay
+                Box(modifier = Modifier.height(300.dp)) {
+                    AsyncImage(
+                        model = state.playlist?.thumbnail,
+                        contentDescription = state.playlist?.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add",
-                        tint = Color.White,
-                        modifier = Modifier.size(30.dp)
-                            .clickable {
-                                navController.currentBackStackEntry?.savedStateHandle?.set("playlistId", state.playlist?.id)
-                                navController.currentBackStackEntry?.savedStateHandle?.set("addedSongIds", state.songs.map { it.id })
-                                navController.navigate(Screen.SearchSongAddIntoPlaylist.route)
-                            }
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        if (state.songs.isNotEmpty()) {
-                            sharedViewModel.setSongList(state.songs, 0)
-                            sharedViewModel.addRecentlyPlayed(state.songs[0].id)
-                            Log.d("PlayListSongsScreen", "Called addRecentlyPlayed for songId: ${state.songs[0].id}")
-                            globalPlayerController.play(state.songs[0])
-                            mainViewModel.setFullScreenPlayer(true)
-                            navController.navigate(Screen.Player.createRoute(state.songs[0].id))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.4f))
+                            .padding(horizontal = 16.dp, vertical = 20.dp),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        IconButton(
+                            onClick = {
+                                playlistViewModel.loadPlaylist()
+                                navController.popBackStack()
+                            },
+                            modifier = Modifier.align(Alignment.TopStart)
+                                .padding(top = 24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBackIos,
+                                contentDescription = "Back",
+                                tint = Color.White
+                            )
                         }
-                    },
-                    modifier = Modifier
-                        .size(42.dp)
-                        .background(Color.White, shape = CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play All",
-                        tint = Color.Black,
-                        modifier = Modifier.size(35.dp)
-                    )
-                }
-            }
-        }
 
-        // Song list
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(state.songs) { song ->
-                Row(
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = state.playlist?.name ?: "",
+                                color = Color.White,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Playlist",
+                                color = Color.LightGray,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Info and action row below cover
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            sharedViewModel.setSongList(state.songs, state.songs.indexOf(song))
-                            sharedViewModel.addRecentlyPlayed(song.id)
-                            Log.d("PlayListSongsScreen", "Called addRecentlyPlayed for songId: ${song.id}")
-                            globalPlayerController.play(song)
-                            mainViewModel.setFullScreenPlayer(true)
-                            navController.navigate(Screen.Player.createRoute(song.id))
-                        }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .background(Color.Black)
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    AsyncImage(
-                        model = song.thumbnail,
-                        contentDescription = song.title,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        contentScale = ContentScale.Crop
+                    Text(
+                        text = "1.2K likes • ${state.songs.size} songs",
+                        color = Color.LightGray,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    Spacer(Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = song.title,
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1
-                        )
-                        Text(
-                            text = song.artistName,
-                            color = Color.LightGray,
-                            fontSize = 14.sp,
-                            maxLines = 1
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.FavoriteBorder,
+                                contentDescription = "Like",
+                                tint = Color.White,
+                                modifier = Modifier.size(30.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add",
+                                tint = Color.White,
+                                modifier = Modifier.size(30.dp)
+                                    .clickable {
+                                        navController.currentBackStackEntry?.savedStateHandle?.set(
+                                            "playlistId",
+                                            state.playlist?.id
+                                        )
+                                        navController.currentBackStackEntry?.savedStateHandle?.set(
+                                            "addedSongIds",
+                                            state.songs.map { it.id })
+                                        navController.currentBackStackEntry?.savedStateHandle?.set("reload", true) // Đặt reload thành true
+                                        navController.navigate(Screen.SearchSongAddIntoPlaylist.route)
+                                    }
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                if (state.songs.isNotEmpty()) {
+                                    sharedViewModel.setSongList(state.songs, 0)
+                                    sharedViewModel.addRecentlyPlayed(state.songs[0].id)
+                                    Log.d(
+                                        "PlayListSongsScreen",
+                                        "Called addRecentlyPlayed for songId: ${state.songs[0].id}"
+                                    )
+                                    globalPlayerController.play(state.songs[0])
+                                    mainViewModel.setFullScreenPlayer(true)
+                                    navController.navigate(Screen.Player.createRoute(state.songs[0].id))
+                                }
+                            },
+                            modifier = Modifier
+                                .size(42.dp)
+                                .background(Color.White, shape = CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Play All",
+                                tint = Color.Black,
+                                modifier = Modifier.size(35.dp)
+                            )
+                        }
                     }
-                    IconButton(onClick = { /* handle more */ }) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = null,
-                            tint = Color.White
-                        )
+                }
+
+                // Song list
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(state.songs) { song ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    sharedViewModel.setSongList(
+                                        state.songs,
+                                        state.songs.indexOf(song)
+                                    )
+                                    sharedViewModel.addRecentlyPlayed(song.id)
+                                    Log.d(
+                                        "PlayListSongsScreen",
+                                        "Called addRecentlyPlayed for songId: ${song.id}"
+                                    )
+                                    globalPlayerController.play(song)
+                                    mainViewModel.setFullScreenPlayer(true)
+                                    navController.navigate(Screen.Player.createRoute(song.id))
+                                }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = song.thumbnail,
+                                contentDescription = song.title,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = song.title,
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = song.artistName,
+                                    color = Color.LightGray,
+                                    fontSize = 14.sp,
+                                    maxLines = 1
+                                )
+                            }
+                            IconButton(onClick = { /* handle more */ }) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
-    }
 }

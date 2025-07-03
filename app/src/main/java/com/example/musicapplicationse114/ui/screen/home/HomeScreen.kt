@@ -269,12 +269,22 @@ fun AlbumItem(album: AlbumResponse, onClick: () -> Unit) {
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = album.name,
-            color = Color.LightGray,
-            fontSize = 16.sp,
-            maxLines = 1
-        )
+        Column()
+        {
+            Text(
+                text = album.name,
+                color = Color.LightGray,
+                fontSize = 16.sp,
+                maxLines = 1
+            )
+            Text(
+                text = "Album",
+                color = Color.LightGray,
+                fontSize = 14.sp,
+                maxLines = 1
+            )
+        }
+
     }
 }
 
@@ -299,14 +309,24 @@ fun ArtistItem(artist: ArtistResponse, onClick: () -> Unit) {
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = artist.name,
-            color = Color.LightGray,
-            fontSize = 16.sp,
-            maxLines = 1,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
+            Text(
+                text = artist.name,
+                color = Color.LightGray,
+                fontSize = 16.sp,
+                maxLines = 1,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+
+            Text(
+                text = "Artist",
+                color = Color.LightGray,
+                fontSize = 14.sp,
+                maxLines = 1,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+
     }
 }
 
@@ -332,12 +352,22 @@ fun SongItem(song: SongResponse, onClick: () -> Unit) {
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = song.title,
-            color = Color.LightGray,
-            fontSize = 16.sp,
-            maxLines = 1
-        )
+        Column{
+            Text(
+                text = song.title,
+                color = Color.LightGray,
+                fontSize = 16.sp,
+                maxLines = 1
+            )
+
+            Text(
+                text = "Song",
+                color = Color.LightGray,
+                fontSize = 14.sp,
+                maxLines = 1
+            )
+        }
+
     }
 }
 

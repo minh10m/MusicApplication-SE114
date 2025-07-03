@@ -1,6 +1,5 @@
 package com.example.musicapplicationse114.ui.screen.login
 
-import android.media.Image
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowForward
@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -42,7 +41,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,15 +52,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusModifier
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -82,7 +77,6 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
     val state = viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-
     LaunchedEffect(state.value.status) {
         when (val status = state.value.status) {
             is LoadStatus.Success -> {
@@ -97,8 +91,8 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                 }
             }
             is LoadStatus.Error -> {
-                mainViewModel.setError(status.description)
                 viewModel.reset()
+                Toast.makeText(context, state.value.errorMessage, Toast.LENGTH_SHORT).show()
             }
             else -> {
                 // do nothing
@@ -121,19 +115,13 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
-                    )
-                    {
+                    ) {
                         CircularProgressIndicator(
                             strokeWidth = 2.dp,
                             color = Color.White
                         )
                     }
                 }
-
-                is LoadStatus.Success -> {
-
-                }
-
                 else -> {
                     Spacer(modifier = Modifier.height(80.dp)) // Cách lề trên
 
@@ -148,8 +136,7 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                     Spacer(modifier = Modifier.height(100.dp)) // Khoảng cách dưới logo
 
                     // Login Text
-                    Row()
-                    {
+                    Row {
                         Text(
                             text = "Login",
                             fontSize = 30.sp,
@@ -181,21 +168,35 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                     Spacer(modifier = Modifier.height(60.dp))
 
                     TextField(
-                        value = state.value.username, onValueChange = {
-                            viewModel.updateUsername(it)
+                        value = state.value.username,
+                        onValueChange = { newValue ->
+                            // Loại bỏ ký tự Enter (\n)
+                            val filteredValue = newValue.replace("\n", "")
+                            viewModel.updateUsername(filteredValue)
                         },
                         label = { Text("Account") },
                         leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
-
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = TextFieldDefaults.colors(
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            errorIndicatorColor = Color.Transparent
+                        ),
                         modifier = Modifier
-                            .shadow(25.dp, shape = RoundedCornerShape(20.dp),)
+                            .width(280.dp)
+                            .shadow(25.dp, shape = RoundedCornerShape(20.dp))
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
 
                     TextField(
-                        value = state.value.password, onValueChange = {
-                            viewModel.updatePassword(it)
+                        value = state.value.password,
+                        onValueChange = { newValue ->
+                            // Loại bỏ ký tự Enter (\n)
+                            val filteredValue = newValue.replace("\n", "")
+                            viewModel.updatePassword(filteredValue)
                         },
                         label = { Text("Password") },
                         visualTransformation = if (state.value.isShowPassword) VisualTransformation.None
@@ -211,13 +212,27 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
                                 )
                             }
                         },
-                        modifier = Modifier.shadow(25.dp, shape = RoundedCornerShape(20.dp))
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = TextFieldDefaults.colors(
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            errorIndicatorColor = Color.Transparent
+                        ),
+                        modifier = Modifier
+                            .width(280.dp)
+                            .shadow(25.dp, shape = RoundedCornerShape(20.dp))
                     )
 
                     Spacer(modifier = Modifier.height(28.dp))
 
-                    Button(onClick = { viewModel.login() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B5998)),) {
+                    Button(
+                        onClick = { viewModel.login() },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B5998)),
+                        modifier = Modifier
+                            .width(140.dp)
+                    ) {
                         Row {
                             Text(
                                 "Sign In",
@@ -266,8 +281,12 @@ fun LoginScreen(navController: NavHostController, viewModel: LoginViewModel, mai
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun LoginScreenPreview()
-{
+fun LoginScreenPreview() {
     val navController = rememberNavController()
-    LoginScreen(navController = navController, viewModel = LoginViewModel(null, null, null), mainViewModel = MainViewModel(), homeViewModel = HomeViewModel(null,null, null))
+    LoginScreen(
+        navController = navController,
+        viewModel = LoginViewModel(null, null, null),
+        mainViewModel = MainViewModel(),
+        homeViewModel = HomeViewModel(null, null, null)
+    )
 }
