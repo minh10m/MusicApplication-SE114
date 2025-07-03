@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SongPlaylistRepository extends JpaRepository<SongPlaylist, Long> {
@@ -15,4 +16,8 @@ public interface SongPlaylistRepository extends JpaRepository<SongPlaylist, Long
     List<SongPlaylist> findByPlaylistIdOrderByAddedAtAsc(Long playlistId);
 
     long countByPlaylistId(Long id);
+    
+    Optional<SongPlaylist> findBySongIdAndPlaylistId(Long songId, Long playlistId);
+    
+    boolean existsBySongIdAndPlaylistId(Long songId, Long playlistId);
 }
