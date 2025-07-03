@@ -229,7 +229,6 @@ public class SongService {
     }
 
     // Read by ID
-    @Cacheable(value = "songs", key = "#id")
     public SongResponseDTO getSongById(Long id) {
         Song song = songRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Song not found with id: " + id));

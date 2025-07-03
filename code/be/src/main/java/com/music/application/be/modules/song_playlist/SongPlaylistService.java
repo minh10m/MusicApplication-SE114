@@ -38,7 +38,7 @@ public class SongPlaylistService {
     private PlaylistService playlistService; // Thêm dependency
 
     // Add song to playlist
-    @CacheEvict(value = {"playlists", "searchedPlaylists"}, key = "#requestDTO.playlistId")
+    @CacheEvict(value = "songs", key = "#requestDTO.songId")
     public SongPlaylistDTO addSongToPlaylist(SongPlaylistRequestDTO requestDTO) {
         Song song = songRepository.findById(requestDTO.getSongId())
                 .orElseThrow(() -> new EntityNotFoundException("Song not found with id: " + requestDTO.getSongId()));
@@ -70,8 +70,12 @@ public class SongPlaylistService {
     }
 
     // Update song or playlist in SongPlaylist
-    @CachePut(value = "songPlaylists", key = "#id")
-    @CacheEvict(value = {"playlists", "searchedPlaylists"}, allEntries = true)
+    @CacheEvict(value = {
+            "playlists", "searchedPlaylists",
+            "playlistWithSongs",
+            "songs", "songsByGenre", "songsByArtist", "topSongs"
+    }, allEntries = true)
+
     public SongPlaylistDTO updateSongPlaylist(Long id, SongPlaylistRequestDTO requestDTO) {
         SongPlaylist songPlaylist = songPlaylistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("SongPlaylist not found with id: " + id));
@@ -112,7 +116,11 @@ public class SongPlaylistService {
     }
 
     // Remove song from playlist
-    @CacheEvict(value = {"songPlaylists", "playlists", "searchedPlaylists"}, allEntries = true)
+    @CacheEvict(value = {
+            "playlists", "searchedPlaylists",
+            "playlistWithSongs",
+            "songs", "songsByGenre", "songsByArtist", "topSongs"
+    }, allEntries = true)
     public void removeSongFromPlaylist(Long id) {
         SongPlaylist songPlaylist = songPlaylistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("SongPlaylist not found with id: " + id));
