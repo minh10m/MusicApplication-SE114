@@ -32,6 +32,14 @@ data class SongPlaylistRequest(
     val playlistId : Long
 )
 
+data class SongPlaylistResponse(
+    val id: Long,
+    val songId: Long,
+    val playlistId: Long,
+    val addedAt: String,
+    val song: SongResponse? = null
+)
+
 data class PlaylistPageResponse<T>(
     val content : List<T>
 )

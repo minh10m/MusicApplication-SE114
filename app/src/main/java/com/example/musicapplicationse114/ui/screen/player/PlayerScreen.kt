@@ -1,8 +1,11 @@
 package com.example.musicapplicationse114.ui.screen.player
 
 import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -32,10 +36,13 @@ import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.model.getCurrentLyric
 import com.example.musicapplicationse114.model.parseLyrics
 import com.example.musicapplicationse114.ui.playerController.PlayerSharedViewModel
+import kotlinx.coroutines.delay
+import com.example.musicapplicationse114.ui.screen.comment.CommentDialog
+import com.example.musicapplicationse114.ui.components.SongOptionsMenu
 import com.example.musicapplicationse114.ui.screen.artist.ArtistViewModel
 import com.example.musicapplicationse114.ui.screen.home.HomeViewModel
-import kotlinx.coroutines.delay
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PlayerScreen(
     navController: NavController,
@@ -52,6 +59,9 @@ fun PlayerScreen(
     val state by viewModel.uiState.collectAsState()
     var isSongEnded by remember { mutableStateOf(false) }
 
+    // State for dialogs
+    var showCommentDialog by remember { mutableStateOf(false) }
+
     // Hiển thị thông báo lỗi nếu có
     LaunchedEffect(state.status) {
         if (state.status is LoadStatus.Error && state.toggle) {
@@ -62,6 +72,21 @@ fun PlayerScreen(
         }
     }
 
+
+    // Handle share URL
+    LaunchedEffect(state.shareUrl) {
+        state.shareUrl?.let { url ->
+            val shareIntent = Intent().apply {
+                action = Intent.ACTION_SEND
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, url)
+                putExtra(Intent.EXTRA_SUBJECT, "Check out this song!")
+            }
+            val chooser = Intent.createChooser(shareIntent, "Share song")
+            context.startActivity(chooser)
+            viewModel.clearShareUrl()
+        }
+    }
 
 
     LaunchedEffect(songId) {
@@ -119,8 +144,19 @@ fun PlayerScreen(
             }
         }
     }
+
+    // Comment Dialog
+    if (showCommentDialog) {
+        playerState.currentSong?.let { song ->
+            CommentDialog(
+                song = song,
+                onDismiss = { showCommentDialog = false }
+            )
+        }
+    }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PlayerContent(
     song: SongResponse,
@@ -141,12 +177,17 @@ fun PlayerContent(
     upNextSong: SongResponse?,
     isSongEnded: Boolean
 ) {
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
     val isLiked = state.likedSongIds.contains(song.id)
     val isDownloaded = state.downloadedSongIds.contains(song.id)
     val globalPlayerController = sharedViewModel.player
 
-    val lyricsList = remember(song.id) { parseLyrics(song.lyrics ?: "") }
+
+    // State for dialogs
+    var showCommentDialog by remember { mutableStateOf(false) }
+
+    val lyricsList = remember(song.id) { parseLyrics(song.lyrics) }
     val hasValidLyrics = lyricsList.isNotEmpty()
     val currentLyricLine = remember { mutableStateOf("") }
 
@@ -184,9 +225,23 @@ fun PlayerContent(
 
             Spacer(modifier = Modifier.width(290.dp))
 
-            IconButton(onClick = { /*DO STH */ }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "MoreVert", tint = Color.White, modifier = Modifier.size(32.dp))
-            }
+            SongOptionsMenu(
+                song = song,
+                navController = navController,
+                isFavorite = isLiked,
+                isDownloaded = isDownloaded,
+                onFavoriteToggle = { viewModel.toggleFavorite(song) },
+                onDownloadToggle = { viewModel.toggleDownload(song) },
+                onCommentClick = { showCommentDialog = true },
+                onAddToPlaylists = { songId, playlistIds ->
+                    viewModel.addToPlaylists(songId, playlistIds)
+                    Toast.makeText(context, "Adding to ${playlistIds.size} playlist(s)...", Toast.LENGTH_SHORT).show()
+                },
+                onShare = { songId ->
+                    viewModel.shareSong(songId)
+                    Toast.makeText(context, "Sharing song...", Toast.LENGTH_SHORT).show()
+                }
+            )
         }
         Spacer(modifier = Modifier.height(20.dp))
         Box(
@@ -344,7 +399,7 @@ fun PlayerContent(
             ) {
                 Text("Queue", color = Color.White, fontSize = 20.sp)
                 Spacer(modifier = Modifier.width(4.dp))
-                Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Queue", tint = Color.White, modifier = Modifier.size(32.dp))
+                Icon(Icons.Default.ArrowForwardIos, contentDescription = "Queue", tint = Color.White, modifier = Modifier.size(25.dp))
             }
         }
         upNextSong?.let { song ->
@@ -377,6 +432,14 @@ fun PlayerContent(
                 }
             }
         }
+    }
+    
+    // Comment Dialog
+    if (showCommentDialog) {
+        CommentDialog(
+            song = song,
+            onDismiss = { showCommentDialog = false }
+        )
     }
 }
 
