@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -25,9 +26,10 @@ public class PlaylistController {
     private PlaylistService playlistService;
 
     // Create playlist for user (no genre required)
-    @PostMapping
-    public ResponseEntity<PlaylistDTO> createPlaylist(@Valid @RequestBody PlaylistRequestDTO playlistRequestDTO) {
-        return ResponseEntity.ok(playlistService.createPlaylist(playlistRequestDTO));
+    @PostMapping()
+    @ResponseStatus(HttpStatus.CREATED)
+    public PlaylistDTO createPlaylist(@RequestBody PlaylistRequestDTO playlistRequestDTO) {
+        return playlistService.createPlaylist(playlistRequestDTO);
     }
 
     // Create playlist for admin with genres (auto-add songs)
