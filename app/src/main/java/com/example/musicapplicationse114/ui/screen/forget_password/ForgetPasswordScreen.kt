@@ -74,7 +74,7 @@ fun ForgetPasswordScreen(
             is LoadStatus.Success -> {
                 if (state.value.status != LoadStatus.Init()) {
                     Toast.makeText(context, state.value.successMessage, Toast.LENGTH_SHORT).show()
-                    
+
                     // For success case, just reset status, don't auto-navigate
                     // User will navigate manually by clicking "Back to Login" button
                     if (state.value.currentStep != ForgetPasswordStep.SUCCESS) {
@@ -129,7 +129,7 @@ fun ForgetPasswordScreen(
                         horizontalArrangement = Arrangement.Start
                     ) {
                         IconButton(
-                            onClick = { 
+                            onClick = {
                                 when (state.value.currentStep) {
                                     ForgetPasswordStep.EMAIL_VERIFICATION -> {
                                         navController.navigateUp()
@@ -283,6 +283,11 @@ private fun EmailVerificationContent(
                 }
             },
             shape = RoundedCornerShape(20.dp),
+            colors = TextFieldDefaults.colors(
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                errorIndicatorColor = Color.Transparent
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(25.dp, shape = RoundedCornerShape(20.dp))
@@ -294,7 +299,7 @@ private fun EmailVerificationContent(
             onClick = onVerifyClick,
             enabled = email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() && emailError.isEmpty(),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() && emailError.isEmpty()) 
+                containerColor = if (email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() && emailError.isEmpty())
                     Color(0xFF3B5998) else Color.Gray,
                 disabledContainerColor = Color.Gray
             ),
@@ -383,6 +388,11 @@ private fun OtpVerificationContent(
                 }
             },
             shape = RoundedCornerShape(20.dp),
+            colors = TextFieldDefaults.colors(
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                errorIndicatorColor = Color.Transparent
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(25.dp, shape = RoundedCornerShape(20.dp))
@@ -419,7 +429,7 @@ private fun OtpVerificationContent(
                 color = Color.Gray
             )
             Spacer(modifier = Modifier.width(8.dp))
-            
+
             if (canResendOtp) {
                 TextButton(
                     onClick = onResendClick,
@@ -501,6 +511,11 @@ private fun ChangePasswordContent(
             placeholder = { Text("Enter a strong password") },
             singleLine = true,
             shape = RoundedCornerShape(20.dp),
+            colors = TextFieldDefaults.colors(
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                errorIndicatorColor = Color.Transparent
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(25.dp, shape = RoundedCornerShape(20.dp))
@@ -509,7 +524,7 @@ private fun ChangePasswordContent(
         // Password requirements
         if (password.isNotEmpty()) {
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -520,7 +535,7 @@ private fun ChangePasswordContent(
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 val requirements = listOf(
                     "At least 8 characters" to (password.length >= 8),
                     "One uppercase letter" to password.any { it.isUpperCase() },
@@ -528,7 +543,7 @@ private fun ChangePasswordContent(
                     "One number" to password.any { it.isDigit() },
                     "One special character" to password.any { it in "!@#$%^&*()_+-=[]{}|;:,.<>?" }
                 )
-                
+
                 requirements.forEach { (requirement, isMet) ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -586,6 +601,11 @@ private fun ChangePasswordContent(
                 }
             },
             shape = RoundedCornerShape(20.dp),
+            colors = TextFieldDefaults.colors(
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                errorIndicatorColor = Color.Transparent
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(25.dp, shape = RoundedCornerShape(20.dp))
@@ -593,11 +613,11 @@ private fun ChangePasswordContent(
 
         Spacer(modifier = Modifier.height(28.dp))
 
-        val isPasswordValid = password.length >= 8 && 
-                            password.any { it.isUpperCase() } &&
-                            password.any { it.isLowerCase() } &&
-                            password.any { it.isDigit() } &&
-                            password.any { it in "!@#$%^&*()_+-=[]{}|;:,.<>?" }
+        val isPasswordValid = password.length >= 8 &&
+                password.any { it.isUpperCase() } &&
+                password.any { it.isLowerCase() } &&
+                password.any { it.isDigit() } &&
+                password.any { it in "!@#$%^&*()_+-=[]{}|;:,.<>?" }
         val isFormValid = isPasswordValid && password == confirmPassword && confirmPassword.isNotEmpty()
 
         Button(

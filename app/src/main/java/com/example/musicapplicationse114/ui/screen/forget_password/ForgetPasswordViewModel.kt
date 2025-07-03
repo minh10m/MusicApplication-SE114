@@ -172,7 +172,7 @@ class ForgetPasswordViewModel @Inject constructor(
                     val responseText = result.body()?.string() ?: "OTP sent to your email successfully"
                     _uiState.value = _uiState.value.copy(
                         status = LoadStatus.Success(),
-                        successMessage = responseText,
+                        successMessage = "Mã xác thực đã được gửi đến email của bạn",
                         currentStep = ForgetPasswordStep.OTP_VERIFICATION,
                         canResendOtp = false,
                         resendCooldown = RESEND_COOLDOWN_SECONDS
@@ -320,7 +320,7 @@ class ForgetPasswordViewModel @Inject constructor(
                     val responseText = result.body()?.string() ?: "OTP verified successfully"
                     _uiState.value = _uiState.value.copy(
                         status = LoadStatus.Success(),
-                        successMessage = responseText,
+                        successMessage = "Xác thực OTP thành công",
                         currentStep = ForgetPasswordStep.CHANGE_PASSWORD
                     )
                 } else {
@@ -429,6 +429,7 @@ class ForgetPasswordViewModel @Inject constructor(
                 if (result != null && result.isSuccessful) {
                     _uiState.value = _uiState.value.copy(
                         status = LoadStatus.Success(),
+                        successMessage = "Thay đổi mật khẩu thành công",
                         currentStep = ForgetPasswordStep.SUCCESS
                     )
                 } else {
@@ -557,7 +558,7 @@ class ForgetPasswordViewModel @Inject constructor(
                     val responseText = result.body()?.string() ?: "New OTP sent to your email"
                     _uiState.value = _uiState.value.copy(
                         status = LoadStatus.Success(),
-                        successMessage = responseText,
+                        successMessage = "Mã xác thực đã được gửi tới email của bạn",
                         canResendOtp = false,
                         resendCooldown = RESEND_COOLDOWN_SECONDS,
                         otp = "" // Clear previous OTP
