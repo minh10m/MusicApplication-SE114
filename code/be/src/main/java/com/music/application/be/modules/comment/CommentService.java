@@ -113,6 +113,10 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
+    public List<Long> getUserLikedComments(Long songId, Long userId) {
+        return commentLikeRepository.findCommentIdsByUserIdAndSongId(userId, songId);
+    }
+
     private CommentResponseDTO mapToResponseDTO(Comment comment) {
         CommentResponseDTO dto = new CommentResponseDTO();
         dto.setId(comment.getId());

@@ -3,6 +3,7 @@ package com.music.application.be.modules.song_playlist;
 import com.music.application.be.common.PagedResponse;
 import com.music.application.be.modules.song_playlist.dto.SongPlaylistDTO;
 import com.music.application.be.modules.song_playlist.dto.SongPlaylistRequestDTO;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -49,5 +50,18 @@ public class SongPlaylistController {
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Order.asc(sortBy) : Sort.Order.desc(sortBy));
         Pageable pageable = PageRequest.of(page, size, sort);
         return ResponseEntity.ok(songPlaylistService.getAllSongPlaylists(pageable));
+    }
+
+    // Find song-playlist relationship
+    @GetMapping("/find")
+    public ResponseEntity<SongPlaylistDTO> findSongPlaylistRelation(
+            @RequestParam Long songId,
+            @RequestParam Long playlistId) {
+        try {
+            SongPlaylistDTO result = songPlaylistService.findBySongIdAndPlaylistId(songId, playlistId);
+            return ResponseEntity.ok(result);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

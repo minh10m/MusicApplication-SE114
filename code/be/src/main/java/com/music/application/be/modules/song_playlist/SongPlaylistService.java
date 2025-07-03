@@ -145,8 +145,13 @@ public class SongPlaylistService {
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
-
         return buildPagedResponse(content, page);
+    }
+
+    public SongPlaylistDTO findBySongIdAndPlaylistId(Long songId, Long playlistId) {
+        SongPlaylist songPlaylist = songPlaylistRepository.findBySongIdAndPlaylistId(songId, playlistId)
+                .orElseThrow(() -> new EntityNotFoundException("Song playlist relationship not found"));
+        return mapToDTO(songPlaylist);
     }
 
     private SongPlaylistDTO mapToDTO(SongPlaylist songPlaylist) {

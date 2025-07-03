@@ -303,4 +303,19 @@ public class SongController {
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(songService.getTopSongsByViewCount(page, size));
     }
+
+    @Operation(
+            summary = "Get user's liked comments for a song",
+            description = "Retrieves all comment IDs that the user has liked for a specific song.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved liked comment IDs",
+                            content = @Content(schema = @Schema(implementation = List.class)))
+            }
+    )
+    @GetMapping("/{songId}/liked-comments")
+    public ResponseEntity<List<Long>> getUserLikedComments(
+            @PathVariable Long songId,
+            @RequestParam Long userId) {
+        return ResponseEntity.ok(commentService.getUserLikedComments(songId, userId));
+    }
 }

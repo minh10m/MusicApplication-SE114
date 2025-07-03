@@ -32,7 +32,7 @@ public class ForgetPasswordService {
 
     public ResponseEntity<String> verifyEmail(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Please provide a valid email"));
+                .orElseThrow(() -> new UsernameNotFoundException("Email does not exist"));
 
         int otp = generateOtp();
         MailBody mailBody = MailBody.builder()
