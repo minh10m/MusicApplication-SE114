@@ -26,10 +26,12 @@ public class PlaylistController {
     private PlaylistService playlistService;
 
     // Create playlist for user (no genre required)
-    @PostMapping()
-    @ResponseStatus(HttpStatus.CREATED)
-    public PlaylistDTO createPlaylist(@RequestBody PlaylistRequestDTO playlistRequestDTO) {
-        return playlistService.createPlaylist(playlistRequestDTO);
+    @PostMapping
+    public ResponseEntity<PlaylistDTO> createPlaylist(@RequestBody PlaylistRequestDTO playlistRequestDTO) {
+        PlaylistDTO createdPlaylist = playlistService.createPlaylist(playlistRequestDTO);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(createdPlaylist);
     }
 
     // Create playlist for admin with genres (auto-add songs)
