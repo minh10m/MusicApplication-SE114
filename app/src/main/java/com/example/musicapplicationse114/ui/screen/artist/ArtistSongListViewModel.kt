@@ -7,6 +7,7 @@ import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.FollowArtistRequest
+import com.example.musicapplicationse114.model.SessionCacheHandler
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
 import com.example.musicapplicationse114.repositories.MainLog
@@ -28,12 +29,25 @@ class ArtistViewModel @Inject constructor(
     private val api: Api?,
     private val mainLog: MainLog?,
     private val tokenManager: TokenManager?
-) : ViewModel() {
+) : ViewModel(), SessionCacheHandler {
     private val _uiState = MutableStateFlow(ArtistUiState())
     val uiState = _uiState
 
-    fun loadArtistById(artistId: Long) {
+    override fun clearSessionCache() {
+        _uiState.value = ArtistUiState() // reset lại trạng thái
+    }
+
+    override fun hasSessionCache(): Boolean {
+        return _uiState.value.artist != null ||
+                _uiState.value.songArtist.isNotEmpty() ||
+                _uiState.value.followedArtistIds.isNotEmpty()
+    }
+
+
+    fun loadArtistById(artistId: Long, forceRefresh: Boolean = false) {
         viewModelScope.launch {
+            if (!forceRefresh && hasSessionCache()) return@launch
+
             try {
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
                 val token = tokenManager?.getToken()
@@ -53,8 +67,10 @@ class ArtistViewModel @Inject constructor(
         }
     }
 
-    fun loadSongByArtistId(artistId: Long) {
+    fun loadSongByArtistId(artistId: Long, forceRefresh: Boolean = false) {
         viewModelScope.launch {
+            if (!forceRefresh && _uiState.value.songArtist.isNotEmpty()) return@launch
+
             try {
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
                 val token = tokenManager?.getToken()
@@ -75,8 +91,10 @@ class ArtistViewModel @Inject constructor(
         }
     }
 
-    fun loadFollowedArtists() {
+    fun loadFollowedArtists(forceRefresh: Boolean = false) {
         viewModelScope.launch {
+            if (!forceRefresh && _uiState.value.followedArtistIds.isNotEmpty()) return@launch
+
             try {
                 val token = tokenManager?.getToken()
                 if (!token.isNullOrBlank() && api != null) {

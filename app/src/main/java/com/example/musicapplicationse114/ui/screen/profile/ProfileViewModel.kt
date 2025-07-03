@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.model.ProfileDto
+import com.example.musicapplicationse114.model.SessionCacheHandler
 import com.example.musicapplicationse114.model.UserUpdateDTO
 import com.example.musicapplicationse114.repositories.Api
 import com.example.musicapplicationse114.ui.notification.LoadState
@@ -35,9 +36,11 @@ class ProfileViewModel @Inject constructor(
     private val _logoutState = MutableStateFlow<LoadState>(LoadState.Idle)
     val logoutState = _logoutState.asStateFlow()
 
-    fun loadProfile() {
+    fun loadProfile(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            _loadState.value = LoadState.Loading
+            if (!forceRefresh && _profile.value != null) {
+                return@launch
+            }
             try {
                 val token = tokenManager.getToken()
                 if (token != null) {
@@ -57,7 +60,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun logout() {
+    fun logout(vararg sessionCaches: SessionCacheHandler) {
         viewModelScope.launch {
             _logoutState.value = LoadState.Loading
             try {
@@ -66,6 +69,8 @@ class ProfileViewModel @Inject constructor(
                     val response = api.logout(token)
                     if (response.isSuccessful) {
                         tokenManager.clearToken()
+                        _profile.value = null
+                        sessionCaches.forEach { it.clearSessionCache() }
                         _logoutState.value = LoadState.Success
                     } else {
                         _logoutState.value = LoadState.Error("Logout failed")
