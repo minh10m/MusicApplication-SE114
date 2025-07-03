@@ -43,20 +43,14 @@ public class UserService {
         return convertToDetailDTO(user);
     }
 
-    @Cacheable(value = "userProfiles", key = "#root.authentication.principal.id")
-    public ProfileDTO getMyProfile() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
-            throw new UsernameNotFoundException("User not authenticated");
-        }
-
-        User fullUser = userRepository.findById(user.getId())
+    @Cacheable(value = "userProfiles", key = "#userId")
+    public ProfileDTO getProfileByUserId(Long userId) {
+        User fullUser = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        int favoriteSongCount = favoriteSongRepository.countByUserId(fullUser.getId());
-        int followedArtistCount = followArtistRepository.countByUserId(fullUser.getId());
-        int playlistCount = favoritePlaylistRepository.countByUserId(fullUser.getId());
+        int favoriteSongCount = favoriteSongRepository.countByUserId(userId);
+        int followedArtistCount = followArtistRepository.countByUserId(userId);
+        int playlistCount = favoritePlaylistRepository.countByUserId(userId);
 
         return new ProfileDTO(
                 fullUser.getUsername(),
@@ -68,6 +62,17 @@ public class UserService {
                 playlistCount
         );
     }
+
+    public ProfileDTO getMyProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new UsernameNotFoundException("User not authenticated");
+        }
+
+        return getProfileByUserId(user.getId()); // 🔁 gọi method có @Cacheable
+    }
+
 
     @CacheEvict(value = {"allUsers", "userProfiles"}, allEntries = true)
     public UserDetailDTO updateCurrentUser(UserUpdateDTO userDTO, MultipartFile avatarFile) throws IOException {
