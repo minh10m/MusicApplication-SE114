@@ -50,7 +50,6 @@ import androidx.navigation.NavController
 import com.example.musicapplicationse114.MainViewModel
 import com.example.musicapplicationse114.common.enum.LoadStatus
 import com.example.musicapplicationse114.ui.screen.playlists.PlayListViewModel
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,7 +79,10 @@ fun CreatePlaylistScreen(
         if (uiState.status is LoadStatus.Success) {
             Toast.makeText(context, "Tạo playlist thành công", Toast.LENGTH_SHORT).show()
             playlistViewModel.loadPlaylist()
-            navController.popBackStack()
+            navController.navigate("playlist") {
+                // Pop để tránh duplicate stack (nếu cần)
+                popUpTo("createPlaylist") { inclusive = true }
+            }
         }
     }
 
