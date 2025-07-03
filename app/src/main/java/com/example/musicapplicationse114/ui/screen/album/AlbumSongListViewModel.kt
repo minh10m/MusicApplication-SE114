@@ -31,12 +31,18 @@ class AlbumSongListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AlbumUiState())
     val uiState = _uiState
 
-    fun loadAlbumById(albumId: Long) {
+    fun loadAlbumById(albumId: Long, forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
-                val token = tokenManager?.getToken()
-                if (!token.isNullOrBlank() && api != null) {
+            if (!forceRefresh && _uiState.value.album?.id == albumId && _uiState.value.artist?.isSuccessful == true) {
+                Log.d("AlbumViewModel", "Using cached album and artist")
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+            val token = tokenManager?.getToken()
+
+            if (!token.isNullOrBlank() && api != null) {
+                try {
                     val album = api.getAlbumById(token, albumId)
                     val artist = api.getArtistById(token, album.artistId)
 
@@ -45,42 +51,42 @@ class AlbumSongListViewModel @Inject constructor(
                         artist = artist,
                         status = LoadStatus.Success()
                     )
-                 }
-                else {
-                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Token hoặc API null"))
+                    Log.d("AlbumViewModel", "Loaded album and artist successfully")
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message ?: "Unknown error"))
+                    Log.e("AlbumViewModel", "Failed to load album/artist: ${e.message}")
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message ?: "Unknown error"))
-                Log.e("PlayerViewModel", "Failed to load song: ${e.message}")
+            } else {
+                _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Token hoặc API null"))
             }
         }
     }
 
-    fun loadSongByAlbumId(albumId: Long) {
+    fun loadSongByAlbumId(albumId: Long, forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
-                val token = tokenManager?.getToken()
-                if(!token.isNullOrBlank() && api != null)
-                {
+            if (!forceRefresh && _uiState.value.songAlbums.isNotEmpty()) {
+                Log.d("AlbumViewModel", "Using cached album songs")
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
+            val token = tokenManager?.getToken()
+
+            if (!token.isNullOrBlank() && api != null) {
+                try {
                     val songs = api.getSongsByAlbumId(token, albumId)
-                    Log.d("PlayerViewModel", "Songs loaded successfully")
                     _uiState.value = _uiState.value.copy(
                         songAlbums = songs.content,
                         status = LoadStatus.Success()
-                )
-            }
-            else
-            {
+                    )
+                    Log.d("AlbumViewModel", "Songs by album loaded successfully")
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message ?: "Unknown error"))
+                    Log.e("AlbumViewModel", "Failed to load songs by album: ${e.message}")
+                }
+            } else {
                 _uiState.value = _uiState.value.copy(status = LoadStatus.Error("Token hoặc API null"))
             }
-        }
-        catch(e : Exception)
-        {
-            _uiState.value = _uiState.value.copy(status = LoadStatus.Error(e.message ?: "Unknown error"))
-            Log.e("PlayerViewModel", "Failed to load song: ${e.message}")
-            }
-
         }
     }
 }

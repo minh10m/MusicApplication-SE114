@@ -56,12 +56,17 @@ import com.example.musicapplicationse114.ui.screen.start.StartScreen
 import com.example.musicapplicationse114.ui.searchSongAddInToPlaylist.SearchSongAddIntoPlaylistScreen
 import com.example.musicapplicationse114.ui.screen.forget_password.ForgetPasswordScreen
 import com.example.musicapplicationse114.ui.screen.forget_password.ForgetPasswordViewModel
+import com.example.musicapplicationse114.ui.screen.profile.EditProfileScreen
+import com.example.musicapplicationse114.ui.screen.profile.ProfileScreen
+import com.example.musicapplicationse114.ui.screen.profile.ProfileViewModel
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 
 sealed class Screen(val route: String, val title: String) {
     object Home : Screen("home", "Home")
     object Notification : Screen("notification", "Notifications")
+    object Profile : Screen("profile", "Profile")
+    object EditProfile : Screen("edit_profile", "Edit Profile")
     object Login : Screen("login", "Login")
     object SignUp : Screen("signup", "Sign Up")
     object ForgetPassword : Screen("forgetPassword", "Forget Password")
@@ -107,6 +112,7 @@ fun Navigation() {
     val sharedViewModel: PlayerSharedViewModel = hiltViewModel()
     val globalPlayerController = sharedViewModel.player
     val playerState by globalPlayerController.state.collectAsState()
+    val profileViewModel : ProfileViewModel = hiltViewModel()
 
     val context = LocalContext.current
     LaunchedEffect(mainState.value.error) {
@@ -144,6 +150,15 @@ fun Navigation() {
                         NotificationsScreen(
                             navController = navController,
                             viewModel = viewModel
+                        )
+                    }
+                    composable("profile") {
+                        ProfileScreen(navController, mainViewModel)
+                    }
+                    composable("edit_profile") {
+                        EditProfileScreen(
+                            navController = navController,
+                            viewModel = hiltViewModel()
                         )
                     }
                     composable(Screen.Login.route) {

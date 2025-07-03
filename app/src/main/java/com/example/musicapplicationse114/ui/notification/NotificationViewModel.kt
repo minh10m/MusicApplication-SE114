@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.model.NotificationDto
+import com.example.musicapplicationse114.model.SessionCacheHandler
 import com.example.musicapplicationse114.repositories.Api
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
@@ -15,15 +16,18 @@ import kotlinx.coroutines.launch
 class NotificationsViewModel @Inject constructor(
     private val api: Api,
     private val tokenManager: TokenManager
-) : ViewModel() {
+) : ViewModel(), SessionCacheHandler {
     private val _notifications = MutableStateFlow<List<NotificationDto>>(emptyList())
     val notifications = _notifications.asStateFlow()
 
     private val _loadingState = MutableStateFlow<LoadState>(LoadState.Idle)
     val loadingState = _loadingState.asStateFlow()
 
-    fun loadNotifications() {
+    fun loadNotifications(forceRefresh: Boolean = false) {
         viewModelScope.launch {
+            if (!forceRefresh && hasSessionCache()) {
+                return@launch
+            }
             _loadingState.value = LoadState.Loading
             try {
                 val token = tokenManager.getToken()
@@ -42,6 +46,15 @@ class NotificationsViewModel @Inject constructor(
                 _loadingState.value = LoadState.Error(e.message ?: "Unknown error")
             }
         }
+    }
+
+    override fun clearSessionCache() {
+        _notifications.value = emptyList()
+        _loadingState.value = LoadState.Idle
+    }
+
+    override fun hasSessionCache(): Boolean {
+        return _notifications.value.isNotEmpty()
     }
 }
 

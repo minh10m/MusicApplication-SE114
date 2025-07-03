@@ -3,18 +3,15 @@ package com.example.musicapplicationse114.ui.screen.library
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import com.example.musicapplicationse114.R
 import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.common.enum.LoadStatus
-import com.example.musicapplicationse114.model.RecentlyPlayedResponse
+import com.example.musicapplicationse114.model.SessionCacheHandler
 import com.example.musicapplicationse114.model.SongResponse
 import com.example.musicapplicationse114.repositories.Api
 import com.example.musicapplicationse114.repositories.MainLog
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -29,12 +26,22 @@ class LibraryViewModel @Inject constructor(
     private val mainLog : MainLog?,
     private val api : Api?,
     private val tokenManager: TokenManager?
-) : ViewModel() {
+) : ViewModel(), SessionCacheHandler {
     val _uiState = MutableStateFlow(LibraryUiState())
     val uiState =  _uiState.asStateFlow()
+    private var isLoaded = false
 
-    fun loadRecentlyPlayed()
+    override fun hasSessionCache(): Boolean = isLoaded
+
+    override fun clearSessionCache() {
+        isLoaded = false
+        _uiState.value = LibraryUiState()
+    }
+
+    fun loadRecentlyPlayed(forceRefresh: Boolean = false)
     {
+        if (isLoaded && !forceRefresh) return
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
             try {

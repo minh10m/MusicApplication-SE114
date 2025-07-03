@@ -5,11 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musicapplicationse114.auth.TokenManager
 import com.example.musicapplicationse114.common.enum.LoadStatus
-import com.example.musicapplicationse114.model.AlbumResponse
-import com.example.musicapplicationse114.model.ArtistResponse
 import com.example.musicapplicationse114.model.FavoriteSongResponse
-import com.example.musicapplicationse114.model.GenreResponse
-import com.example.musicapplicationse114.model.SongResponse
+import com.example.musicapplicationse114.model.SessionCacheHandler
 import com.example.musicapplicationse114.repositories.Api
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -30,12 +27,22 @@ data class LikeSongUiState(
 class LikedSongsViewModel @Inject constructor(
     private val api: Api?,
     private val tokenManager: TokenManager?
-): ViewModel()
+): ViewModel(), SessionCacheHandler
 {
     private val _uiState = MutableStateFlow(LikeSongUiState())
     val uiState: StateFlow<LikeSongUiState> = _uiState
 
     private var searchJob: Job? = null
+
+    private var isLoaded = false
+
+    override fun hasSessionCache(): Boolean = isLoaded
+
+    override fun clearSessionCache() {
+        isLoaded = false
+        _uiState.value = LikeSongUiState()
+    }
+
 
     fun searchAllDebounced(query: String, limit: Int = 10) {
         searchJob?.cancel()
@@ -85,8 +92,10 @@ class LikedSongsViewModel @Inject constructor(
         }
     }
 
-    fun loadFavoriteSong() {
+    fun loadFavoriteSong(forceRefresh: Boolean = false) {
         viewModelScope.launch {
+            if (isLoaded && !forceRefresh) return@launch
+
             _uiState.value = _uiState.value.copy(status = LoadStatus.Loading())
 
             val token = tokenManager?.getToken()
@@ -104,6 +113,7 @@ class LikedSongsViewModel @Inject constructor(
                 val response = api.getFavoriteSongs(token)
                 if (response.isSuccessful) {
                     val songs = response.body()?.content.orEmpty()
+                    isLoaded = true // ✅ Đánh dấu cache đã có
 
                     _uiState.value = _uiState.value.copy(
                         likedSongs = songs,
@@ -122,5 +132,4 @@ class LikedSongsViewModel @Inject constructor(
             }
         }
     }
-    
 }
