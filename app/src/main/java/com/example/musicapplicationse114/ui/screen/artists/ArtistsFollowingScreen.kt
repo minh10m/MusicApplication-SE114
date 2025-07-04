@@ -76,11 +76,7 @@ fun ArtistsFollowingScreen(
         }
     }
 
-    if (uiState.value.status is LoadStatus.Loading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(strokeWidth = 2.dp, color = Color.White)
-        }
-    } else {
+
         Scaffold(
             contentWindowInsets = WindowInsets
                 .safeDrawing
@@ -154,7 +150,11 @@ fun ArtistsFollowingScreen(
                         modifier = Modifier.size(40.dp)
                     )
                 }
-
+                if (uiState.value.status is LoadStatus.Loading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(strokeWidth = 2.dp, color = Color.White)
+                    }
+                } else {
                 Spacer(modifier = Modifier.height(16.dp))
                 val displayedArtists = if (uiState.value.query.isNotBlank()) {
                     uiState.value.searchedArtists

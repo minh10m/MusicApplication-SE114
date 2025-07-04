@@ -88,19 +88,7 @@ fun SearchSongAddIntoPlaylistScreen(
     }
 
 
-    if(uiState.status is LoadStatus.Loading)
-    {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(
-                strokeWidth = 2.dp,
-                color = Color.White
-            )
-        }
-    }
-    else {
+
     Scaffold { innerPadding ->
         Column(
             modifier = Modifier
@@ -136,7 +124,19 @@ fun SearchSongAddIntoPlaylistScreen(
                     modifier = Modifier.weight(1f)
                 )
             }
-
+            if(uiState.status is LoadStatus.Loading)
+            {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                }
+            }
+            else {
                 Spacer(modifier = Modifier.height(16.dp))
                 val displayedSongs = if (uiState.query.isNotBlank()) {
                     uiState.songsSearch

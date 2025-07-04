@@ -93,11 +93,7 @@ fun LikedSongsScreen(
         }
     }
 
-    if (uiState.value.status is LoadStatus.Loading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(strokeWidth = 2.dp, color = Color.White)
-        }
-    } else {
+
         Scaffold(
             contentWindowInsets = WindowInsets
                 .safeDrawing
@@ -173,14 +169,6 @@ fun LikedSongsScreen(
                     )
 
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                val displayedSongs = if (uiState.value.query.isNotBlank()) {
-                    likedSongsSearch
-                } else {
-                    likedSongs
-                }
-
                 if (uiState.value.status is LoadStatus.Loading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(
@@ -189,6 +177,14 @@ fun LikedSongsScreen(
                         )
                     }
                 } else {
+                Spacer(modifier = Modifier.height(16.dp))
+                val displayedSongs = if (uiState.value.query.isNotBlank()) {
+                    likedSongsSearch
+                } else {
+                    likedSongs
+                }
+
+
                     LazyColumn(modifier = Modifier.fillMaxWidth().padding(bottom = 18.dp)) {
                         itemsIndexed(displayedSongs) { index, song ->
                             Row(
@@ -249,7 +245,6 @@ fun LikedSongsScreen(
                 }
             }
         }
-    }
 }
 
 @Composable
