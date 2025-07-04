@@ -120,17 +120,7 @@ fun PlaylistScreen(
         }
     }
 
-    if (uiState.value.status is LoadStatus.Loading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(
-                strokeWidth = 2.dp,
-                color = Color.White
-            )
-        }
-    } else {
+
         Scaffold(
             contentWindowInsets = WindowInsets
                 .safeDrawing
@@ -208,7 +198,17 @@ fun PlaylistScreen(
                             },
                     )
                 }
-
+                if (uiState.value.status is LoadStatus.Loading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                    }
+                } else {
                 Spacer(modifier = Modifier.height(16.dp))
                 val displayedPlaylists = if (uiState.value.query.isNotBlank()) {
                     uiState.value.searchPlaylist
